@@ -1,8 +1,8 @@
 import math
 
-from crc import Calculator, Configuration
 import cv2 as cv
 import numpy as np
+from crc import Calculator, Configuration
 from PIL import Image, ImageColor
 from scipy.spatial import distance as dist
 
@@ -212,7 +212,6 @@ def get_inner_contour_idxs(countour_idxs, hierarchy):
     return valid_contour_idxs
 
 
-
 def order_points(points):
     """
     Sort a 2D array of points into tl, tr, br, bl order.
@@ -232,12 +231,15 @@ def order_points(points):
     dists = np.linalg.norm(right_points - tl, axis=1)
     right_y_sort_idx = np.argsort(dists)
 
-    return np.array([
-        tl,
-        right_points[right_y_sort_idx[0], :],
-        right_points[right_y_sort_idx[1], :],
-        bl,
-    ]).astype(np.float32)
+    return np.array(
+        [
+            tl,
+            right_points[right_y_sort_idx[0], :],
+            right_points[right_y_sort_idx[1], :],
+            bl,
+        ]
+    ).astype(np.float32)
+
 
 def detect_tags(image):
     # Image should be a PIL image format
@@ -273,20 +275,22 @@ def detect_tags(image):
         grid_mean = np.zeros((7, 7))
         grid_std = np.zeros((7, 7))
 
-        for r in range(7): # Rows
-            for c in range(7): # Cols
-                cell = dst_gray[32*r:32*(r + 1), 32*c: 32*(c + 1)]
+        for r in range(7):  # Rows
+            for c in range(7):  # Cols
+                cell = dst_gray[32 * r : 32 * (r + 1), 32 * c : 32 * (c + 1)]
                 grid_mean[r, c] = np.mean(cell)
                 grid_std[r, c] = np.std(cell)
 
         # Bottom left, Top left, Top right, Bottom right
-        corner_means = np.array([grid_mean[-2,1], grid_mean[1,1], grid_mean[1, -2], grid_mean[-2,-2]])
+        corner_means = np.array(
+            [grid_mean[-2, 1], grid_mean[1, 1], grid_mean[1, -2], grid_mean[-2, -2]]
+        )
         sort_idxs = np.argsort(corner_means)
         sorted_corner_means = corner_means[sort_idxs]
 
         distinct_corners = True
-        for i in range(len(sorted_corner_means)-1):
-            if sorted_corner_means[i+1] - sorted_corner_means[i] < 20:
+        for i in range(len(sorted_corner_means) - 1):
+            if sorted_corner_means[i + 1] - sorted_corner_means[i] < 20:
                 distinct_corners = False
         if not distinct_corners:
             continue
@@ -295,16 +299,20 @@ def detect_tags(image):
         # Only use three cells next to the bottom left corner because using the entire quiet
         # zone can be unreliable as the lighting can change across the tag image.
         corner_black = True
-        corner_angle_mean = np.mean(np.concatenate((dst_gray[-64:, 0:32].ravel(), dst_gray[-32:, 32:64].ravel())))
-        if np.abs(corner_angle_mean - grid_mean[-2,1]) > 25:
+        corner_angle_mean = np.mean(
+            np.concatenate(
+                (dst_gray[-64:, 0:32].ravel(), dst_gray[-32:, 32:64].ravel())
+            )
+        )
+        if np.abs(corner_angle_mean - grid_mean[-2, 1]) > 25:
             corner_black = False
         if not corner_black:
             continue
 
         # Check that cell mean is close enough to corner colours
         cell_colours_valid = True
-        for r in range(1, 5+1): # Rows
-            for c in range(1, 5+1): # Cols
+        for r in range(1, 5 + 1):  # Rows
+            for c in range(1, 5 + 1):  # Cols
                 if np.min(np.abs(sorted_corner_means - grid_mean[r, c])) > 30:
                     cell_colours_valid = False
         if not cell_colours_valid:
@@ -313,6 +321,7 @@ def detect_tags(image):
         tags.append(Image.fromarray(cv.cvtColor(dst, cv.COLOR_BGR2RGB)))
 
     return tags
+
 
 def decode_tag_image(tag_image, n=5, palette=["cyan", "magenta", "yellow", "black"]):
     palette_rgb_list = [ImageColor.getrgb(c) for c in palette]
