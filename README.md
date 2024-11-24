@@ -87,6 +87,50 @@ correspondence:
 | 9x9     | 120 bits       | 32 bits    | CRC-32Q         |
 | 11 X 11 | 192 bits       | 40 bits    | CRC-40-GSM      |
 
+
+### Detection Pipeline
+
+The first step to reading a ddTag is to detect tags in an image, which is achieved 
+with the following steps:
+1. Binary threshold the image using Otsu's method
+2. Detect candidate contours in threshold image
+3. Filter candidates so that they are large enough and roughly square
+4. Filter candidates so that they are the innermost contours
+5. Filter candidates based on conforming to spec
+   1. Warp each candidate to be square (rectify)
+   2. Grayscale and normalize
+   3. Check that corner colours are distinct
+   4. Check that bottom left corner colour matches border colour
+   5. Check that each cell colour matches corner colours
+
+This process is my own method, which is based on how QR codes are often detected.
+The ddTag patent does not describe a particular process for detecting the tag and leaves
+it up to the implementor.
+
+### Decoding Pipeline
+
+This process is adapted from the patent and assumes the tag is already rectified:
+1. Inspect the center colour to determine grid size
+2. Divide the image into grid cells
+3. Obtain the palette colours from the four corners of the 
+4. Orient the image so that the darkest corner is at the bottom left
+5. Assign each cell in the grid to the closest colour in the palette (use CIE Lab colour space)
+6. Convert cells to binary using the rule that the palette is ordered clockwise starting at the top left with the 
+binary values 00, 01, 10, 11.
+7. Extract message code and CRC code. Both message and CRC are read left-to-right and top-to-bottom.
+8. Validate message code with CRC code.
+
+TODO:
+- Normalisation
+- Auto detect grid size
+
+Patent discusses using size of centre cell to determine number of cells in the grid.
+
+The patent suggests using the black and white quiet zone of the tag to adjust the colour
+of the image to correct for lighting.
+- https://github.com/colour-science/colour#colour-correction-colour-characterisation
+
+
 ## References
 
 - EP3561729NWA1 https://data.epo.org/publication-server/rest/v1.0/publication-dates/20191030/patents/EP3561729NWA1/document.pdf
