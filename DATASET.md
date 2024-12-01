@@ -6,6 +6,8 @@ Refer to https://creativecommons.org/licenses/by/4.0/ for licence details.
 
 ## Contributors
 
-Elliana May (mause.me)
-Cait Macleod (caitelatte)
+- Elliana May (mause.me)
+- Cait Macleod (caitelatte)
+- David Vo (auscompgeek)
+- Peter Hall (urcher)
 
