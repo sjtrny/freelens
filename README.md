@@ -34,7 +34,7 @@ unique combinations.
 NaviLens uses a tag format called "ddTag", short for "distant dense tag". The "ddTag" brand 
 is managed by a separate entity to NaviLens, however both companies are closely linked. A ddTag 
 consists of a small grid of coloured squares. The typical implementation uses a 5x5 grid, 
-which represents a 24 bit message, with cyan, magenta, yellow and black colours.
+which represents a 24 bit message, with cyan, magenta, yellow and black coloured cells.
 
 The tag consists of three nested components, which are from the outside moving inwards:
 1. Outer quiet zone
@@ -49,7 +49,7 @@ black,
 - the same width as the cells in the tag grid.
 
 The grid consists of an odd numbered square grid of solid colours from a palette of 
-four colours, typically cyan, magenta, yellow and black. Each cell in the grid represents two bits of data 
+four colours. Each cell in the grid represents two bits of data 
 since it is in one of four states. ddTags officially come in the following sizes:
 - 5x5
 - 7x7
