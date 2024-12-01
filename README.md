@@ -105,9 +105,11 @@ In `detect_frames` we use a modified version of \[2\] as follows:
 
 ## Decoding Possible Tags
 
-This process is adapted from the patent for each unrectified frame:
+This process is adapted from the patent.
+
+For each un-rectified frame polygon:
 1. Convert image to CIELab colour space
-2. Unwarp frame to square aspect ratio and resize to a fixed size
+2. Un-warp frame image to square aspect ratio and resize to a fixed size
 3. Get the cell colours from the center positions of each cell in the grid
 4. Obtain the palette colours from the four corners of the grid 
 5. Assign each cell in the grid to the closest colour in the palette
