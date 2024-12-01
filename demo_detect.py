@@ -1,14 +1,14 @@
 from freelens import (
-    detect_tags,
-    decode_tag_image,
+    detect_frames,
+    decode_frames,
 )
 
 from PIL import Image
 
-img = Image.open("test-images/PXL_20241123_063356874.jpg")
+img = Image.open("dataset/positives/PXL_20241125_120348955.jpg")
 
-detected_tags = detect_tags(img)
-for i, tag in enumerate(detected_tags):
-    decoded_id = decode_tag_image(tag)
-    print(decoded_id)
-    tag.save(f"detected-tag-{decoded_id}-{i}.png")
+frames = detect_frames(img)
+
+codes = decode_frames(img, frames, n=5, validate_crc=False)
+
+print(codes)

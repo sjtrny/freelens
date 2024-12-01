@@ -2,9 +2,9 @@
 
 # FreeLens
 
-This project provides a reference implementation of [NaviLens](https://www.navilens.com) and [ddTag](https://www.ddtags.com) 
-for educational or self-use purposes. Commercial use is at your own risk as NaviLens and ddTag may attempt to enforce 
-their patents.
+This project provides a reference implementation of [NaviLens][3] and [ddTag][4] 
+for educational or personal use. Commercial use is at your own risk as NaviLens and 
+ddTag may attempt to enforce their patents.
 
 ## Components
 
@@ -29,14 +29,12 @@ regions, within which it allocates tags to users. This allows tags to be re-used
 message length of the tags used by NaviLens. For example the typical 5x5 ddTag can only represent 16,777,216 
 unique combinations.
 
-## ddTag
+## ddTag Specification
 
 NaviLens uses a tag format called "ddTag", short for "distant dense tag". The "ddTag" brand 
 is managed by a separate entity to NaviLens, however both companies are closely linked. A ddTag 
 consists of a small grid of coloured squares. The typical implementation uses a 5x5 grid, 
-which represents a 24 bit message, with cyan, magenta, yellow and black colours. 
-
-### ddTag Specification
+which represents a 24 bit message, with cyan, magenta, yellow and black colours.
 
 The tag consists of three nested components, which are from the outside moving inwards:
 1. Outer quiet zone
@@ -88,51 +86,43 @@ correspondence:
 | 11 X 11 | 192 bits       | 40 bits    | CRC-40-GSM      |
 
 
-### Detection Pipeline
+## Detecting Possible Tags
 
-The first step to reading a ddTag is to detect tags in an image, which is achieved 
-with the following steps:
-1. Binary threshold the image using Otsu's method
-2. Detect candidate contours in threshold image
-3. Filter candidates so that they are large enough and roughly square
-4. Filter candidates so that they are the innermost contours
-5. Filter candidates based on conforming to spec
-   1. Warp each candidate to be square (rectify)
-   2. Grayscale and normalize
-   3. Check that corner colours are distinct
-   4. Check that bottom left corner colour matches border colour
-   5. Check that each cell colour matches corner colours
+The ddTag patent does not describe a particular process for detecting "frames" and leaves
+it up to the implementor. However it suggests that \[2\] may be used.
 
-This process is my own method, which is based on how QR codes are often detected.
-The ddTag patent does not describe a particular process for detecting the tag and leaves
-it up to the implementor.
+In `detect_frames` we use a modified version of \[2\] as follows:
+1. Convert image to grayscale
+2. Detect edges by local adaptive thresholding (cv.adaptiveThreshold)
+3. Detect contours by Suzuki's method (cv.findContours)
+4. Fit polygon to contours (cv.approxPolyDP)
+5. Apply filters:
+   1. 4-vertex polygons.
+   2. Area greater than threshold
+   3. Convex polygon
+   4. Shape is roughly square (perimeter/area test)
+   5. Check that border around frame is white
 
-### Decoding Pipeline
+## Decoding Possible Tags
 
-This process is adapted from the patent and assumes the tag is already rectified:
-1. Inspect the center colour to determine grid size
-2. Divide the image into grid cells
-3. Obtain the palette colours from the four corners of the 
-4. Orient the image so that the darkest corner is at the bottom left
-5. Assign each cell in the grid to the closest colour in the palette (use CIE Lab colour space)
-6. Convert cells to binary using the rule that the palette is ordered clockwise starting at the top left with the 
-binary values 00, 01, 10, 11.
-7. Extract message code and CRC code. Both message and CRC are read left-to-right and top-to-bottom.
-8. Validate message code with CRC code.
-
-TODO:
-- Normalisation
-- Auto detect grid size
-
-Patent discusses using size of centre cell to determine number of cells in the grid.
-
-The patent suggests using the black and white quiet zone of the tag to adjust the colour
-of the image to correct for lighting.
-- https://github.com/colour-science/colour#colour-correction-colour-characterisation
-
+This process is adapted from the patent for each unrectified frame:
+1. Convert image to CIELab colour space
+2. Unwarp frame to square aspect ratio and resize to a fixed size
+3. Get the cell colours from the center positions of each cell in the grid
+4. Obtain the palette colours from the four corners of the grid 
+5. Assign each cell in the grid to the closest colour in the palette
+6. Validate tag
+   1. Convert cells to binary using the rule that the palette is ordered clockwise starting at the top left with the binary values 00, 01, 10, 11. 
+   2. Extract message code and CRC code. Both message and CRC are read left-to-right and top-to-bottom. 
+   3. Validate message code with CRC code.
 
 ## References
 
-- EP3561729NWA1 https://data.epo.org/publication-server/rest/v1.0/publication-dates/20191030/patents/EP3561729NWA1/document.pdf
+\[1\]: European Patent [EP3561729NWA1][1]
+\[2\]: Garrido-Jurado, S., et al. (2014). [Automatic generation and detection of highly reliable fiducial markers under occlusion][2]. Pattern Recognition.
 
 
+[1]: https://data.epo.org/publication-server/rest/v1.0/publication-dates/20191030/patents/EP3561729NWA1/document.pdf
+[2]: https://cs-courses.mines.edu/csci507/schedule/24/ArUco.pdf
+[3]: https://www.navilens.com
+[4]: https://www.ddtags.com

@@ -3,8 +3,7 @@ import math
 import cv2 as cv
 import numpy as np
 from crc import Calculator, Configuration
-from PIL import Image, ImageColor
-from scipy.spatial import distance as dist
+from PIL import Image
 
 crc_config_map = {
     5: Configuration(
@@ -118,10 +117,10 @@ def tag_colours(id_int, n=5, palette=["cyan", "magenta", "yellow", "black"]):
 
     crc_calculator = Calculator(crc_config_map[n])
     crc_int = crc_calculator.checksum(message_bytes)
+
     # n_crc_cells_per_side * 4 sides * 2 bits per cell
     n_bits_crc = int(math.floor(n / 2)) * 4 * 2
     crc_binary_string = format(crc_int, f"0{n_bits_crc}b")
-
     message_colour_list = [
         palette[int(message_binary_string[i : i + 2], 2)]
         for i in range(0, n_bits_message, 2)
@@ -186,32 +185,6 @@ def make_tag_image(
     return padded_img
 
 
-def find_square_contour_idxs(contours, hierarchy):
-    candidate_contours_idx = []
-    for i, c in enumerate(contours):
-        peri = cv.arcLength(c, True)
-        approx = cv.approxPolyDP(c, 0.04 * peri, True)
-        if len(approx) == 4:
-            x, y, w, h = cv.boundingRect(approx)
-            area = cv.contourArea(c)
-            if area > 600:
-                candidate_contours_idx.append(i)
-                ar = w / float(h)
-                if 0.85 < ar < 1.3:
-                    candidate_contours_idx.append(i)
-
-    return candidate_contours_idx
-
-
-def get_inner_contour_idxs(countour_idxs, hierarchy):
-    valid_contour_idxs = []
-    for i, idx in enumerate(countour_idxs):
-        if hierarchy[idx][2] not in countour_idxs:
-            valid_contour_idxs.append(idx)
-
-    return valid_contour_idxs
-
-
 def order_points(points):
     """
     Sort a 2D array of points into tl, tr, br, bl order.
@@ -241,111 +214,152 @@ def order_points(points):
     ).astype(np.float32)
 
 
-def detect_tags(image):
-    # Image should be a PIL image format
+def reduce_poly_vertices(contours, tolerance=0.1):
+    polygons = []
+    for c in contours:
+        perimeter = cv.arcLength(c, True)
+        polygon = np.squeeze(cv.approxPolyDP(c, tolerance * perimeter, True))
+        polygons.append(polygon)
+    return polygons
+
+
+def frame_filter_polygons_4vertex(polygons):
+    filtered_polygons = []
+    for i, p in enumerate(polygons):
+        if len(p) == 4:
+            filtered_polygons.append(p)
+
+    return filtered_polygons
+
+
+def frame_filter_polygons_area(polygons, area_threshold=4000):
+    filtered_polygons = []
+    for i, p in enumerate(polygons):
+        if cv.contourArea(p, True) >= area_threshold:
+            filtered_polygons.append(p)
+
+    return filtered_polygons
+
+
+def frame_filter_polygons_convex(polygons):
+    filtered_polygons = []
+    for i, p in enumerate(polygons):
+        if cv.isContourConvex(p):
+            filtered_polygons.append(p)
+
+    return filtered_polygons
+
+
+def frame_filter_polygons_squareish(polygons):
+    filtered_polygons = []
+    for i, p in enumerate(polygons):
+        area = cv.contourArea(p, True)
+        perimeter = cv.arcLength(p, True)
+        if 1 > np.abs(perimeter / area) > 0:
+            filtered_polygons.append(p)
+
+    return filtered_polygons
+
+
+def expand_polygon(polygon, scale_factor=1 + 4 / 14):
+    # Calculate the centroid of the polygon
+    centroid = np.mean(polygon, axis=0)
+
+    # Scale each point relative to the centroid
+    expanded_polygon = centroid + (polygon - centroid) * scale_factor
+
+    # Convert back to integers for pixel coordinates
+    return np.round(expanded_polygon).astype(int)
+
+
+def frame_filter_white_border(polygons, image_bw):
+    filtered_polygons = []
+
+    laplacian = cv.Laplacian(image_bw, cv.CV_64F)
+
+    for i, p in enumerate(polygons):
+        p_expanded = expand_polygon(p)
+
+        outer_mask = np.zeros(image_bw.shape).astype(np.uint8)
+        cv.fillConvexPoly(outer_mask, p_expanded, color=255)
+
+        inner_mask = np.zeros(image_bw.shape).astype(np.uint8)
+        cv.fillConvexPoly(inner_mask, p, color=255)
+
+        mask = outer_mask - inner_mask
+
+        masked_laplacian_inner = laplacian * inner_mask.astype(bool)
+        masked_laplacian_inner_values = masked_laplacian_inner[inner_mask > 0]
+        inner_laplacian_variance = np.var(masked_laplacian_inner_values)
+        masked_laplacian_mask = laplacian * mask.astype(bool)
+        masked_laplacian_mask_values = masked_laplacian_mask[mask > 0]
+        laplacian_variance = np.var(masked_laplacian_mask_values)
+
+        masked_pixels = image_bw[inner_mask > 0]
+        inner_percentile = np.percentile(masked_pixels, 90)
+        masked_pixels = image_bw[mask > 0]
+        border_median = np.median(masked_pixels)
+
+        if (
+            laplacian_variance <= inner_laplacian_variance
+            and border_median >= inner_percentile
+        ):
+            filtered_polygons.append(p)
+
+    return filtered_polygons
+
+
+def detect_frames(image):
+    """
+    Based on "Automatic generation and detection of highly reliable fiducial markers under occlusion" Pattern Recognition 2014
+
+    1. Convert image to grayscale
+    2. Detect edges by local adaptive thresholding (cv.adaptiveThreshold)
+    3. Detect contours by Suzuki's method (cv.findContours)
+    4. Fit polygon to contours (cv.approxPolyDP)
+    5. Apply filters:
+        1. 4-vertex polygons.
+        2. Area greater than threshold
+        3. Convex polygon
+        4. Shape is roughly square (perimeter/area test)
+        5. Check that border around frame is white
+
+    TODO: Retain only internal contours (opposite of paper which suggests external)
+    """
+
     image_cv = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+
+    # 1. Convert image to grayscale
     image_bw_cv = cv.cvtColor(image_cv, cv.COLOR_BGR2GRAY)
 
-    # Binary threshold with cv2.threshold using Otsu's method
-    ret, thresh = cv.threshold(image_bw_cv, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+    # 2. Detect edges by local adaptive thresholding (cv.adaptiveThreshold)
+    threshold_image = cv.adaptiveThreshold(
+        image_bw_cv, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 101, 0
+    )
 
-    contours, hierarchy = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    hierarchy = np.squeeze(hierarchy)
+    # 3. Detect contours by Suzuki's method (cv.findContours)
+    contours, hierarchy = cv.findContours(
+        threshold_image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE
+    )
 
-    candidate_contours_idx = find_square_contour_idxs(contours, hierarchy)
-    final_contour_idxs = get_inner_contour_idxs(candidate_contours_idx, hierarchy)
+    # 4. Fit polygon to contours (cv.approxPolyDP)
+    polygons = reduce_poly_vertices(contours)
 
-    # Mask border
-    n_pixels = 224
-    ref_pts = np.float32([[0, 0], [n_pixels, 0], [n_pixels, n_pixels], [0, n_pixels]])
+    # 5. Apply filters
+    filters = [
+        frame_filter_polygons_4vertex,
+        lambda polygons: frame_filter_polygons_area(polygons, 2**11),
+        frame_filter_polygons_convex,
+        frame_filter_polygons_squareish,
+        lambda polygons: frame_filter_white_border(polygons, image_bw_cv),
+    ]
+    for filter in filters:
+        polygons = filter(polygons)
 
-    tags = []
-    for i, contour_idx in enumerate(final_contour_idxs):
-        # Reshape to square
-        c = contours[contour_idx]
-        peri = cv.arcLength(c, True)
-        approx = np.squeeze(cv.approxPolyDP(c, 0.04 * peri, True))
-        contour_pts = order_points(approx)
-        M = cv.getPerspectiveTransform(contour_pts, ref_pts)
-        dst = cv.warpPerspective(image_cv, M, (n_pixels, n_pixels))
-
-        dst_gray = cv.cvtColor(dst, cv.COLOR_BGR2GRAY)
-        dst_gray = cv.normalize(dst_gray, None, 0, 255, cv.NORM_MINMAX)
-
-        grid_mean = np.zeros((7, 7))
-        grid_std = np.zeros((7, 7))
-
-        for r in range(7):  # Rows
-            for c in range(7):  # Cols
-                cell = dst_gray[32 * r : 32 * (r + 1), 32 * c : 32 * (c + 1)]
-                grid_mean[r, c] = np.mean(cell)
-                grid_std[r, c] = np.std(cell)
-
-        # Bottom left, Top left, Top right, Bottom right
-        corner_means = np.array(
-            [grid_mean[-2, 1], grid_mean[1, 1], grid_mean[1, -2], grid_mean[-2, -2]]
-        )
-        sort_idxs = np.argsort(corner_means)
-        sorted_corner_means = corner_means[sort_idxs]
-
-        distinct_corners = True
-        for i in range(len(sorted_corner_means) - 1):
-            if sorted_corner_means[i + 1] - sorted_corner_means[i] < 20:
-                distinct_corners = False
-        if not distinct_corners:
-            continue
-
-        # Check bottom left is close enough to border/quiet zone
-        # Only use three cells next to the bottom left corner because using the entire quiet
-        # zone can be unreliable as the lighting can change across the tag image.
-        corner_black = True
-        corner_angle_mean = np.mean(
-            np.concatenate(
-                (dst_gray[-64:, 0:32].ravel(), dst_gray[-32:, 32:64].ravel())
-            )
-        )
-        if np.abs(corner_angle_mean - grid_mean[-2, 1]) > 25:
-            corner_black = False
-        if not corner_black:
-            continue
-
-        # Check that cell mean is close enough to corner colours
-        cell_colours_valid = True
-        for r in range(1, 5 + 1):  # Rows
-            for c in range(1, 5 + 1):  # Cols
-                if np.min(np.abs(sorted_corner_means - grid_mean[r, c])) > 30:
-                    cell_colours_valid = False
-        if not cell_colours_valid:
-            continue
-
-        tags.append(Image.fromarray(cv.cvtColor(dst, cv.COLOR_BGR2RGB)))
-
-    return tags
+    return polygons
 
 
-def decode_tag_image(tag_image, n=5, palette=["cyan", "magenta", "yellow", "black"]):
-    palette_rgb_list = [ImageColor.getrgb(c) for c in palette]
-
-    palette_rgb_array = np.vstack(palette_rgb_list)
-
-    cell_size = int(tag_image.width / (n + 2))
-
-    code = []
-    for i in range(n):
-        for j in range(n):
-            window_median = np.median(
-                tag_image.crop(
-                    (
-                        cell_size + cell_size * j,  # Left
-                        cell_size + cell_size * i,  # Top
-                        cell_size + cell_size * (j + 1),  # Right
-                        cell_size + cell_size * (i + 1),  # Bottom
-                    )
-                ),
-                axis=(0, 1),
-            )
-            ind = np.argmin(np.mean((palette_rgb_array - window_median) ** 2, axis=1))
-            code.append(int(ind))
+def valid_crc(code, n=5):
 
     ind_bit_map = {
         0: "00",
@@ -360,21 +374,71 @@ def decode_tag_image(tag_image, n=5, palette=["cyan", "magenta", "yellow", "blac
         crc_list.append(code[ind])
 
     message_inds = get_message_inds(n)
-    id_list = []
+
+    message_list = []
     for i, ind in enumerate(message_inds):
-        id_list.append(code[ind])
+        message_list.append(code[ind])
 
     crc_bit_string = "".join([ind_bit_map[ind] for ind in crc_list])
-    id_bit_string = "".join([ind_bit_map[ind] for ind in id_list])
+    message_bit_string = "".join([ind_bit_map[ind] for ind in message_list])
 
     crc_checksum = int(crc_bit_string, 2)
-    id_int = int(id_bit_string, 2)
 
-    id_bytes = id_int.to_bytes(int(len(id_bit_string) / 8))
+    message_int = int(message_bit_string, 2)
+    message_bytes = message_int.to_bytes(
+        int(len(message_bit_string) / 8), byteorder="little"
+    )
     crc_calculator = Calculator(crc_config_map[n])
-    crc_checksum_calculated = crc_calculator.checksum(id_bytes)
+    crc_checksum_calculated = crc_calculator.checksum(message_bytes)
 
-    # if crc_checksum != crc_checksum_calculated:
-    #     raise ValueError("CRC checksum mismatch, possible data corruption.")
+    if crc_checksum == crc_checksum_calculated:
+        return True
 
-    return id_int
+    return False
+
+
+def decode_frames(image, polygons, n=5, validate_crc=False):
+
+    image_cv = cv.cvtColor(np.array(image), cv.COLOR_RGB2Lab)
+
+    cell_size = 32
+    n_pixels = cell_size * (n + 2)
+    ref_pts = np.float32([[0, 0], [n_pixels, 0], [n_pixels, n_pixels], [0, n_pixels]])
+
+    tags = []
+
+    for i, polygon in enumerate(polygons):
+
+        polygon_ordered = order_points(polygon)
+
+        M = cv.getPerspectiveTransform(polygon_ordered, ref_pts)
+        dst = cv.warpPerspective(image_cv, M, (n_pixels, n_pixels))
+
+        values = np.zeros((n + 2, n + 2, 3))
+
+        for r in range(n + 2):  # Rows
+            for c in range(n + 2):  # Cols
+                center_x = r * cell_size + cell_size // 2
+                center_y = c * cell_size + cell_size // 2
+                values[r, c] = dst[center_x, center_y]
+
+        # Get corner colours
+        corner_vals = np.array(
+            [values[1, 1], values[1, -2], values[-2, -2], values[-2, 1]]
+        )
+
+        # Find argmin of each cell to corner colours
+        code = []
+        for r in range(1, n + 1):  # Rows
+            for c in range(1, n + 1):  # Cols
+                ind = np.argmin(np.mean((corner_vals - values[r, c]) ** 2, axis=1))
+                code.append(int(ind))
+
+        if validate_crc:
+            if valid_crc(code, n):
+                tags.append(code)
+        else:
+            tags.append(code)
+
+    return tags
+
