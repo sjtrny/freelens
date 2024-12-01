@@ -5,7 +5,7 @@ from freelens import (
 
 from PIL import Image
 
-img = Image.open("dataset/positives/PXL_20241125_120348955.jpg")
+img = Image.open("dataset/positives/PXL_20241124_081401367.MP.jpg")
 
 frames = detect_frames(img)
 
