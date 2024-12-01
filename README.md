@@ -119,6 +119,7 @@ This process is adapted from the patent for each unrectified frame:
 ## References
 
 \[1\]: European Patent [EP3561729NWA1][1]
+
 \[2\]: Garrido-Jurado, S., et al. (2014). [Automatic generation and detection of highly reliable fiducial markers under occlusion][2]. Pattern Recognition.
 
 
