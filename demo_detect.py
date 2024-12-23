@@ -1,14 +1,9 @@
-from freelens import (
-    detect_frames,
-    decode_frames,
-)
-
+from freelens import detect_tags
 from PIL import Image
 
 img = Image.open("dataset/positives/PXL_20241124_081401367.MP.jpg")
 
-frames = detect_frames(img)
+tags_list = detect_tags(img, n=5)
 
-codes = decode_frames(img, frames, n=5, validate_crc=False)
-
-print(codes)
+for tag in tags_list:
+    print(tag.message)
