@@ -173,7 +173,7 @@ For each un-rectified frame polygon:
 4. Obtain the palette colours from the four corners of the grid 
 5. Assign each cell in the grid to the closest colour in the palette
 6. Validate tag
-   1. Convert cells to binary using the rule that the palette is ordered clockwise starting at the top left with the binary values 00, 01, 10, 11. 
+   1. Convert cells to binary using the rule that the palette is ordered clockwise starting at the top left with the binary values `00`, `01`, `10`, `11`. 
    2. Extract message code and CRC code.
    3. Validate message code with CRC code.
 

@@ -286,7 +286,7 @@ def message_length_for_N(N):
     crc_length = rows * 4
 
     # total - corners - middle - CRC
-    return (total - 4 - 1 - crc_length)*2
+    return (total - 4 - 1 - crc_length) * 2
 
 
 def max_int_for_N(N):
@@ -402,7 +402,9 @@ class Tag:
         n_bits_message = message_length_for_N(n)
 
         if len(message_bit_string) != n_bits_message:
-            raise ValueError(f"message_bit_string has length {len(message_bit_string)}, expected length {n_bits_message} since n={n}")
+            raise ValueError(
+                f"message_bit_string has length {len(message_bit_string)}, expected length {n_bits_message} since n={n}"
+            )
 
         cells = [None] * (n**2)
 
