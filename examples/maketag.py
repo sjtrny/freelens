@@ -1,4 +1,4 @@
-from freelens import Tag
+from freelens.freelens import Tag
 
 message = "101010101011000000001011"
 
