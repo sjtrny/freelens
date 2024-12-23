@@ -5,6 +5,15 @@ import numpy as np
 from crc import Calculator, Configuration
 from PIL import Image
 
+ind_bit_map = {
+    0: "00",
+    1: "01",
+    2: "10",
+    3: "11",
+}
+
+center_bit_map = {5: "00", 7: "01", 9: "10", 11: "11"}
+
 crc_config_map = {
     5: Configuration(
         width=16,
@@ -39,150 +48,6 @@ crc_config_map = {
         reverse_output=False,
     ),
 }
-
-
-def message_length_for_N(N):
-    """
-    Returns the number of cells available to store the message for a tag of size N
-    """
-    total = N**2
-    rows = int(math.floor(N / 2))
-    crc_length = rows * 4
-
-    # total - corners - middle - CRC
-    return total - 4 - 1 - crc_length
-
-
-def max_int_for_N(N):
-    message_len = message_length_for_N(N)
-    return 2 ** (message_len * 2)
-
-
-def get_corner_inds(n):
-    return [0, n - 1, n**2 - 1, n**2 - n]
-
-
-def get_center_ind(n):
-    return int(math.floor((n**2) / 2))
-
-
-def get_crc_inds(n):
-    middle_col_x = int(math.floor(n / 2))
-    rows = int(math.floor(n / 2))
-    center_ind = get_center_ind(n)
-
-    crc_inds = []
-    # Set CRC vertical top
-    crc_inds.extend(list(range(middle_col_x, middle_col_x + n * rows, n)))
-    # Set CRC horizontal
-    crc_inds.extend(list(range(rows * n, rows * n + rows, 1)))
-    crc_inds.extend(list(range(center_ind + 1, center_ind + 1 + rows, 1)))
-    # Set CRC vertical bottom
-    crc_inds.extend(list(range(center_ind + n, n * n - middle_col_x, n)))
-
-    return crc_inds
-
-
-def get_message_inds(n):
-    center_ind = get_center_ind(n)
-    corner_inds = get_corner_inds(n)
-    crc_inds = get_crc_inds(n)
-    return set(range(n**2)) - set(crc_inds + [center_ind] + corner_inds)
-
-
-def tag_colours(id_int, n=5, palette=["cyan", "magenta", "yellow", "black"]):
-    """
-    palette: a list of strings representing the colours used. Must be supported
-    by ImageColor module of Pillow https://pillow.readthedocs.io/en/stable/reference/ImageColor.html
-    """
-    if id_int < 0 or id_int > max_int_for_N(n):
-        raise ValueError(f"message_int must be >= 0 and <= {max_int_for_N(n)}.")
-
-    if n not in [5, 7, 9, 11]:
-        raise ValueError("N must be one of 5, 7, 9, 11.")
-
-    if len(set(palette)) != 4:
-        raise ValueError("palette must contain 4 distinct elements.")
-
-    n_cells_message = message_length_for_N(n)
-    n_bits_message = n_cells_message * 2
-    n_bytes_message = int((n_cells_message * 2) / 8)
-
-    try:
-        message_bytes = id_int.to_bytes(n_bytes_message)
-    except OverflowError:
-        raise ValueError(f"message_int too large to be represented in {n}x{n} tag.")
-
-    message_binary_string = format(id_int, f"0{n_bits_message}b")
-
-    crc_calculator = Calculator(crc_config_map[n])
-    crc_int = crc_calculator.checksum(message_bytes)
-
-    # n_crc_cells_per_side * 4 sides * 2 bits per cell
-    n_bits_crc = int(math.floor(n / 2)) * 4 * 2
-    crc_binary_string = format(crc_int, f"0{n_bits_crc}b")
-    message_colour_list = [
-        palette[int(message_binary_string[i : i + 2], 2)]
-        for i in range(0, n_bits_message, 2)
-    ]
-    crc_colour_list = [
-        palette[int(crc_binary_string[i : i + 2], 2)] for i in range(0, n_bits_crc, 2)
-    ]
-
-    tag_colour_list = [None] * (n**2)
-
-    # Set corner colours
-    corner_inds = get_corner_inds(n)
-    for i, ind in enumerate(corner_inds):
-        tag_colour_list[ind] = palette[i]
-
-    # Set center colour
-    center_ind = get_center_ind(n)
-    center_palette_map = {5: 0, 7: 1, 9: 2, 11: 3}
-    tag_colour_list[center_ind] = palette[center_palette_map[n]]
-
-    # Set CRC colours
-    crc_inds = get_crc_inds(n)
-    for i, ind in enumerate(crc_inds):
-        tag_colour_list[ind] = crc_colour_list[i]
-
-    message_inds = get_message_inds(n)
-    for i, ind in enumerate(message_inds):
-        tag_colour_list[ind] = message_colour_list[i]
-
-    return tag_colour_list
-
-
-def make_tag_image(
-    colour_list,
-    N=5,
-    cell_size=32,
-    quiet_pad_size=64,
-    inner_pad_colour="black",
-    outer_pad_colour="white",
-):
-    # Create cell grid
-    wh = N * cell_size
-    grid_img = Image.new("RGB", (wh, wh), inner_pad_colour)
-    for i in range(len(colour_list)):
-        cell = Image.new("RGB", (cell_size, cell_size), colour_list[i])
-        grid_img.paste(cell, (i % N * cell_size, math.floor(i / N) * cell_size))
-
-    # Create inner quiet zone and paste grid image inside
-    black_code_img_wh = wh + cell_size * 2
-    black_code_img = Image.new(
-        "RGB", (black_code_img_wh, black_code_img_wh), inner_pad_colour
-    )
-
-    black_code_img.paste(grid_img, (cell_size, cell_size))
-
-    # Create outer quiet zone and paste inner quiet zone inside
-    padded_img_wh = black_code_img_wh + quiet_pad_size * 2
-    padded_img = Image.new("RGB", (padded_img_wh, padded_img_wh), outer_pad_colour)
-
-    padded_img.paste(black_code_img, (quiet_pad_size, quiet_pad_size))
-
-    return padded_img
 
 
 def order_points(points):
@@ -359,44 +224,6 @@ def detect_frames(image):
     return polygons
 
 
-def valid_crc(code, n=5):
-
-    ind_bit_map = {
-        0: "00",
-        1: "01",
-        2: "10",
-        3: "11",
-    }
-
-    crc_inds = get_crc_inds(n)
-    crc_list = []
-    for i, ind in enumerate(crc_inds):
-        crc_list.append(code[ind])
-
-    message_inds = get_message_inds(n)
-
-    message_list = []
-    for i, ind in enumerate(message_inds):
-        message_list.append(code[ind])
-
-    crc_bit_string = "".join([ind_bit_map[ind] for ind in crc_list])
-    message_bit_string = "".join([ind_bit_map[ind] for ind in message_list])
-
-    crc_checksum = int(crc_bit_string, 2)
-
-    message_int = int(message_bit_string, 2)
-    message_bytes = message_int.to_bytes(
-        int(len(message_bit_string) / 8), byteorder="little"
-    )
-    crc_calculator = Calculator(crc_config_map[n])
-    crc_checksum_calculated = crc_calculator.checksum(message_bytes)
-
-    if crc_checksum == crc_checksum_calculated:
-        return True
-
-    return False
-
-
 def decode_frames(image, polygons, n=5, validate_crc=False):
 
     image_cv = cv.cvtColor(np.array(image), cv.COLOR_RGB2Lab)
@@ -434,11 +261,226 @@ def decode_frames(image, polygons, n=5, validate_crc=False):
                 ind = np.argmin(np.mean((corner_vals - values[r, c]) ** 2, axis=1))
                 code.append(int(ind))
 
-        if validate_crc:
-            if valid_crc(code, n):
-                tags.append(code)
-        else:
-            tags.append(code)
+        bit_string = "".join([ind_bit_map[ind] for ind in code])
+
+        tag = Tag(bit_string, n=n)
+        tags.append(tag)
 
     return tags
 
+
+def detect_tags(img, n=5, validate_crc=False):
+    frames = detect_frames(img)
+
+    tags = decode_frames(img, frames, n=n, validate_crc=validate_crc)
+
+    return tags
+
+
+def message_length_for_N(N):
+    """
+    Returns the number of bits available to store the message for a tag of size N
+    """
+    total = N**2
+    rows = int(math.floor(N / 2))
+    crc_length = rows * 4
+
+    # total - corners - middle - CRC
+    return (total - 4 - 1 - crc_length)*2
+
+
+def max_int_for_N(N):
+    message_n_bits = message_length_for_N(N)
+    return 2 ** (message_n_bits)
+
+
+def get_corner_indices_1d(n):
+    return [0, n - 1, n**2 - 1, n**2 - n]
+
+
+def get_center_ind(n):
+    return int(math.floor((n**2) / 2))
+
+
+def get_crc_inds(n):
+    indices = np.reshape(np.arange(n**2), (n, n))
+
+    center_ind = int(np.floor(n / 2))
+
+    flat_indices = np.zeros((center_ind * 4,), dtype=np.uint32)
+
+    # Left row
+    flat_indices[0:center_ind] = indices[center_ind, 0:center_ind]
+    # Top column
+    flat_indices[center_ind : 2 * center_ind] = indices[0:center_ind, center_ind]
+    # Bottom column
+    flat_indices[2 * center_ind : 3 * center_ind] = indices[
+        center_ind + 1 :, center_ind
+    ]
+    # Right row
+    flat_indices[3 * center_ind : 4 * center_ind] = indices[
+        center_ind, center_ind + 1 :
+    ]
+
+    return list(flat_indices)
+
+
+def get_message_inds(n):
+    indices = np.reshape(np.arange(n**2), (n, n))
+
+    center_ind = int(np.floor(n / 2))
+
+    # Clear center row and col
+    indices[center_ind, :] = -1
+    indices[:, center_ind] = -1
+
+    # Clear corners
+    indices[0, 0] = -1
+    indices[0, n - 1] = -1
+    indices[n - 1, n - 1] = -1
+    indices[n - 1, 0] = -1
+
+    # Using fortran order to descend rows before columns to
+    # match reading order of NaviLens provided tags
+    indices_flat = np.ravel(indices, order="F")
+    indices_flat = indices_flat[indices_flat >= 0]
+
+    return list(indices_flat)
+
+
+def valid_crc(bit_string, n=5):
+
+    cells = [bit_string[i : i + 2] for i in range(0, n**2 * 2, 2)]
+
+    crc_inds = get_crc_inds(n)
+    crc_bit_string = "".join([cells[i] for i in crc_inds])
+
+    message_inds = get_message_inds(n)
+    message_bit_string = "".join([cells[i] for i in message_inds])
+
+    crc_checksum = int(crc_bit_string, 2)
+
+    message_int = int(message_bit_string, 2)
+    message_bytes = message_int.to_bytes(
+        int(len(message_bit_string) / 8), byteorder="little"
+    )
+    crc_calculator = Calculator(crc_config_map[n])
+    crc_checksum_calculated = crc_calculator.checksum(message_bytes)
+
+    if crc_checksum == crc_checksum_calculated:
+        return True
+
+    return False
+
+
+class Tag:
+
+    def __init__(self, bit_string, n=5):
+
+        if set(bit_string) != {"0", "1"}:
+            raise ValueError("bit_string must only contain '0' and '1'.")
+
+        if len(bit_string) != (n**2 * 2):
+            raise ValueError(
+                f"bit_string has length {len(bit_string)}, expected length {n**2 * 2} since n={n}."
+            )
+
+        if n not in center_bit_map.keys():
+            raise ValueError(f"n must be one of {center_bit_map.keys()}.")
+
+        self.n = n
+        self.bit_string = bit_string
+        self.valid = valid_crc(self.bit_string)
+
+        self.cells = (self.bit_string[i : i + 2] for i in range(0, self.n**2 * 2, 2))
+        self.message = "".join([self.cells[i] for i in get_message_inds(self.n)])
+        self.crc = "".join([self.cells[i] for i in get_crc_inds(self.n)])
+
+    @staticmethod
+    def from_message(message_bit_string, n=5):
+
+        n_bits_message = message_length_for_N(n)
+
+        if len(message_bit_string) != n_bits_message:
+            raise ValueError(f"message_bit_string has length {len(message_bit_string)}, expected length {n_bits_message} since n={n}")
+
+        cells = [None] * (n**2)
+
+        # Set the MESSAGE cell values
+        message_cells = [message_bit_string[i : i + 2] for i in range(0, n**2 * 2, 2)]
+        for i, index in enumerate(get_message_inds(n)):
+            cells[index] = message_cells[i]
+
+        # Calculate the CRC
+        message_bytes = int(message_bit_string, 2).to_bytes(int(n_bits_message / 8))
+
+        crc_calculator = Calculator(crc_config_map[n])
+        crc_int = crc_calculator.checksum(message_bytes)
+
+        # Convert CRC checksum to binary and set cell values
+        n_bits_crc = int(math.floor(n / 2)) * 4 * 2
+        crc_binary_string = format(crc_int, f"0{n_bits_crc}b")
+        crc_cells = [crc_binary_string[i : i + 2] for i in range(0, n_bits_crc, 2)]
+        for i, index in enumerate(get_crc_inds(n)):
+            cells[index] = crc_cells[i]
+
+        # Set CORNER cell values
+        corner_cells = ["00", "01", "10", "11"]
+        for i, index in enumerate(get_corner_indices_1d(n)):
+            cells[index] = corner_cells[i]
+
+        # Set the CENTER cell value
+        cells[get_center_ind(n)] = center_bit_map[n]
+
+        tag_bit_string = "".join(cells)
+
+        return Tag(bit_string=tag_bit_string, n=n)
+
+    def to_image(
+        self,
+        cell_size=32,
+        quiet_pad_size=64,
+        palette=("cyan", "magenta", "yellow", "black"),
+        inner_pad_colour="black",
+        outer_pad_colour="white",
+    ):
+        """
+        palette: a list of strings representing the colours used. Must be supported
+        by ImageColor module of Pillow https://pillow.readthedocs.io/en/stable/reference/ImageColor.html
+        """
+
+        if len(set(palette)) != 4:
+            raise ValueError("palette must contain 4 distinct elements.")
+
+        colour_list = [palette[int(cell, 2)] for cell in self.cells]
+
+        # Create cell grid
+        wh = self.n * cell_size
+        grid_img = Image.new("RGB", (wh, wh), inner_pad_colour)
+        for i in range(len(colour_list)):
+            cell = Image.new("RGB", (cell_size, cell_size), colour_list[i])
+            grid_img.paste(
+                cell, (i % self.n * cell_size, math.floor(i / self.n) * cell_size)
+            )
+
+        # Create inner quiet zone and paste grid image inside
+        black_code_img_wh = wh + cell_size * 2
+        black_code_img = Image.new(
+            "RGB", (black_code_img_wh, black_code_img_wh), inner_pad_colour
+        )
+
+        black_code_img.paste(grid_img, (cell_size, cell_size))
+
+        # Create outer quiet zone and paste inner quiet zone inside
+        padded_img_wh = black_code_img_wh + quiet_pad_size * 2
+        padded_img = Image.new("RGB", (padded_img_wh, padded_img_wh), outer_pad_colour)
+
+        padded_img.paste(black_code_img, (quiet_pad_size, quiet_pad_size))
+
+        return padded_img
+
+    def __str__(self):
+        return "".join(self.message)
+
+    def __repr__(self):
+        return f"Tag({self.bit_string}, {self.n})"
