@@ -1,6 +1,4 @@
-black==24.10.0
 crc==7.1.0
-isort==5.13.2
 numpy==2.0.0
 opencv-python==4.10.0.84
 Pillow==11.0.0
