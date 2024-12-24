@@ -4,11 +4,17 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "freelens"
+version = "0.0.1"
+requires-python = ">=3.11"
+description = "Reference implementation of NaviLens and ddTag"
 authors = [{name = "Stephen Tierney", email = "sjtrny@gmail.com"}]
 readme = "README.md"
-license = {file = "LICENSE"}
-classifiers = ["License :: OSI Approved :: MIT License"]
-dynamic = ["version", "description"]
+dependencies = [
+    "crc==7.1.0",
+    "numpy==2.0.0",
+    "opencv-python==4.10.0.84",
+    "Pillow==11.0.0",
+]
 
 [project.urls]
 Home = "https://github.com/sjtrny/freelens"

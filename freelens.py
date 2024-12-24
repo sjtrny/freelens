@@ -392,7 +392,9 @@ class Tag:
         self.bit_string = bit_string
         self.valid = valid_crc(self.bit_string)
 
-        self.cells = (self.bit_string[i : i + 2] for i in range(0, self.n**2 * 2, 2))
+        self.cells = tuple(
+            self.bit_string[i : i + 2] for i in range(0, self.n**2 * 2, 2)
+        )
         self.message = "".join([self.cells[i] for i in get_message_inds(self.n)])
         self.crc = "".join([self.cells[i] for i in get_crc_inds(self.n)])
 
