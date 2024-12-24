@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "freelens"
-version = "0.0.1"
+version = "0.0.2"
 requires-python = ">=3.11"
 description = "Reference implementation of NaviLens and ddTag"
 authors = [{name = "Stephen Tierney", email = "sjtrny@gmail.com"}]
@@ -18,3 +18,11 @@ dependencies = [
 
 [project.urls]
 Home = "https://github.com/sjtrny/freelens"
+
+[tool.flit.sdist]
+exclude = [
+    "examples/",
+    "dataset/",
+    "requirements*",
+    "setup.sh"
+]
