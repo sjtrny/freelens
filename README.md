@@ -1,5 +1,7 @@
 *This is a work in progress and sudden, dramatic changes are expected!*
 
+Free tag generator here https://freelens.apps.sjtrny.com
+
 # FreeLens
 
 This project provides a reference implementation of [NaviLens][3] and [ddTag][4] 
