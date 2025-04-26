@@ -1,6 +1,6 @@
 *This is a work in progress and sudden, dramatic changes are expected!*
 
-Free tag generator here https://freelens.apps.sjtrny.com
+Free tag generator here https://freelens.sjtrny.com
 
 # FreeLens
 
