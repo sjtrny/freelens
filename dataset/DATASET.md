@@ -10,6 +10,7 @@ Refer to the `LICENSE` file or https://creativecommons.org/licenses/by/4.0/ for 
 - Cait Macleod (caitelatte)
 - David Vo (auscompgeek)
 - Peter Hall (urcher)
+- Stephen Tierney (sjtrny)
 
 ## PyCon AU 2025 Contributors
 
