@@ -19,3 +19,4 @@ Refer to the `LICENSE` file or https://creativecommons.org/licenses/by/4.0/ for 
 - Liam Bluett (infamousturtle)
 - Toby Lovett (tobythetober)
 - Arshia (riaar)
+- Stephen Tierney (sjtrny)
