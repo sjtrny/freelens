@@ -8,6 +8,12 @@ This project provides a reference implementation of [NaviLens][3] and [ddTag][4]
 for educational or personal use. Commercial use is at your own risk as NaviLens and 
 ddTag may attempt to enforce their patents.
 
+## Installation
+
+```
+pip install freelens
+```
+
 ## Generating Tags
 
 ```
