@@ -55,10 +55,15 @@ For example a tag could be placed on the front of a bus so that a visually impai
 can hold their phone camera up to the approaching bus to read the route number.
 
 These tag images must be requested from NaviLens who are the central data resolution authority and
-maintain a database with the associated data for each ddTag. NaviLens divides the world into smaller geographic 
-regions, within which it allocates tags to users. This allows tags to be re-used and overcomes the relatively short 
-message length of the tags used by NaviLens. For example the typical 5x5 ddTag can only represent 16,777,216 
-unique combinations.
+maintain a database with the associated data for each ddTag.
+
+### Unique Tags
+
+The typical 5x5 ddTag can only represent 16,777,216 unique combinations. The first line of defence against 
+running out of codes is to use larger dimension codes (see specification below).
+
+I spectulate that another avenue that NaviLens will explore is to divide the world into smaller geographic 
+regions, within which it allocates tags to users. This allows tags to be safely re-used without collision.
 
 ## ddTag Specification
 
