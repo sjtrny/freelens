@@ -145,6 +145,11 @@ and it is possible that the message is transformed before the CRC is generated.*
 
 *This library generates CRCs from the message content without any prior transformation.*
 
+*Update: the checksum that deployed 5x5 tags actually carry has been worked out — it
+is not the patent's CRC at all, but an affine map over GF(2). See [CHECKSUM.md](CHECKSUM.md)
+and `realcrc.py` for an implementation that both generates and validates it (verified
+against real tags). The 7x7/9x9/11x11 deployed checksums remain unknown.*
+
 #### Message
 
 The message is formed by concatenating the binary values of the remaining cells in "reading order",
