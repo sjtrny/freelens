@@ -100,11 +100,18 @@ def get_center_ind(n=5):
 
 # --- public API ----------------------------------------------------------------
 
+def _check_bit_string(value, length, name):
+    if not isinstance(value, str):
+        raise TypeError(f"{name} must be a str, got {type(value).__name__}")
+    if len(value) != length:
+        raise ValueError(f"{name} must be {length} bits, got {len(value)}")
+    if any(c not in "01" for c in value):
+        raise ValueError(f"{name} must contain only '0' and '1'")
+
+
 def real_crc_bits(message_bit_string):
     """24-char message bit string (get_message_inds order) -> 16-bit np.array."""
-    if len(message_bit_string) != 24:
-        raise ValueError(
-            f"expected 24 message bits, got {len(message_bit_string)}")
+    _check_bit_string(message_bit_string, 24, "message_bit_string")
     m = np.fromiter((int(c) for c in message_bit_string), dtype=np.uint8, count=24)
     return (A_f.dot(m) + b_f) % 2
 
@@ -129,6 +136,7 @@ def valid_real_crc(bit_string, n=5):
     if n != 5:
         raise NotImplementedError(
             "deployed checksum is only known for n=5; use valid_crc for larger n")
+    _check_bit_string(bit_string, n ** 2 * 2, "bit_string")
     cells = [bit_string[i:i + 2] for i in range(0, n ** 2 * 2, 2)]
     message_bits = "".join(cells[i] for i in get_message_inds(n))
     crc_bits = "".join(cells[i] for i in get_crc_inds(n))
@@ -145,6 +153,7 @@ def apply_real_crc(message_bit_string, n=5):
     if n != 5:
         raise NotImplementedError(
             "deployed checksum is only known for n=5; use Tag.from_message for larger n")
+    _check_bit_string(message_bit_string, 24, "message_bit_string")
     message_cells = [message_bit_string[i:i + 2] for i in range(0, 24, 2)]
     cells = [None] * (n ** 2)
     for value, index in zip(message_cells, get_message_inds(n)):

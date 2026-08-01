@@ -90,6 +90,33 @@ message = "101010101011000000001011"          # 24 bits
 tag_bits = realcrc.apply_real_crc(message)     # full grid bit string
 ```
 
+In the detector, `validate_crc` selects the scheme (`Tag`, `decode_frames`,
+`detect_tags`):
+
+```python
+import freelens
+
+tags = freelens.detect_tags(img, n=5, validate_crc="affine")  # deployed checksum
+# "patent" -> documented CRC-16 ; None -> no check. tag.valid holds the result.
+```
+
+## Reproducing this
+
+```
+python scripts/reproduce_claims.py        # affine crc matches both real tags
+python scripts/derive_affine_checksum.py  # re-derive A_f/b_f from (msg, crc) pairs
+python scripts/validate_dataset.py [dir]   # decode a folder and report validity
+```
+
+`derive_affine_checksum.py` shows the generation: given >=25 independent
+(message, crc) pairs it solves for `A_f`/`b_f` over GF(2); its self-test recovers
+the shipped matrix from random samples, and pointed at real tags it re-derives
+the same map.
+
+To check the affine checksum across a whole tag set (e.g. the NaviLens free kit),
+drop the images in `dataset/freekit/` or set `FREELENS_FREEKIT=<dir>`;
+`tests/test_freekit.py` decodes each and asserts it passes (skips when empty).
+
 ## Provenance
 
 The reverse-engineering of the deployed checksum -- the affine map and the proof

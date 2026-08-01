@@ -224,7 +224,12 @@ def detect_frames(image):
     return polygons
 
 
-def decode_frames(image, polygons, n=5, validate_crc=False):
+def decode_frames(image, polygons, n=5, validate_crc="patent"):
+
+    if validate_crc not in (None, *CRC_MODES):
+        raise ValueError(
+            f'validate_crc must be "patent", "affine" or None, got {validate_crc!r}'
+        )
 
     image_cv = cv.cvtColor(np.array(image), cv.COLOR_RGB2Lab)
 
@@ -263,13 +268,13 @@ def decode_frames(image, polygons, n=5, validate_crc=False):
 
         bit_string = "".join([ind_bit_map[ind] for ind in code])
 
-        tag = Tag(bit_string, n=n)
+        tag = Tag(bit_string, n=n, validate_crc=validate_crc)
         tags.append(tag)
 
     return tags
 
 
-def detect_tags(img, n=5, validate_crc=False):
+def detect_tags(img, n=5, validate_crc="patent"):
     frames = detect_frames(img)
 
     tags = decode_frames(img, frames, n=n, validate_crc=validate_crc)
@@ -373,9 +378,34 @@ def valid_crc(bit_string, n=5):
     return False
 
 
+CRC_MODES = ("patent", "affine")
+
+
+def validate_bit_string(bit_string, n=5, validate_crc="patent"):
+    """Validate a decoded grid under the selected checksum scheme.
+
+    ``validate_crc`` selects the scheme:
+      * ``"patent"`` -- the documented CRC-16 (``valid_crc``).
+      * ``"affine"`` -- the checksum deployed tags actually carry
+        (``realcrc.valid_real_crc``); only defined for n=5.
+      * ``None``     -- no validation; returns ``None``.
+    """
+    if validate_crc is None:
+        return None
+    if validate_crc == "patent":
+        return valid_crc(bit_string, n)
+    if validate_crc == "affine":
+        from realcrc import valid_real_crc
+
+        return valid_real_crc(bit_string, n)
+    raise ValueError(
+        f'validate_crc must be "patent", "affine" or None, got {validate_crc!r}'
+    )
+
+
 class Tag:
 
-    def __init__(self, bit_string, n=5):
+    def __init__(self, bit_string, n=5, validate_crc="patent"):
 
         if set(bit_string) != {"0", "1"}:
             raise ValueError("bit_string must only contain '0' and '1'.")
@@ -390,7 +420,7 @@ class Tag:
 
         self.n = n
         self.bit_string = bit_string
-        self.valid = valid_crc(self.bit_string)
+        self.valid = validate_bit_string(self.bit_string, n, validate_crc)
 
         self.cells = tuple(
             self.bit_string[i : i + 2] for i in range(0, self.n**2 * 2, 2)

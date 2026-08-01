@@ -101,6 +101,31 @@ def test_larger_n_not_supported():
         realcrc.valid_real_crc("0" * (7 * 7 * 2), n=7)
 
 
+def test_input_validation_length():
+    with pytest.raises(ValueError):
+        realcrc.real_crc_bits("0" * 23)
+    with pytest.raises(ValueError):
+        realcrc.valid_real_crc("0" * 48)
+    with pytest.raises(ValueError):
+        realcrc.apply_real_crc("0" * 25)
+
+
+def test_input_validation_alphabet():
+    with pytest.raises(ValueError):
+        realcrc.real_crc_bits("0" * 23 + "2")
+    with pytest.raises(ValueError):
+        realcrc.valid_real_crc("0" * 49 + "x")
+    with pytest.raises(ValueError):
+        realcrc.apply_real_crc("2" * 24)
+
+
+def test_input_validation_type():
+    with pytest.raises(TypeError):
+        realcrc.real_crc_bits(None)
+    with pytest.raises(TypeError):
+        realcrc.valid_real_crc(12345)
+
+
 def test_index_helpers_match_freelens():
     pytest.importorskip("cv2")  # freelens imports cv2 at module load
     pytest.importorskip("crc")
