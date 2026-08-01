@@ -86,12 +86,22 @@ def pairs_from_dataset(folder):
 
     import freelens
 
+    # Decode with no checksum filter so the (message, crc) pairs are raw ground
+    # truth from the image, not pre-selected to fit the matrix -- that keeps the
+    # derivation an independent check. Intended for clean tag sets (e.g. the free
+    # kit, ideally one tag per image); ``derive`` reports consistency, so garbage
+    # frames from noisy field photos will show up as inconsistent rather than
+    # silently corrupt the result.
     pairs = []
     exts = ("*.png", "*.jpg", "*.jpeg", "*.bmp", "*.tif", "*.tiff")
     files = sorted(f for e in exts for f in glob.glob(os.path.join(folder, e)))
     for path in files:
         img = Image.open(path).convert("RGB")
-        for tag in freelens.detect_tags(img, n=5, validate_crc=None):
+        try:
+            tags = freelens.detect_tags(img, n=5, validate_crc=None)
+        except Exception:  # a degenerate frame can trip Tag's own checks
+            continue
+        for tag in tags:
             pairs.append((tag.message, tag.crc))
     return pairs, files
 

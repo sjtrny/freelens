@@ -42,6 +42,10 @@ for tag in tags_list:
     print(tag.message)
 ```
 
+`detect_tags`, `decode_frames` and `Tag` take `validate_crc="patent" | "affine" | None`
+to choose how `tag.valid` is checked: the documented CRC-16, the deployed affine
+checksum (5x5 only), or no check. See [CHECKSUM.md](CHECKSUM.md).
+
 ## NaviLens
 
 NaviLens is a service that provides navigational data resolution, based on ddTags ("distant dense tag")

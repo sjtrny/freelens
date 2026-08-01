@@ -230,6 +230,8 @@ def decode_frames(image, polygons, n=5, validate_crc="patent"):
         raise ValueError(
             f'validate_crc must be "patent", "affine" or None, got {validate_crc!r}'
         )
+    if validate_crc == "affine" and n != 5:
+        raise NotImplementedError("the affine checksum is only defined for n=5")
 
     image_cv = cv.cvtColor(np.array(image), cv.COLOR_RGB2Lab)
 
