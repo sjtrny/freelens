@@ -270,7 +270,12 @@ def decode_frames(image, polygons, n=5, validate_crc="patent"):
 
         bit_string = "".join([ind_bit_map[ind] for ind in code])
 
-        tag = Tag(bit_string, n=n, validate_crc=validate_crc)
+        try:
+            tag = Tag(bit_string, n=n, validate_crc=validate_crc)
+        except ValueError:
+            # a degenerate frame (e.g. a solid-colour region) can decode to a
+            # bit string that is not a valid tag; skip it rather than aborting
+            continue
         tags.append(tag)
 
     return tags
