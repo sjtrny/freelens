@@ -14,6 +14,7 @@ ind_bit_map = {
 
 center_bit_map = {5: "00", 7: "01", 9: "10", 11: "11"}
 
+# Patent-specified CRC configurations (do not match deployed tags)
 crc_config_map = {
     5: Configuration(
         width=16,
@@ -44,6 +45,43 @@ crc_config_map = {
         polynomial=0x0004820009,
         init_value=0x0000000000,
         final_xor_value=0xFFFFFFFFFF,
+        reverse_input=False,
+        reverse_output=False,
+    ),
+}
+
+# CRC configurations as deployed, which use zero init and final xor values for every
+# size. Verified against real tags for n=5, the rest are extrapolated. See issue #1.
+crc_config_map_deployed = {
+    5: Configuration(
+        width=16,
+        polynomial=0xC867,  # CRC-16-CDMA2000
+        init_value=0x0000,
+        final_xor_value=0x0000,
+        reverse_input=False,
+        reverse_output=False,
+    ),
+    7: Configuration(
+        width=24,
+        polynomial=0x864CFB,  # CRC-24-Radix-64
+        init_value=0x000000,
+        final_xor_value=0x000000,
+        reverse_input=False,
+        reverse_output=False,
+    ),
+    9: Configuration(
+        width=32,
+        polynomial=0x814141AB,  # CRC-32Q
+        init_value=0x00000000,
+        final_xor_value=0x00000000,
+        reverse_input=False,
+        reverse_output=False,
+    ),
+    11: Configuration(
+        width=40,
+        polynomial=0x0004820009,  # CRC-40-GSM
+        init_value=0x0000000000,
+        final_xor_value=0x0000000000,
         reverse_input=False,
         reverse_output=False,
     ),
@@ -349,7 +387,10 @@ def get_message_inds(n):
 
 
 def valid_crc(bit_string, n=5):
-
+    """
+    Validate a CRC as the patent describes it. This does not match the tags NaviLens
+    actually distributes, so use valid_crc_deployed instead. See issue #1.
+    """
     cells = [bit_string[i : i + 2] for i in range(0, n**2 * 2, 2)]
 
     crc_inds = get_crc_inds(n)
@@ -373,6 +414,50 @@ def valid_crc(bit_string, n=5):
     return False
 
 
+def get_crc_input_indices(n):
+    """
+    Returns the indices of every cell outside the center row and column, in column
+    major order. This includes the four corner cells, which the patent is ambiguous
+    about but deployed tags do feed into the CRC.
+    """
+    indices = np.reshape(np.arange(n**2), (n, n))
+    center = n // 2
+
+    indices[center, :] = -1
+    indices[:, center] = -1
+
+    flat = np.ravel(indices, order="F")
+    return list(flat[flat >= 0])
+
+
+def compute_crc_deployed(cells, n):
+    """
+    Returns the CRC checksum for a list of 2 bit cell values, as an integer.
+    """
+    crc_input_cells = [cells[i] for i in get_crc_input_indices(n)]
+    crc_input_bits = "".join(crc_input_cells)
+    crc_input_bytes = int(crc_input_bits, 2).to_bytes(
+        len(crc_input_bits) // 8, byteorder="big"
+    )
+
+    crc_calculator = Calculator(crc_config_map_deployed[n])
+    return crc_calculator.checksum(crc_input_bytes)
+
+
+def valid_crc_deployed(bit_string, n=5):
+    """
+    Validate a CRC the way deployed tags compute it, which differs from valid_crc in
+    that the corner cells are included in the CRC input and the init and final xor
+    values are zero. See issue #1.
+    """
+    cells = [bit_string[i : i + 2] for i in range(0, n**2 * 2, 2)]
+
+    crc_cells = [cells[i] for i in get_crc_inds(n)]
+    crc_expected = int("".join(crc_cells), 2)
+
+    return compute_crc_deployed(cells, n) == crc_expected
+
+
 class Tag:
 
     def __init__(self, bit_string, n=5):
@@ -390,7 +475,7 @@ class Tag:
 
         self.n = n
         self.bit_string = bit_string
-        self.valid = valid_crc(self.bit_string)
+        self.valid = valid_crc_deployed(self.bit_string, n)
 
         self.cells = tuple(
             self.bit_string[i : i + 2] for i in range(0, self.n**2 * 2, 2)
@@ -411,15 +496,20 @@ class Tag:
         cells = [None] * (n**2)
 
         # Set the MESSAGE cell values
-        message_cells = [message_bit_string[i : i + 2] for i in range(0, n**2 * 2, 2)]
+        message_cells = [message_bit_string[i : i + 2] for i in range(0, n_bits_message, 2)]
         for i, index in enumerate(get_message_inds(n)):
             cells[index] = message_cells[i]
 
-        # Calculate the CRC
-        message_bytes = int(message_bit_string, 2).to_bytes(int(n_bits_message / 8))
+        # Set CORNER cell values (must be set before CRC calculation)
+        corner_cells = ["00", "01", "10", "11"]
+        for i, index in enumerate(get_corner_indices_1d(n)):
+            cells[index] = corner_cells[i]
 
-        crc_calculator = Calculator(crc_config_map[n])
-        crc_int = crc_calculator.checksum(message_bytes)
+        # Set the CENTER cell value
+        cells[get_center_ind(n)] = center_bit_map[n]
+
+        # Calculate CRC using deployed algorithm (includes corners in input)
+        crc_int = compute_crc_deployed(cells, n)
 
         # Convert CRC checksum to binary and set cell values
         n_bits_crc = int(math.floor(n / 2)) * 4 * 2
@@ -427,14 +517,6 @@ class Tag:
         crc_cells = [crc_binary_string[i : i + 2] for i in range(0, n_bits_crc, 2)]
         for i, index in enumerate(get_crc_inds(n)):
             cells[index] = crc_cells[i]
-
-        # Set CORNER cell values
-        corner_cells = ["00", "01", "10", "11"]
-        for i, index in enumerate(get_corner_indices_1d(n)):
-            cells[index] = corner_cells[i]
-
-        # Set the CENTER cell value
-        cells[get_center_ind(n)] = center_bit_map[n]
 
         tag_bit_string = "".join(cells)
 
