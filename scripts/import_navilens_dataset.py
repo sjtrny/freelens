@@ -13,7 +13,7 @@ from pathlib import Path
 
 from PIL import Image
 
-EXPECTED_CASE_COUNT = 63
+EXPECTED_CASE_COUNT = 142
 SOURCE_SUFFIXES = {".bmp", ".jpeg", ".jpg", ".pdf", ".png", ".tif", ".tiff"}
 CODE_RE = re.compile(r"[0-9A-Fa-f]{6}")
 MANIFEST_FIELDS = (

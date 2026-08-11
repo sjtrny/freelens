@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from scripts.import_navilens_dataset import import_dataset
+from scripts.import_navilens_dataset import EXPECTED_CASE_COUNT, import_dataset
 from scripts.verify_navilens_dataset import read_manifest, verify_checksums
 
 
@@ -66,11 +66,14 @@ def test_importer_fails_on_an_unexpected_case_count(tmp_path):
     source.mkdir()
     _write_source_image(source / "Exit_B1269C.png", "blue")
 
-    with pytest.raises(ValueError, match="found 1 source cases; expected 63"):
+    with pytest.raises(
+        ValueError,
+        match=f"found 1 source cases; expected {EXPECTED_CASE_COUNT}",
+    ):
         import_dataset(
             source,
             tmp_path / "imported",
-            expected_count=63,
+            expected_count=EXPECTED_CASE_COUNT,
             zoom=3.0,
             force=False,
         )

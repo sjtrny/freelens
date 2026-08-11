@@ -12,7 +12,7 @@ from PIL import Image
 
 from freelens import detect_tags
 
-EXPECTED_CASE_COUNT = 63
+EXPECTED_CASE_COUNT = 142
 REQUIRED_COLUMNS = (
     "case_id",
     "source_file",

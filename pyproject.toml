@@ -40,7 +40,7 @@ exclude = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
-    "integration: tests that require the NaviLens-provided LFS corpus",
+    "integration: tests that require a NaviLens-provided corpus",
 ]
 
 [tool.isort]
