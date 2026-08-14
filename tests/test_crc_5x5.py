@@ -6,6 +6,7 @@ from freelens import (
     _crc_input_bytes_5x5,
     compute_crc_5x5,
     get_crc_inds,
+    get_crc_input_inds,
     get_message_inds,
     valid_crc,
 )
@@ -77,6 +78,7 @@ def test_crc_input_indices_5x5():
         19,
         24,
     )
+    assert tuple(get_crc_input_inds(5)) == CRC_INPUT_INDICES_5X5
 
 
 def test_crc_cell_order_5x5():
@@ -225,14 +227,6 @@ def test_crc_helpers_reject_larger_sizes(n):
         ValueError, match="CRC validation is supported only for 5x5 tags"
     ):
         valid_crc("0" * (n * n * 2), n=n)
-
-
-@pytest.mark.parametrize("n", (7, 9, 11))
-def test_generator_rejects_larger_sizes_before_message_processing(n):
-    with pytest.raises(
-        ValueError, match="CRC generation is supported only for 5x5 tags"
-    ):
-        Tag.from_message(None, n=n)
 
 
 @pytest.mark.parametrize("message", ("", "0" * 23, "0" * 25, "0" * 23 + "x"))

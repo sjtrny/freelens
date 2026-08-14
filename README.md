@@ -28,7 +28,10 @@ pip install freelens
 
 ### Generating Tags
 
-Freelens generates deployed-CRC tags only at the independently verified 5×5 size.
+FreeLens generates 5×5, 7×7, 9×9, and 11×11 tags. The 5×5 generator uses the CRC found
+in deployed NaviLens tags. Larger generators extend that calculation with the CRC width
+and polynomial for their size. Their CRCs are not validated because no deployed examples
+have been tested.
 
 ```python
 from freelens import Tag
@@ -40,6 +43,13 @@ tag = Tag.from_message(message, n=5)
 tag_img = tag.to_image()
 
 tag_img.save("tag.png")
+```
+
+Generated tags larger than 5×5 report an unknown CRC status:
+
+```python
+tag = Tag.from_message("0" * 64, n=7)
+assert tag.crc_valid is None
 ```
 
 ### Detecting Tags

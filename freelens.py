@@ -45,14 +45,14 @@ CRC_INPUT_INDICES_5X5 = (
     24,
 )
 
-_DEPLOYED_CRC_CONFIGURATION = Configuration(
-    width=CRC_WIDTH,
-    polynomial=CRC_POLYNOMIAL,
-    init_value=CRC_INITIAL_VALUE,
-    final_xor_value=CRC_FINAL_XOR,
-    reverse_input=CRC_REVERSE_INPUT,
-    reverse_output=CRC_REVERSE_OUTPUT,
-)
+# The widths and polynomials are size-specific. All other generation rules are
+# extrapolated from deployed 5x5 tags.
+_CRC_POLYNOMIALS = {
+    5: CRC_POLYNOMIAL,
+    7: 0x864CFB,
+    9: 0x814141AB,
+    11: 0x0004820009,
+}
 
 
 def _validate_n(n):
@@ -338,7 +338,7 @@ def message_length_for_N(N):
 
 def max_int_for_N(N):
     message_n_bits = message_length_for_N(N)
-    return 2 ** (message_n_bits)
+    return (2**message_n_bits) - 1
 
 
 def get_corner_indices_1d(n):
@@ -361,6 +361,19 @@ def get_crc_inds(n):
         + [row * n + center for row in range(center + 1, n)]
         + [center * n + column for column in range(center + 1, n)]
     )
+
+
+def get_crc_input_inds(n):
+    """Return non-cross cells in the order used as CRC input."""
+    _validate_n(n)
+    center = n // 2
+
+    return [
+        row * n + column
+        for column in range(n)
+        for row in range(n)
+        if row != center and column != center
+    ]
 
 
 def get_message_inds(n):
@@ -392,32 +405,73 @@ def _validate_tag_bits(bit_string, n):
     return bit_string
 
 
-def _crc_input_bytes_5x5(cells):
+def _validate_message_bits(message, n):
+    if not isinstance(message, str):
+        raise TypeError("message must be a str")
+
+    expected_length = message_length_for_N(n)
+    if len(message) != expected_length:
+        raise ValueError(
+            f"{n}x{n} messages must contain exactly {expected_length} bits; "
+            f"got {len(message)}"
+        )
+    if set(message) - {"0", "1"}:
+        raise ValueError("message must contain only '0' and '1'")
+
+    return message
+
+
+def _crc_input_bytes(cells, n):
+    _validate_n(n)
+
     try:
         cell_count = len(cells)
     except TypeError as error:
         raise TypeError("cells must be a sequence of two-bit strings") from error
 
-    if cell_count != CRC_TAG_SIZE**2:
-        raise ValueError("5x5 tags must contain exactly 25 cells")
+    expected_cell_count = n**2
+    if cell_count != expected_cell_count:
+        raise ValueError(
+            f"{n}x{n} tags must contain exactly {expected_cell_count} cells"
+        )
 
-    selected = [cells[index] for index in CRC_INPUT_INDICES_5X5]
+    selected = [cells[index] for index in get_crc_input_inds(n)]
     if any(cell not in {"00", "01", "10", "11"} for cell in selected):
-        raise ValueError("Every 5x5 CRC input cell must be a two-bit binary string")
+        raise ValueError("Every CRC input cell must be a two-bit binary string")
 
     bits = "".join(selected)
-    if len(bits) != 32:
-        raise ValueError("5x5 CRC input must contain exactly 32 bits")
+    expected_bit_count = 2 * (n - 1) ** 2
+    if len(bits) != expected_bit_count:
+        raise ValueError(
+            f"{n}x{n} CRC input must contain exactly {expected_bit_count} bits"
+        )
     if len(bits) % 8:
-        raise ValueError("5x5 CRC input must be byte-aligned")
+        raise ValueError("CRC input must be byte-aligned")
 
     return bytes(int(bits[offset : offset + 8], 2) for offset in range(0, len(bits), 8))
 
 
+def _crc_input_bytes_5x5(cells):
+    return _crc_input_bytes(cells, CRC_TAG_SIZE)
+
+
+def _compute_crc(cells, n):
+    """Calculate a CRC using the generation rules extrapolated from 5x5 tags."""
+    _validate_n(n)
+    configuration = Configuration(
+        width=4 * n - 4,
+        polynomial=_CRC_POLYNOMIALS[n],
+        init_value=CRC_INITIAL_VALUE,
+        final_xor_value=CRC_FINAL_XOR,
+        reverse_input=CRC_REVERSE_INPUT,
+        reverse_output=CRC_REVERSE_OUTPUT,
+    )
+    return Calculator(configuration).checksum(_crc_input_bytes(cells, n))
+
+
 def compute_crc_5x5(cells):
     """Return the deployed CRC for a complete set of 5x5 tag cells."""
-    data = _crc_input_bytes_5x5(cells)
-    return Calculator(_DEPLOYED_CRC_CONFIGURATION).checksum(data)
+    return _compute_crc(cells, CRC_TAG_SIZE)
 
 
 def valid_crc(bit_string, n=5):
@@ -468,19 +522,8 @@ class Tag:
 
     @classmethod
     def from_message(cls, message, n=5):
-        if n != CRC_TAG_SIZE:
-            raise ValueError("CRC generation is supported only for 5x5 tags")
-        if not isinstance(message, str):
-            raise TypeError("message must be a str")
-
-        expected_length = message_length_for_N(n)
-        if len(message) != expected_length:
-            raise ValueError(
-                f"5x5 messages must contain exactly {expected_length} bits; "
-                f"got {len(message)}"
-            )
-        if set(message) - {"0", "1"}:
-            raise ValueError("message must contain only '0' and '1'")
+        _validate_n(n)
+        message = _validate_message_bits(message, n)
 
         cells = [None] * (n**2)
 
@@ -494,12 +537,19 @@ class Tag:
             cells[index] = cell
         cells[get_center_ind(n)] = center_bit_map[n]
 
-        crc_bits = f"{compute_crc_5x5(cells):0{CRC_WIDTH}b}"
-        crc_cells = [crc_bits[offset : offset + 2] for offset in range(0, CRC_WIDTH, 2)]
+        crc = _compute_crc(cells, n)
+
+        crc_width = 4 * n - 4
+        crc_bits = f"{crc:0{crc_width}b}"
+        crc_cells = [crc_bits[offset : offset + 2] for offset in range(0, crc_width, 2)]
         for index, cell in zip(get_crc_inds(n), crc_cells):
             cells[index] = cell
 
-        return cls(bit_string="".join(cells), n=n, validate_crc=True)
+        return cls(
+            bit_string="".join(cells),
+            n=n,
+            validate_crc=n == CRC_TAG_SIZE,
+        )
 
     def to_image(
         self,

@@ -179,17 +179,31 @@ packing, tag generation, and changes to each type of cell.
 
 ## FreeLens
 
-FreeLens calculates and validates CRCs only for 5x5 tags. It can parse 7x7, 9x9, and
-11x11 grids only when CRC validation is disabled:
+FreeLens generates all four tag sizes. It extends the observed 5x5 calculation to larger
+grids:
+
+- CRC input contains every cell outside the centre row and column, including corners;
+- input cells are read by columns and packed most-significant bit first;
+- CRC width is `4N - 4`, using the polynomial listed for that size in the patent;
+- `init=0`, `xorout=0`, `refin=false`, and `refout=false`; and
+- CRC cells are written as the left, upper, lower, and right arms of the central cross.
+
+This is not the patent calculation. It applies the real 5x5 layout and parameters to the
+larger polynomial widths. Only the 5x5 result has been checked against real tags.
+
+The larger CRCs are not validated because no real 7x7, 9x9, or 11x11 tags have been
+tested. Generated larger tags therefore report an unknown CRC status:
 
 ```python
-tag = Tag(bit_string, n=7, validate_crc=False)
+tag = Tag.from_message("0" * 64, n=7)
 assert tag.crc_valid is None
 ```
 
-The patent describes the CRC layout and names a polynomial for each larger grid.
-FreeLens does not implement those CRCs because no real 7x7, 9x9, or 11x11 tags have been
-tested.
+Parsing a larger tag also requires CRC validation to be disabled explicitly:
+
+```python
+tag = Tag(bit_string, n=7, validate_crc=False)
+```
 
 The local `NaviLens Codes.zip` archive contains 142 5x5 PDF tags. All 142 pass the real
 5x5 calculation. The archive is not committed because redistribution permission has not
@@ -204,4 +218,4 @@ python scripts/verify_navilens_archive.py "/path/to/NaviLens Codes.zip"
 
 - [ddTag patent: EP 3561729 A1](https://data.epo.org/publication-server/rest/v1.0/publication-dates/20191030/patents/EP3561729NWA1/document.pdf)
 - [CRC RevEng catalogue](https://reveng.sourceforge.io/crc-catalogue/)
-- [FreeLens 5x5 CRC implementation](../freelens.py)
+- [FreeLens CRC implementation](../freelens.py)
