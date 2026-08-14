@@ -54,6 +54,41 @@ _DEPLOYED_CRC_CONFIGURATION = Configuration(
     reverse_output=CRC_REVERSE_OUTPUT,
 )
 
+_PATENT_CRC_CONFIGURATIONS = {
+    5: Configuration(
+        width=16,
+        polynomial=0xC867,
+        init_value=0xFFFF,
+        final_xor_value=0x0000,
+        reverse_input=False,
+        reverse_output=False,
+    ),
+    7: Configuration(
+        width=24,
+        polynomial=0x864CFB,
+        init_value=0xB704CE,
+        final_xor_value=0x000000,
+        reverse_input=False,
+        reverse_output=False,
+    ),
+    9: Configuration(
+        width=32,
+        polynomial=0x814141AB,
+        init_value=0x00000000,
+        final_xor_value=0x00000000,
+        reverse_input=False,
+        reverse_output=False,
+    ),
+    11: Configuration(
+        width=40,
+        polynomial=0x0004820009,
+        init_value=0x0000000000,
+        final_xor_value=0xFFFFFFFFFF,
+        reverse_input=False,
+        reverse_output=False,
+    ),
+}
+
 
 def _validate_n(n):
     if isinstance(n, bool) or not isinstance(n, int) or n not in SUPPORTED_TAG_SIZES:
@@ -338,7 +373,7 @@ def message_length_for_N(N):
 
 def max_int_for_N(N):
     message_n_bits = message_length_for_N(N)
-    return 2 ** (message_n_bits)
+    return (2**message_n_bits) - 1
 
 
 def get_corner_indices_1d(n):
@@ -353,6 +388,9 @@ def get_center_ind(n):
 
 def get_crc_inds(n):
     _validate_n(n)
+    if n != CRC_TAG_SIZE:
+        return get_patent_crc_inds(n)
+
     center = n // 2
 
     return (
@@ -361,6 +399,20 @@ def get_crc_inds(n):
         + [row * n + center for row in range(center + 1, n)]
         + [center * n + column for column in range(center + 1, n)]
     )
+
+
+def get_patent_crc_inds(n):
+    """Return the patent's row-major CRC cell order."""
+    _validate_n(n)
+    center = n // 2
+
+    return [
+        row * n + column
+        for row in range(n)
+        for column in range(n)
+        if (row == center or column == center)
+        and not (row == center and column == center)
+    ]
 
 
 def get_message_inds(n):
@@ -392,6 +444,22 @@ def _validate_tag_bits(bit_string, n):
     return bit_string
 
 
+def _validate_message_bits(message, n):
+    if not isinstance(message, str):
+        raise TypeError("message must be a str")
+
+    expected_length = message_length_for_N(n)
+    if len(message) != expected_length:
+        raise ValueError(
+            f"{n}x{n} messages must contain exactly {expected_length} bits; "
+            f"got {len(message)}"
+        )
+    if set(message) - {"0", "1"}:
+        raise ValueError("message must contain only '0' and '1'")
+
+    return message
+
+
 def _crc_input_bytes_5x5(cells):
     try:
         cell_count = len(cells)
@@ -418,6 +486,16 @@ def compute_crc_5x5(cells):
     """Return the deployed CRC for a complete set of 5x5 tag cells."""
     data = _crc_input_bytes_5x5(cells)
     return Calculator(_DEPLOYED_CRC_CONFIGURATION).checksum(data)
+
+
+def compute_patent_crc(message, n):
+    """Return the CRC described by the patent for a message and tag size."""
+    _validate_n(n)
+    message = _validate_message_bits(message, n)
+    data = bytes(
+        int(message[offset : offset + 8], 2) for offset in range(0, len(message), 8)
+    )
+    return Calculator(_PATENT_CRC_CONFIGURATIONS[n]).checksum(data)
 
 
 def valid_crc(bit_string, n=5):
@@ -468,19 +546,8 @@ class Tag:
 
     @classmethod
     def from_message(cls, message, n=5):
-        if n != CRC_TAG_SIZE:
-            raise ValueError("CRC generation is supported only for 5x5 tags")
-        if not isinstance(message, str):
-            raise TypeError("message must be a str")
-
-        expected_length = message_length_for_N(n)
-        if len(message) != expected_length:
-            raise ValueError(
-                f"5x5 messages must contain exactly {expected_length} bits; "
-                f"got {len(message)}"
-            )
-        if set(message) - {"0", "1"}:
-            raise ValueError("message must contain only '0' and '1'")
+        _validate_n(n)
+        message = _validate_message_bits(message, n)
 
         cells = [None] * (n**2)
 
@@ -494,12 +561,22 @@ class Tag:
             cells[index] = cell
         cells[get_center_ind(n)] = center_bit_map[n]
 
-        crc_bits = f"{compute_crc_5x5(cells):0{CRC_WIDTH}b}"
-        crc_cells = [crc_bits[offset : offset + 2] for offset in range(0, CRC_WIDTH, 2)]
+        if n == CRC_TAG_SIZE:
+            crc = compute_crc_5x5(cells)
+        else:
+            crc = compute_patent_crc(message, n)
+
+        crc_width = 4 * n - 4
+        crc_bits = f"{crc:0{crc_width}b}"
+        crc_cells = [crc_bits[offset : offset + 2] for offset in range(0, crc_width, 2)]
         for index, cell in zip(get_crc_inds(n), crc_cells):
             cells[index] = cell
 
-        return cls(bit_string="".join(cells), n=n, validate_crc=True)
+        return cls(
+            bit_string="".join(cells),
+            n=n,
+            validate_crc=n == CRC_TAG_SIZE,
+        )
 
     def to_image(
         self,

@@ -179,17 +179,24 @@ packing, tag generation, and changes to each type of cell.
 
 ## FreeLens
 
-FreeLens calculates and validates CRCs only for 5x5 tags. It can parse 7x7, 9x9, and
-11x11 grids only when CRC validation is disabled:
+FreeLens generates all four tag sizes. For 5x5 tags, it generates and validates the
+observed CRC described above. For 7x7, 9x9, and 11x11 tags, it generates the patent CRC
+using the standard parameters in the table above. It packs the message bits into bytes
+from left to right and stores the CRC in the patent's row-major cell order.
+
+The larger CRCs are not validated because no real 7x7, 9x9, or 11x11 tags have been
+tested. Generated larger tags therefore report an unknown CRC status:
 
 ```python
-tag = Tag(bit_string, n=7, validate_crc=False)
+tag = Tag.from_message("0" * 64, n=7)
 assert tag.crc_valid is None
 ```
 
-The patent describes the CRC layout and names a polynomial for each larger grid.
-FreeLens does not implement those CRCs because no real 7x7, 9x9, or 11x11 tags have been
-tested.
+Parsing a larger tag also requires CRC validation to be disabled explicitly:
+
+```python
+tag = Tag(bit_string, n=7, validate_crc=False)
+```
 
 The local `NaviLens Codes.zip` archive contains 142 5x5 PDF tags. All 142 pass the real
 5x5 calculation. The archive is not committed because redistribution permission has not
@@ -204,4 +211,4 @@ python scripts/verify_navilens_archive.py "/path/to/NaviLens Codes.zip"
 
 - [ddTag patent: EP 3561729 A1](https://data.epo.org/publication-server/rest/v1.0/publication-dates/20191030/patents/EP3561729NWA1/document.pdf)
 - [CRC RevEng catalogue](https://reveng.sourceforge.io/crc-catalogue/)
-- [FreeLens 5x5 CRC implementation](../freelens.py)
+- [FreeLens CRC implementation](../freelens.py)

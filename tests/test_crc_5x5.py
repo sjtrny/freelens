@@ -5,8 +5,10 @@ from freelens import (
     Tag,
     _crc_input_bytes_5x5,
     compute_crc_5x5,
+    compute_patent_crc,
     get_crc_inds,
     get_message_inds,
+    get_patent_crc_inds,
     valid_crc,
 )
 
@@ -81,6 +83,12 @@ def test_crc_input_indices_5x5():
 
 def test_crc_cell_order_5x5():
     assert get_crc_inds(5) == [10, 11, 2, 7, 17, 22, 13, 14]
+    assert get_patent_crc_inds(5) == [2, 7, 10, 11, 13, 14, 17, 22]
+
+
+def test_patent_and_deployed_5x5_crc_differ():
+    assert compute_patent_crc(MELBOURNE_MESSAGE, 5) == 0xE751
+    assert compute_crc_5x5(_cells(MELBOURNE_FULL_TAG_BITS)) == MELBOURNE_CRC
 
 
 @pytest.mark.parametrize(
@@ -225,14 +233,6 @@ def test_crc_helpers_reject_larger_sizes(n):
         ValueError, match="CRC validation is supported only for 5x5 tags"
     ):
         valid_crc("0" * (n * n * 2), n=n)
-
-
-@pytest.mark.parametrize("n", (7, 9, 11))
-def test_generator_rejects_larger_sizes_before_message_processing(n):
-    with pytest.raises(
-        ValueError, match="CRC generation is supported only for 5x5 tags"
-    ):
-        Tag.from_message(None, n=n)
 
 
 @pytest.mark.parametrize("message", ("", "0" * 23, "0" * 25, "0" * 23 + "x"))
