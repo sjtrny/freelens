@@ -179,10 +179,17 @@ packing, tag generation, and changes to each type of cell.
 
 ## FreeLens
 
-FreeLens generates all four tag sizes. For 5x5 tags, it generates and validates the
-observed CRC described above. For 7x7, 9x9, and 11x11 tags, it generates the patent CRC
-using the standard parameters in the table above. It packs the message bits into bytes
-from left to right and stores the CRC in the patent's row-major cell order.
+FreeLens generates all four tag sizes. It extends the observed 5x5 calculation to larger
+grids:
+
+- CRC input contains every cell outside the centre row and column, including corners;
+- input cells are read by columns and packed most-significant bit first;
+- CRC width is `4N - 4`, using the polynomial listed for that size in the patent;
+- `init=0`, `xorout=0`, `refin=false`, and `refout=false`; and
+- CRC cells are written as the left, upper, lower, and right arms of the central cross.
+
+This is not the patent calculation. It applies the real 5x5 layout and parameters to the
+larger polynomial widths. Only the 5x5 result has been checked against real tags.
 
 The larger CRCs are not validated because no real 7x7, 9x9, or 11x11 tags have been
 tested. Generated larger tags therefore report an unknown CRC status:

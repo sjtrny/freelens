@@ -5,10 +5,9 @@ from freelens import (
     Tag,
     _crc_input_bytes_5x5,
     compute_crc_5x5,
-    compute_patent_crc,
     get_crc_inds,
+    get_crc_input_inds,
     get_message_inds,
-    get_patent_crc_inds,
     valid_crc,
 )
 
@@ -79,16 +78,11 @@ def test_crc_input_indices_5x5():
         19,
         24,
     )
+    assert tuple(get_crc_input_inds(5)) == CRC_INPUT_INDICES_5X5
 
 
 def test_crc_cell_order_5x5():
     assert get_crc_inds(5) == [10, 11, 2, 7, 17, 22, 13, 14]
-    assert get_patent_crc_inds(5) == [2, 7, 10, 11, 13, 14, 17, 22]
-
-
-def test_patent_and_deployed_5x5_crc_differ():
-    assert compute_patent_crc(MELBOURNE_MESSAGE, 5) == 0xE751
-    assert compute_crc_5x5(_cells(MELBOURNE_FULL_TAG_BITS)) == MELBOURNE_CRC
 
 
 @pytest.mark.parametrize(

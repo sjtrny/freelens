@@ -29,8 +29,9 @@ pip install freelens
 ### Generating Tags
 
 FreeLens generates 5×5, 7×7, 9×9, and 11×11 tags. The 5×5 generator uses the CRC found
-in deployed NaviLens tags. Larger generators use the CRC models named in the ddTag
-patent; their CRCs are not validated because no deployed examples have been tested.
+in deployed NaviLens tags. Larger generators extend that calculation with the CRC width
+and polynomial for their size. Their CRCs are not validated because no deployed examples
+have been tested.
 
 ```python
 from freelens import Tag

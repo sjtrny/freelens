@@ -2,51 +2,55 @@ import pytest
 
 from freelens import (
     Tag,
-    compute_patent_crc,
+    _crc_input_bytes,
     get_crc_inds,
-    get_patent_crc_inds,
     max_int_for_N,
     message_length_for_N,
 )
 
-PATENT_GENERATION_CASES = (
+GENERATION_CASES = (
     (
         7,
         bytes(range(8)),
-        0xDE5627,
-        [3, 10, 17, 21, 22, 23, 25, 26, 27, 31, 38, 45],
+        bytes.fromhex("00 30 10 20 30 40 50 64 1E"),
+        0x15C9EA,
+        [21, 22, 23, 3, 10, 17, 31, 38, 45, 25, 26, 27],
     ),
     (
         9,
         bytes(range(15)),
-        0xE7904844,
-        [4, 13, 22, 31, 36, 37, 38, 39, 41, 42, 43, 44, 49, 58, 67, 76],
+        bytes.fromhex("00 03 10 20 30 40 50 60 70 80 90 A0 B0 C0 74 3A"),
+        0x00A9E1B7,
+        [36, 37, 38, 39, 4, 13, 22, 31, 49, 58, 67, 76, 41, 42, 43, 44],
     ),
     (
         11,
         bytes(range(24)),
-        0x88A08AE226,
+        bytes.fromhex(
+            "00 00 70 20 30 40 50 60 70 80 90 A0 B0 C0 D0 E0 F1 01 11 21 31 41 54 58 5E"
+        ),
+        0xE8BB8233ED,
         [
-            5,
-            16,
-            27,
-            38,
-            49,
             55,
             56,
             57,
             58,
             59,
-            61,
-            62,
-            63,
-            64,
-            65,
+            5,
+            16,
+            27,
+            38,
+            49,
             71,
             82,
             93,
             104,
             115,
+            61,
+            62,
+            63,
+            64,
+            65,
         ],
     ),
 )
@@ -57,13 +61,14 @@ def _bits(data):
 
 
 @pytest.mark.parametrize(
-    ("n", "message_bytes", "expected_crc", "expected_crc_indices"),
-    PATENT_GENERATION_CASES,
+    ("n", "message_bytes", "expected_input", "expected_crc", "expected_crc_indices"),
+    GENERATION_CASES,
     ids=("7x7", "9x9", "11x11"),
 )
-def test_larger_tag_generation_uses_patent_crc(
+def test_larger_tag_generation_extends_observed_5x5_crc(
     n,
     message_bytes,
+    expected_input,
     expected_crc,
     expected_crc_indices,
 ):
@@ -71,8 +76,7 @@ def test_larger_tag_generation_uses_patent_crc(
 
     tag = Tag.from_message(message, n=n)
 
-    assert compute_patent_crc(message, n) == expected_crc
-    assert get_patent_crc_inds(n) == expected_crc_indices
+    assert _crc_input_bytes(tag.cells, n) == expected_input
     assert get_crc_inds(n) == expected_crc_indices
     assert tag.message == message
     assert tag.crc == f"{expected_crc:0{4 * n - 4}b}"
