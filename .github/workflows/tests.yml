@@ -38,6 +38,7 @@ jobs:
         run: |
           python -m black --check freelens.py scripts tests
           python -m isort --check-only freelens.py scripts tests
+          python -m mdformat --check README.md docs dataset
 
       - name: Verify authorized NaviLens corpus
         if: ${{ hashFiles('dataset/navilens-provided/manifest.csv') != '' }}
