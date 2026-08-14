@@ -1,0 +1,119 @@
+name: Publish release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.14"]
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          lfs: true
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Verify existing LFS fixtures
+        run: git lfs fsck
+
+      - name: Install test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      - name: Check formatting and imports
+        run: |
+          python -m black --check freelens.py scripts tests
+          python -m isort --check-only freelens.py scripts tests
+          python -m mdformat --check README.md docs dataset
+
+      - name: Verify authorized NaviLens corpus
+        if: ${{ hashFiles('dataset/navilens-provided/manifest.csv') != '' }}
+        env:
+          FREELENS_REQUIRE_NAVILENS_DATASET: "1"
+        run: |
+          python -m pytest -q tests/test_navilens_dataset.py
+          python scripts/verify_navilens_dataset.py --manifest dataset/navilens-provided/manifest.csv
+          sha256sum --check dataset/navilens-provided/SHA256SUMS
+
+  build:
+    name: Build distributions
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Verify release tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          python - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+
+          metadata = tomllib.loads(Path("pyproject.toml").read_text())
+          version = metadata["project"]["version"]
+          release_tag = os.environ["RELEASE_TAG"]
+          expected_tag = f"v{version}"
+          if release_tag != expected_tag:
+              raise SystemExit(
+                  f"release tag {release_tag!r} does not match {expected_tag!r}"
+              )
+          PY
+
+      - name: Install build dependencies
+        run: python -m pip install -r requirements_build.txt
+
+      - name: Build wheel and source distribution
+        run: python -m flit build --no-use-vcs
+
+      - name: Store distributions
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/freelens
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish distributions
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
