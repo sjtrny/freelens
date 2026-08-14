@@ -55,6 +55,17 @@ python -m flit build --no-use-vcs
 
 ## Release
 
+PyPI publishing is tied to GitHub Releases. The workflow in
+`.github/workflows/release.yml` runs when a GitHub Release is published. Saving a draft
+does not trigger it.
+
+The workflow runs the checks, verifies that the release tag matches the package version,
+and builds the wheel and source distribution. The final job waits for approval in the
+`pypi` GitHub environment, then authenticates to PyPI through Trusted Publishing and
+uploads both files.
+
+### One-time setup
+
 Add a GitHub publisher in the
 [PyPI publishing settings](https://pypi.org/manage/project/freelens/settings/publishing/)
 with these values:
@@ -65,16 +76,24 @@ with these values:
 - Workflow: `release.yml`
 - Environment: `pypi`
 
-Use the `pypi` GitHub environment with required approval. For each release, update the
-version in `pyproject.toml`, merge it to `main`, then publish a GitHub Release with a
-matching `v` tag:
+Use the `pypi` GitHub environment with required approval.
+
+### Publish a release
+
+1. Update the version in `pyproject.toml` and merge it to `main`.
+1. Open [GitHub Releases](https://github.com/sjtrny/freelens/releases/new).
+1. Create a tag named `v<version>`, such as `v0.0.3`, targeting `main`.
+1. Publish the release.
+1. Open the workflow run and approve the `pypi` deployment.
+
+The release tag must match the version in `pyproject.toml`. The workflow rejects any
+mismatch.
+
+The GitHub CLI is an optional alternative to steps 2–4:
 
 ```bash
 gh release create v0.0.3 --target main --title "FreeLens 0.0.3" --generate-notes
 ```
-
-The release workflow runs the checks, builds both distributions, and publishes them to
-PyPI. It rejects a tag that does not match the package version.
 
 ## Contributing
 
