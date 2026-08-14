@@ -14,40 +14,63 @@ ind_bit_map = {
 
 center_bit_map = {5: "00", 7: "01", 9: "10", 11: "11"}
 
-crc_config_map = {
-    5: Configuration(
-        width=16,
-        polynomial=0xC867,
-        init_value=0xFFFF,
-        final_xor_value=0x0000,
-        reverse_input=False,
-        reverse_output=False,
-    ),
-    7: Configuration(
-        width=24,
-        polynomial=0x864CFB,
-        init_value=0x000000,
-        final_xor_value=0x000000,
-        reverse_input=False,
-        reverse_output=False,
-    ),
-    9: Configuration(
-        width=32,
-        polynomial=0x814141AB,
-        init_value=0x00000000,
-        final_xor_value=0x00000000,
-        reverse_input=False,
-        reverse_output=False,
-    ),
-    11: Configuration(
-        width=40,
-        polynomial=0x0004820009,
-        init_value=0x0000000000,
-        final_xor_value=0xFFFFFFFFFF,
-        reverse_input=False,
-        reverse_output=False,
-    ),
-}
+SUPPORTED_TAG_SIZES = (5, 7, 9, 11)
+
+CRC_TAG_SIZE = 5
+CRC_WIDTH = 16
+CRC_POLYNOMIAL = 0xC867
+CRC_INITIAL_VALUE = 0x0000
+CRC_FINAL_XOR = 0x0000
+CRC_REVERSE_INPUT = False
+CRC_REVERSE_OUTPUT = False
+
+# Column-major traversal of every cell outside the center row and column.
+# The four palette corners are deliberately included.
+CRC_INPUT_INDICES_5X5 = (
+    0,
+    5,
+    15,
+    20,
+    1,
+    6,
+    16,
+    21,
+    3,
+    8,
+    18,
+    23,
+    4,
+    9,
+    19,
+    24,
+)
+
+_DEPLOYED_CRC_CONFIGURATION = Configuration(
+    width=CRC_WIDTH,
+    polynomial=CRC_POLYNOMIAL,
+    init_value=CRC_INITIAL_VALUE,
+    final_xor_value=CRC_FINAL_XOR,
+    reverse_input=CRC_REVERSE_INPUT,
+    reverse_output=CRC_REVERSE_OUTPUT,
+)
+
+
+def _validate_n(n):
+    if isinstance(n, bool) or not isinstance(n, int) or n not in SUPPORTED_TAG_SIZES:
+        raise ValueError(f"n must be one of {SUPPORTED_TAG_SIZES}")
+
+
+def _validate_crc_options(n, validate_crc, require_valid_crc=False):
+    _validate_n(n)
+
+    if not isinstance(validate_crc, bool):
+        raise TypeError("validate_crc must be a bool")
+    if not isinstance(require_valid_crc, bool):
+        raise TypeError("require_valid_crc must be a bool")
+    if require_valid_crc and not validate_crc:
+        raise ValueError("require_valid_crc=True requires validate_crc=True")
+    if validate_crc and n != CRC_TAG_SIZE:
+        raise ValueError("CRC validation is supported only for 5x5 tags")
 
 
 def order_points(points):
@@ -224,7 +247,15 @@ def detect_frames(image):
     return polygons
 
 
-def decode_frames(image, polygons, n=5, validate_crc=False):
+def decode_frames(
+    image,
+    polygons,
+    n=5,
+    *,
+    validate_crc=True,
+    require_valid_crc=False,
+):
+    _validate_crc_options(n, validate_crc, require_valid_crc)
 
     image_cv = cv.cvtColor(np.array(image), cv.COLOR_RGB2Lab)
 
@@ -263,16 +294,31 @@ def decode_frames(image, polygons, n=5, validate_crc=False):
 
         bit_string = "".join([ind_bit_map[ind] for ind in code])
 
-        tag = Tag(bit_string, n=n)
-        tags.append(tag)
+        tag = Tag(bit_string, n=n, validate_crc=validate_crc)
+
+        if not require_valid_crc or tag.crc_valid is True:
+            tags.append(tag)
 
     return tags
 
 
-def detect_tags(img, n=5, validate_crc=False):
+def detect_tags(
+    img,
+    n=5,
+    *,
+    validate_crc=True,
+    require_valid_crc=False,
+):
+    _validate_crc_options(n, validate_crc, require_valid_crc)
     frames = detect_frames(img)
 
-    tags = decode_frames(img, frames, n=n, validate_crc=validate_crc)
+    tags = decode_frames(
+        img,
+        frames,
+        n=n,
+        validate_crc=validate_crc,
+        require_valid_crc=require_valid_crc,
+    )
 
     return tags
 
@@ -281,6 +327,7 @@ def message_length_for_N(N):
     """
     Returns the number of bits available to store the message for a tag of size N
     """
+    _validate_n(N)
     total = N**2
     rows = int(math.floor(N / 2))
     crc_length = rows * 4
@@ -295,150 +342,164 @@ def max_int_for_N(N):
 
 
 def get_corner_indices_1d(n):
+    _validate_n(n)
     return [0, n - 1, n**2 - 1, n**2 - n]
 
 
 def get_center_ind(n):
+    _validate_n(n)
     return int(math.floor((n**2) / 2))
 
 
 def get_crc_inds(n):
-    indices = np.reshape(np.arange(n**2), (n, n))
+    _validate_n(n)
+    center = n // 2
 
-    center_ind = int(np.floor(n / 2))
-
-    flat_indices = np.zeros((center_ind * 4,), dtype=np.uint32)
-
-    # Left row
-    flat_indices[0:center_ind] = indices[center_ind, 0:center_ind]
-    # Top column
-    flat_indices[center_ind : 2 * center_ind] = indices[0:center_ind, center_ind]
-    # Bottom column
-    flat_indices[2 * center_ind : 3 * center_ind] = indices[
-        center_ind + 1 :, center_ind
-    ]
-    # Right row
-    flat_indices[3 * center_ind : 4 * center_ind] = indices[
-        center_ind, center_ind + 1 :
-    ]
-
-    return list(flat_indices)
+    return (
+        [center * n + column for column in range(center)]
+        + [row * n + center for row in range(center)]
+        + [row * n + center for row in range(center + 1, n)]
+        + [center * n + column for column in range(center + 1, n)]
+    )
 
 
 def get_message_inds(n):
-    indices = np.reshape(np.arange(n**2), (n, n))
+    _validate_n(n)
+    center = n // 2
+    corners = set(get_corner_indices_1d(n))
 
-    center_ind = int(np.floor(n / 2))
+    return [
+        row * n + column
+        for column in range(n)
+        for row in range(n)
+        if row != center and column != center and row * n + column not in corners
+    ]
 
-    # Clear center row and col
-    indices[center_ind, :] = -1
-    indices[:, center_ind] = -1
 
-    # Clear corners
-    indices[0, 0] = -1
-    indices[0, n - 1] = -1
-    indices[n - 1, n - 1] = -1
-    indices[n - 1, 0] = -1
+def _validate_tag_bits(bit_string, n):
+    if not isinstance(bit_string, str):
+        raise TypeError("bit_string must be a str")
 
-    # Using fortran order to descend rows before columns to
-    # match reading order of NaviLens provided tags
-    indices_flat = np.ravel(indices, order="F")
-    indices_flat = indices_flat[indices_flat >= 0]
+    expected_length = n**2 * 2
+    if len(bit_string) != expected_length:
+        raise ValueError(
+            f"{n}x{n} tags must contain exactly {expected_length} bits; "
+            f"got {len(bit_string)}"
+        )
+    if set(bit_string) - {"0", "1"}:
+        raise ValueError("bit_string must contain only '0' and '1'")
 
-    return list(indices_flat)
+    return bit_string
+
+
+def _crc_input_bytes_5x5(cells):
+    try:
+        cell_count = len(cells)
+    except TypeError as error:
+        raise TypeError("cells must be a sequence of two-bit strings") from error
+
+    if cell_count != CRC_TAG_SIZE**2:
+        raise ValueError("5x5 tags must contain exactly 25 cells")
+
+    selected = [cells[index] for index in CRC_INPUT_INDICES_5X5]
+    if any(cell not in {"00", "01", "10", "11"} for cell in selected):
+        raise ValueError("Every 5x5 CRC input cell must be a two-bit binary string")
+
+    bits = "".join(selected)
+    if len(bits) != 32:
+        raise ValueError("5x5 CRC input must contain exactly 32 bits")
+    if len(bits) % 8:
+        raise ValueError("5x5 CRC input must be byte-aligned")
+
+    return bytes(int(bits[offset : offset + 8], 2) for offset in range(0, len(bits), 8))
+
+
+def compute_crc_5x5(cells):
+    """Return the deployed CRC for a complete set of 5x5 tag cells."""
+    data = _crc_input_bytes_5x5(cells)
+    return Calculator(_DEPLOYED_CRC_CONFIGURATION).checksum(data)
 
 
 def valid_crc(bit_string, n=5):
+    """Validate the deployed CRC carried by a 5x5 NaviLens tag."""
+    _validate_n(n)
+    if n != CRC_TAG_SIZE:
+        raise ValueError("CRC validation is supported only for 5x5 tags")
 
-    cells = [bit_string[i : i + 2] for i in range(0, n**2 * 2, 2)]
-
-    crc_inds = get_crc_inds(n)
-    crc_bit_string = "".join([cells[i] for i in crc_inds])
-
-    message_inds = get_message_inds(n)
-    message_bit_string = "".join([cells[i] for i in message_inds])
-
-    crc_checksum = int(crc_bit_string, 2)
-
-    message_int = int(message_bit_string, 2)
-    message_bytes = message_int.to_bytes(
-        int(len(message_bit_string) / 8), byteorder="little"
+    bit_string = _validate_tag_bits(bit_string, n)
+    cells = tuple(
+        bit_string[offset : offset + 2] for offset in range(0, len(bit_string), 2)
     )
-    crc_calculator = Calculator(crc_config_map[n])
-    crc_checksum_calculated = crc_calculator.checksum(message_bytes)
-
-    if crc_checksum == crc_checksum_calculated:
-        return True
-
-    return False
+    expected_crc = int("".join(cells[index] for index in get_crc_inds(n)), 2)
+    return compute_crc_5x5(cells) == expected_crc
 
 
 class Tag:
 
-    def __init__(self, bit_string, n=5):
-
-        if set(bit_string) != {"0", "1"}:
-            raise ValueError("bit_string must only contain '0' and '1'.")
-
-        if len(bit_string) != (n**2 * 2):
-            raise ValueError(
-                f"bit_string has length {len(bit_string)}, expected length {n**2 * 2} since n={n}."
-            )
-
-        if n not in center_bit_map.keys():
-            raise ValueError(f"n must be one of {center_bit_map.keys()}.")
+    def __init__(self, bit_string, n=5, *, validate_crc=True):
+        _validate_n(n)
+        if not isinstance(validate_crc, bool):
+            raise TypeError("validate_crc must be a bool")
 
         self.n = n
-        self.bit_string = bit_string
-        self.valid = valid_crc(self.bit_string)
-
+        self.bit_string = _validate_tag_bits(bit_string, n)
         self.cells = tuple(
-            self.bit_string[i : i + 2] for i in range(0, self.n**2 * 2, 2)
+            self.bit_string[offset : offset + 2]
+            for offset in range(0, len(self.bit_string), 2)
         )
-        self.message = "".join([self.cells[i] for i in get_message_inds(self.n)])
-        self.crc = "".join([self.cells[i] for i in get_crc_inds(self.n)])
+        self.message = "".join(self.cells[index] for index in get_message_inds(n))
+        self.crc = "".join(self.cells[index] for index in get_crc_inds(n))
+        self.center_valid = self.cells[get_center_ind(n)] == center_bit_map[n]
+        self.corners_valid = tuple(
+            self.cells[index] for index in get_corner_indices_1d(n)
+        ) == ("00", "01", "10", "11")
 
-    @staticmethod
-    def from_message(message_bit_string, n=5):
+        if not validate_crc:
+            self.crc_valid = None
+        elif n != CRC_TAG_SIZE:
+            raise ValueError("CRC validation is supported only for 5x5 tags")
+        else:
+            self.crc_valid = valid_crc(self.bit_string, n=n)
 
-        n_bits_message = message_length_for_N(n)
+    @property
+    def valid(self):
+        """Deprecated alias for :attr:`crc_valid`."""
+        return self.crc_valid
 
-        if len(message_bit_string) != n_bits_message:
+    @classmethod
+    def from_message(cls, message, n=5):
+        if n != CRC_TAG_SIZE:
+            raise ValueError("CRC generation is supported only for 5x5 tags")
+        if not isinstance(message, str):
+            raise TypeError("message must be a str")
+
+        expected_length = message_length_for_N(n)
+        if len(message) != expected_length:
             raise ValueError(
-                f"message_bit_string has length {len(message_bit_string)}, expected length {n_bits_message} since n={n}"
+                f"5x5 messages must contain exactly {expected_length} bits; "
+                f"got {len(message)}"
             )
+        if set(message) - {"0", "1"}:
+            raise ValueError("message must contain only '0' and '1'")
 
         cells = [None] * (n**2)
 
-        # Set the MESSAGE cell values
-        message_cells = [message_bit_string[i : i + 2] for i in range(0, n**2 * 2, 2)]
-        for i, index in enumerate(get_message_inds(n)):
-            cells[index] = message_cells[i]
+        message_cells = [
+            message[offset : offset + 2] for offset in range(0, len(message), 2)
+        ]
+        for index, cell in zip(get_message_inds(n), message_cells):
+            cells[index] = cell
 
-        # Calculate the CRC
-        message_bytes = int(message_bit_string, 2).to_bytes(int(n_bits_message / 8))
-
-        crc_calculator = Calculator(crc_config_map[n])
-        crc_int = crc_calculator.checksum(message_bytes)
-
-        # Convert CRC checksum to binary and set cell values
-        n_bits_crc = int(math.floor(n / 2)) * 4 * 2
-        crc_binary_string = format(crc_int, f"0{n_bits_crc}b")
-        crc_cells = [crc_binary_string[i : i + 2] for i in range(0, n_bits_crc, 2)]
-        for i, index in enumerate(get_crc_inds(n)):
-            cells[index] = crc_cells[i]
-
-        # Set CORNER cell values
-        corner_cells = ["00", "01", "10", "11"]
-        for i, index in enumerate(get_corner_indices_1d(n)):
-            cells[index] = corner_cells[i]
-
-        # Set the CENTER cell value
+        for index, cell in zip(get_corner_indices_1d(n), ("00", "01", "10", "11")):
+            cells[index] = cell
         cells[get_center_ind(n)] = center_bit_map[n]
 
-        tag_bit_string = "".join(cells)
+        crc_bits = f"{compute_crc_5x5(cells):0{CRC_WIDTH}b}"
+        crc_cells = [crc_bits[offset : offset + 2] for offset in range(0, CRC_WIDTH, 2)]
+        for index, cell in zip(get_crc_inds(n), crc_cells):
+            cells[index] = cell
 
-        return Tag(bit_string=tag_bit_string, n=n)
+        return cls(bit_string="".join(cells), n=n, validate_crc=True)
 
     def to_image(
         self,

@@ -1,3 +1,4 @@
 black==24.10.0
 flit==3.10.1
+flit_core==3.10.1
 isort==5.13.2

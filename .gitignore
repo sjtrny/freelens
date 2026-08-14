@@ -137,3 +137,7 @@ dmypy.json
 
 # Cache files
 cache-directory/
+
+# Locally supplied NaviLens corpus (redistribution permission pending)
+/NaviLens Codes.zip
+/dataset/navilens-provided/local/
