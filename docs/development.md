@@ -53,6 +53,29 @@ uv pip install -r requirements_build.txt
 python -m flit build --no-use-vcs
 ```
 
+## Release
+
+Add a GitHub publisher in the
+[PyPI publishing settings](https://pypi.org/manage/project/freelens/settings/publishing/)
+with these values:
+
+- PyPI project: `freelens`
+- GitHub owner: `sjtrny`
+- Repository: `freelens`
+- Workflow: `release.yml`
+- Environment: `pypi`
+
+Use the `pypi` GitHub environment with required approval. For each release, update the
+version in `pyproject.toml`, merge it to `main`, then publish a GitHub Release with a
+matching `v` tag:
+
+```bash
+gh release create v0.0.3 --target main --title "FreeLens 0.0.3" --generate-notes
+```
+
+The release workflow runs the checks, builds both distributions, and publishes them to
+PyPI. It rejects a tag that does not match the package version.
+
 ## Contributing
 
 Keep changes focused, add tests for changed behavior, update relevant docs, and run the
