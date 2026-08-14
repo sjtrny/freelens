@@ -295,9 +295,9 @@ def decode_frames(
         bit_string = "".join([ind_bit_map[ind] for ind in code])
 
         tag = Tag(bit_string, n=n, validate_crc=validate_crc)
-        if require_valid_crc and tag.crc_valid is not True:
-            continue
-        tags.append(tag)
+
+        if not require_valid_crc or tag.crc_valid is True:
+            tags.append(tag)
 
     return tags
 
