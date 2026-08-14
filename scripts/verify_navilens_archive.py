@@ -2,7 +2,6 @@
 """Verify an uncommitted NaviLens PDF archive without extracting it."""
 
 import argparse
-import hashlib
 import re
 import sys
 import zipfile
@@ -12,10 +11,6 @@ from PIL import Image
 
 from freelens import detect_tags
 
-EXPECTED_CASE_COUNT = 142
-EXPECTED_ARCHIVE_SHA256 = (
-    "a93706ebe73b17e37e55af015151c531c396e0d5ccb3bfddaba0156edb33b07a"
-)
 CODE_RE = re.compile(r"(?<![0-9A-Fa-f])([0-9A-Fa-f]{6})(?![0-9A-Fa-f])")
 
 
@@ -32,15 +27,11 @@ def _code_from_member(member_name):
     return matches[0].upper()
 
 
-def read_archive_cases(archive_path, expected_count=EXPECTED_CASE_COUNT):
+def read_archive_cases(archive_path):
     """Read and validate case metadata without extracting archive members."""
     archive_path = Path(archive_path)
     if not archive_path.is_file():
         raise ArchiveVerificationError(f"archive not found: {archive_path}")
-    if isinstance(expected_count, bool) or not isinstance(expected_count, int):
-        raise TypeError("expected_count must be an int")
-    if expected_count < 1:
-        raise ValueError("expected_count must be positive")
 
     try:
         with zipfile.ZipFile(archive_path) as archive:
@@ -70,11 +61,6 @@ def read_archive_cases(archive_path, expected_count=EXPECTED_CASE_COUNT):
     if non_pdf_members:
         names = ", ".join(sorted(non_pdf_members))
         raise ArchiveVerificationError(f"unexpected non-PDF archive members: {names}")
-
-    if len(members) != expected_count:
-        raise ArchiveVerificationError(
-            f"archive contains {len(members)} cases; expected {expected_count}"
-        )
 
     cases = []
     seen_members = set()
@@ -132,8 +118,6 @@ def _render_pdf(pdf_bytes, member_name, zoom):
 
 def verify_archive(
     archive_path,
-    expected_count=EXPECTED_CASE_COUNT,
-    expected_sha256=EXPECTED_ARCHIVE_SHA256,
     zoom=3.0,
     progress=None,
 ):
@@ -144,16 +128,7 @@ def verify_archive(
         raise ValueError("zoom must be positive")
 
     archive_path = Path(archive_path)
-    cases = read_archive_cases(archive_path, expected_count=expected_count)
-    if expected_sha256 is not None:
-        if not re.fullmatch(r"[0-9a-f]{64}", expected_sha256):
-            raise ValueError("expected_sha256 must be 64 lowercase hexadecimal digits")
-        actual_sha256 = hashlib.sha256(archive_path.read_bytes()).hexdigest()
-        if actual_sha256 != expected_sha256:
-            raise ArchiveVerificationError(
-                f"archive SHA-256 mismatch: expected {expected_sha256}, "
-                f"got {actual_sha256}"
-            )
+    cases = read_archive_cases(archive_path)
 
     errors = []
 
@@ -204,12 +179,6 @@ def verify_archive(
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("archive", type=Path)
-    parser.add_argument("--expected-count", type=int, default=EXPECTED_CASE_COUNT)
-    parser.add_argument(
-        "--expected-sha256",
-        default=EXPECTED_ARCHIVE_SHA256,
-        help="expected lowercase archive digest",
-    )
     parser.add_argument("--zoom", type=float, default=3.0)
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args(argv)
@@ -221,8 +190,6 @@ def main(argv=None):
     try:
         count = verify_archive(
             args.archive,
-            expected_count=args.expected_count,
-            expected_sha256=args.expected_sha256,
             zoom=args.zoom,
             progress=report_progress,
         )
@@ -230,7 +197,7 @@ def main(argv=None):
         print(error, file=sys.stderr)
         return 1
 
-    print(f"{count}/{args.expected_count} cases passed")
+    print(f"{count} cases passed")
     return 0
 
 

@@ -5,9 +5,9 @@
 # FreeLens
 
 This project provides a reference implementation of
-[NaviLens](https://www.navilens.com/) and [ddTag](https://www.ddtags.com/)
-for educational or personal use. Commercial use is at your own risk as NaviLens
-and ddTag may attempt to enforce their IP.
+[NaviLens](https://www.navilens.com/) and [ddTag](https://www.ddtags.com/) for
+educational or personal use. Commercial use is at your own risk as NaviLens and ddTag
+may attempt to enforce their IP.
 
 ## Documentation
 
@@ -15,6 +15,7 @@ and ddTag may attempt to enforce their IP.
 - [ddTag specification](./docs/ddtag.md)
 - [ddTag detection](./docs/ddtag-detection.md)
 - [CRCs in ddTags](./docs/ddtag-crc.md)
+- [Testing NaviLens code PDFs](./docs/testing-navilens-codes.md)
 - [Development](./docs/development.md)
 
 ## Quickstart
@@ -27,8 +28,7 @@ pip install freelens
 
 ### Generating Tags
 
-Freelens generates deployed-CRC tags only at the independently verified 5×5
-size.
+Freelens generates deployed-CRC tags only at the independently verified 5×5 size.
 
 ```python
 from freelens import Tag

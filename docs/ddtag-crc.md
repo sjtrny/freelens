@@ -1,54 +1,77 @@
-
-CRC validation and generation implement the behavior observed in deployed 5×5
-NaviLens tags. CRC behavior for 7×7, 9×9, and 11×11 tags is not implemented
-because it has not been independently verified. Larger grids can still be
-parsed explicitly without CRC validation:
-
-```python
-tag = Tag(bit_string, n=7, validate_crc=False)
-assert tag.crc_valid is None
-```
-
-See [CRCs in ddTags](./docs/ddtag-crc.md) for the checksum's place in the tag,
-the observed 5×5 algorithm, known-answer fixtures, and local archive validation.
-
-
 # CRCs in ddTags
 
-A ddTag carries a payload and a cyclic redundancy check (CRC) in its coloured
-grid. Each cell has one of four palette values, so it represents two bits. The
-CRC lets a reader reject accidental colour or cell errors.
+## Patent CRC
 
-## The deployed 5×5 format
+The patent defines grids with sizes 5x5, 7x7, 9x9, and 11x11. For a grid with width `N`:
 
-The independently verified format is the 5×5 tag used by NaviLens. Its cells
-have four roles:
+- the centre row and centre column hold the CRC, except for the centre cell;
+- the CRC uses `2N - 2` cells and therefore contains `4N - 4` bits;
+- the four corners hold the palette;
+- the centre cell holds the grid size; and
+- all remaining cells form the message.
+
+The message length is `2N^2 - 4N - 6` bits. The patent says to calculate the CRC from
+this message only.
+
+### Polynomials and parameters
+
+The patent gives a standard CRC name for each grid size. Its table calls these names
+"CRC polynomials", but does not list the initial value, final XOR, or reflection
+settings. Interpreting each name as the standard CRC model gives the following
+parameters. `check` is the CRC of the ASCII bytes `123456789` and is included to remove
+any ambiguity.
+
+All four models use `refin=false` and `refout=false`, so each input byte is processed
+most-significant bit first.
+
+| Grid  |  Message |     CRC | Patent name     |         `poly` |         `init` |       `xorout` |        `check` |
+| ----- | -------: | ------: | --------------- | -------------: | -------------: | -------------: | -------------: |
+| 5x5   |  24 bits | 16 bits | CRC-16-CDMA2000 |       `0xC867` |       `0xFFFF` |       `0x0000` |       `0x4C06` |
+| 7x7   |  64 bits | 24 bits | CRC-24-Radix-64 |     `0x864CFB` |     `0xB704CE` |     `0x000000` |     `0x21CF02` |
+| 9x9   | 120 bits | 32 bits | CRC-32Q         |   `0x814141AB` |   `0x00000000` |   `0x00000000` |   `0x3010BF7F` |
+| 11x11 | 192 bits | 40 bits | CRC-40-GSM      | `0x0004820009` | `0x0000000000` | `0xFFFFFFFFFF` | `0xD4164FC646` |
+
+`CRC-24-Radix-64` is now normally called `CRC-24/OPENPGP`. `CRC-32Q` is also called
+`CRC-32/AIXM`. The residue is zero for the 16-, 24-, and 32-bit models. The CRC-40/GSM
+residue is `0xC4FF8071FF`.
+
+The hexadecimal `poly` value omits the leading `x^width` term. The complete generator
+polynomials are:
 
 ```text
-P D C D P
-D D C D D
-C C S C C
-D D C D D
-P D C D P
+CRC-16: x^16 + x^15 + x^14 + x^11 + x^6 + x^5 + x^2 + x + 1
+CRC-24: x^24 + x^23 + x^18 + x^17 + x^14 + x^11 + x^10
+        + x^7 + x^6 + x^5 + x^4 + x^3 + x + 1
+CRC-32: x^32 + x^31 + x^24 + x^22 + x^16 + x^14 + x^8
+        + x^7 + x^5 + x^3 + x + 1
+CRC-40: x^40 + x^26 + x^23 + x^17 + x^3 + 1
 ```
 
-`P` marks a palette corner, `D` a payload cell, `C` a CRC cell, and `S` the
-center size marker. The palette corners, clockwise from the top left, represent
-`00`, `01`, `10`, and `11`. The 5×5 center marker is `00`.
+### CRC cells
 
-Numbering the cells row by row gives:
+The patent reads the CRC cells in normal matrix order: left to right, then top to
+bottom. The following table lists the zero-based cell indices in that order.
 
-```text
- 0  1  2  3  4
- 5  6  7  8  9
-10 11 12 13 14
-15 16 17 18 19
-20 21 22 23 24
-```
+| Grid  | CRC cell indices                                                                  |
+| ----- | --------------------------------------------------------------------------------- |
+| 5x5   | `2, 7, 10, 11, 13, 14, 17, 22`                                                    |
+| 7x7   | `3, 10, 17, 21, 22, 23, 25, 26, 27, 31, 38, 45`                                   |
+| 9x9   | `4, 13, 22, 31, 36, 37, 38, 39, 41, 42, 43, 44, 49, 58, 67, 76`                   |
+| 11x11 | `5, 16, 27, 38, 49, 55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 71, 82, 93, 104, 115` |
 
-### Payload
+The patent is less exact about the message. It says to compose the message from the
+cells that are not palette, CRC, or size cells. It does not give a separate cell order
+or say how to pack the resulting bits into bytes. A simple reading is to use the same
+row order, but this is not stated as clearly as the CRC cell order.
 
-The twelve payload cells are read by columns, not rows:
+## Observed CRC
+
+Real 5x5 tags do not use the patent calculation. They use the same `0xC867` polynomial,
+but change the input data, initial value, and CRC cell order.
+
+### Message order
+
+The twelve message cells are read by columns:
 
 ```text
 5, 15,
@@ -57,12 +80,14 @@ The twelve payload cells are read by columns, not rows:
 9, 19
 ```
 
-Concatenating their two-bit values produces the 24-bit message.
+Their two-bit values form the 24-bit message.
 
 ### CRC input
 
-The checksum covers every cell outside the center row and column. Unlike the
-payload, this includes the four palette corners:
+The CRC covers every cell outside the centre row and centre column. This includes the
+four palette corners. The centre cell and the CRC cells are not included.
+
+The cells are read by columns in this order:
 
 ```text
 0, 5, 15, 20,
@@ -71,116 +96,112 @@ payload, this includes the four palette corners:
 4, 9, 19, 24
 ```
 
-Read the two-bit values in that order to make a 32-bit string, then split it
-left-to-right into four bytes. This explicit split preserves leading zero
-bytes. The bytes are processed MSB-first with:
+Join the two-bit cell values to make 32 bits. Split those bits from left to right into
+four bytes. Keep the input width fixed at four bytes so that leading zero bytes are
+preserved.
+
+The CRC parameters are:
 
 ```text
-width       = 16
-polynomial  = 0xC867
-initial     = 0x0000
-final XOR   = 0x0000
-refin       = false
-refout      = false
+width     = 16
+poly      = 0xC867
+init      = 0x0000
+xorout    = 0x0000
+refin     = false
+refout    = false
+check     = 0xE355
+residue   = 0x0000
 ```
 
-This is sometimes called CRC-16/CDMA2000, but the usual named configuration has
-a different initial value. The complete tuple above is what matters.
+This is not the standard CRC-16/CDMA2000 model. That model uses `init=0xFFFF`.
 
 ### CRC storage
 
-The resulting 16 bits are split into eight two-bit values and stored in this
-order:
+Write the 16-bit result most-significant bit first and split it into eight two-bit
+cells. Store those cells in this order:
 
 ```text
 10, 11, 2, 7, 17, 22, 13, 14
 ```
 
-The center cell is not part of the CRC. FreeLens reports the checksum, center,
-and palette layout separately as `crc_valid`, `center_valid`, and
-`corners_valid`.
+In grid terms, this order is the left arm of the centre row, the upper arm of the centre
+column, the lower arm, and then the right arm.
 
-An earlier implementation checksummed only the payload described by the patent.
-That calculation does not validate deployed tags. Including the palette corners
-and using the zero initial value does.
-
-## Examples from deployed tags
-
-The Melbourne tram fixture from issue #1:
+The complete check is equivalent to:
 
 ```text
-grid     00101100010110110011111100001000001110001100110010
-message  010010100000000010001100
-input    00010011101000000000100001110010
-bytes    13 A0 08 72
-CRC      FFF2
+input_bits  = join(cells[i] for i in CRC_INPUT_INDICES)
+input_bytes = split input_bits into four 8-bit values, left to right
+calculated  = CRC(input_bytes, poly=0xC867, init=0x0000,
+                  xorout=0x0000, refin=false, refout=false)
+stored      = join(cells[i] for i in CRC_STORAGE_INDICES)
+valid       = calculated == integer value of stored
 ```
 
-The tag printed with the label `B1269C`:
+### Patent and real 5x5 tags
+
+| Detail                      | Patent 5x5                     | Real NaviLens 5x5                |
+| --------------------------- | ------------------------------ | -------------------------------- |
+| CRC input                   | 24 message bits                | 32 bits from all non-cross cells |
+| Palette corners included    | No                             | Yes                              |
+| Polynomial                  | `0xC867`                       | `0xC867`                         |
+| Initial value               | `0xFFFF` in the named standard | `0x0000`                         |
+| Input and output reflection | False                          | False                            |
+| Final XOR                   | `0x0000`                       | `0x0000`                         |
+| CRC cell order              | `2, 7, 10, 11, 13, 14, 17, 22` | `10, 11, 2, 7, 17, 22, 13, 14`   |
+
+## Examples
+
+For the Melbourne tram tag:
 
 ```text
-grid     00001001011001011011001100011111001010001110100110
-message  101100010010011010011100
-input    00101111000100100110100101110010
-bytes    2F 12 69 72
-CRC      39A7
+grid       00101100010110110011111100001000001110001100110010
+message    010010100000000010001100
+CRC input  00010011101000000000100001110010
+bytes      13 A0 08 72
+CRC        FFF2
 ```
 
-The [CRC tests](../tests/test_crc_5x5.py) check both grids, cell order, byte
-packing, calculated CRCs, generation, and corruption of each cell role.
+Standard CRC-16/CDMA2000 over the message bytes `4A 00 8C` gives `E751`, not `FFF2`.
 
-## Larger tags
+For the tag labelled `B1269C`:
 
-ddTags also use 7×7, 9×9, and 11×11 grids, but their deployed CRC details have
-not been independently verified. A generator that validates its own output is
-not evidence of compatibility. Each size needs real fixtures that establish its
-cell membership, order, packing, parameters, and CRC placement.
-
-FreeLens therefore validates and generates CRCs only for 5×5 tags. Larger grids
-can still be parsed with `validate_crc=False`.
-
-## Using FreeLens
-
-```python
-tag = Tag(bit_string, n=5, validate_crc=True)
-assert tag.crc_valid is True
-
-tags = detect_tags(
-    image,
-    n=5,
-    validate_crc=True,
-    require_valid_crc=True,
-)
+```text
+grid       00001001011001011011001100011111001010001110100110
+message    101100010010011010011100
+CRC input  00101111000100100110100101110010
+bytes      2F 12 69 72
+CRC        39A7
 ```
 
-For a larger grid:
+The [5x5 CRC tests](../tests/test_crc_5x5.py) check these values, the cell orders, byte
+packing, tag generation, and changes to each type of cell.
+
+## FreeLens
+
+FreeLens calculates and validates CRCs only for 5x5 tags. It can parse 7x7, 9x9, and
+11x11 grids only when CRC validation is disabled:
 
 ```python
 tag = Tag(bit_string, n=7, validate_crc=False)
 assert tag.crc_valid is None
 ```
 
-CRC validation or generation with `n=7`, `n=9`, or `n=11` raises a
-`ValueError`.
+The patent describes the CRC layout and names a polynomial for each larger grid.
+FreeLens does not implement those CRCs because no real 7x7, 9x9, or 11x11 tags have been
+tested.
 
-## Fixtures
-
-The locally supplied `NaviLens Codes.zip` contains 142 one-page PDFs and has
-SHA-256
-`a93706ebe73b17e37e55af015151c531c396e0d5ccb3bfddaba0156edb33b07a`.
-The [archive verifier](../scripts/verify_navilens_archive.py) reads the PDFs in
-memory and derives each expected payload from its six-hex filename:
+The local `NaviLens Codes.zip` archive contains 142 5x5 PDF tags. All 142 pass the real
+5x5 calculation. The archive is not committed because redistribution permission has not
+been provided. Run the check with:
 
 ```bash
 python -m pip install -e ".[dataset,test]"
 python scripts/verify_navilens_archive.py "/path/to/NaviLens Codes.zip"
 ```
 
-All 142 PDFs passed at the default 3× render scale. Their labels share the
-`AAB` prefix, so the upper 12 payload bits are constant. The archive remains
-uncommitted because redistribution permission was not provided.
+## References
 
-The CC-BY-4.0 community photographs in `dataset/positives/` and
-`dataset/negatives/` are not yet covered by an automated test. See the
-[dataset notes](../dataset/navilens-provided/README.md) for provenance and the
-future Git LFS import process.
+- [ddTag patent: EP 3561729 A1](https://data.epo.org/publication-server/rest/v1.0/publication-dates/20191030/patents/EP3561729NWA1/document.pdf)
+- [CRC RevEng catalogue](https://reveng.sourceforge.io/crc-catalogue/)
+- [FreeLens 5x5 CRC implementation](../freelens.py)

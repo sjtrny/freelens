@@ -20,6 +20,8 @@ dependencies = [
 test = [
     "black==24.10.0",
     "isort==5.13.2",
+    "mdformat==1.0.0",
+    "mdformat-gfm==1.0.0",
     "pytest>=8",
 ]
 dataset = [

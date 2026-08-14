@@ -10,9 +10,9 @@ source ./setup.sh
 uv pip install -e ".[test]"
 ```
 
-`setup.sh` creates a Python 3.11 `.venv` and installs the runtime requirements.
-Source it to keep the environment active; the second command adds developer
-tools and installs FreeLens in editable mode.
+`setup.sh` creates a Python 3.11 `.venv` and installs the runtime requirements. Source
+it to keep the environment active; the second command adds developer tools and installs
+FreeLens in editable mode.
 
 ## Checks
 
@@ -20,22 +20,24 @@ tools and installs FreeLens in editable mode.
 python -m pytest -q
 python -m black --check freelens.py scripts tests
 python -m isort --check-only freelens.py scripts tests
+python -m mdformat --check README.md docs dataset
 git lfs fsck
 ```
 
 CI runs these checks on Python 3.11 and 3.14.
 
-To apply Python formatting:
+To apply formatting:
 
 ```bash
 python -m black freelens.py scripts tests
 python -m isort freelens.py scripts tests
+python -m mdformat README.md docs dataset
 ```
 
 ## Dataset
 
-Optional dataset tests skip when their files are absent. To validate the local
-PDF archive:
+Optional dataset tests skip when their files are absent. To validate the local PDF
+archive:
 
 ```bash
 uv pip install -e ".[dataset,test]"
@@ -53,5 +55,5 @@ python -m flit build --no-use-vcs
 
 ## Contributing
 
-Keep changes focused, add tests for changed behavior, update relevant docs, and
-run the checks above before opening a pull request.
+Keep changes focused, add tests for changed behavior, update relevant docs, and run the
+checks above before opening a pull request.
