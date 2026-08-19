@@ -27,6 +27,7 @@ For each un-rectified frame polygon:
 1. Convert image to CIELab colour space
 1. Un-warp frame image to square aspect ratio and resize to a fixed size
 1. Get the cell colours from the center positions of each cell in the grid
+1. Rotate the sampled grid so its darkest corner is at the bottom left
 1. Obtain the palette colours from the four corners of the grid
 1. Assign each cell in the grid to the closest colour in the palette
 1. Validate the deployed CRC when processing a 5×5 tag and validation is enabled
