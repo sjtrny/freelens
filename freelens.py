@@ -15,6 +15,9 @@ ind_bit_map = {
 center_bit_map = {5: "00", 7: "01", 9: "10", 11: "11"}
 
 SUPPORTED_TAG_SIZES = (5, 7, 9, 11)
+# The largest grid starts inside 1-cell quiet zones at 11 / (11 + 2).
+QUIET_ZONE_INNER_SCALE = 11 / 13
+MAX_BLACK_TO_WHITE_RATIO = 0.6
 
 CRC_TAG_SIZE = 5
 CRC_WIDTH = 16
@@ -167,6 +170,7 @@ def frame_filter_white_border(polygons, image_bw):
 
     for i, p in enumerate(polygons):
         p_expanded = expand_polygon(p)
+        p_contracted = expand_polygon(p, QUIET_ZONE_INNER_SCALE)
 
         outer_mask = np.zeros(image_bw.shape).astype(np.uint8)
         cv.fillConvexPoly(outer_mask, p_expanded, color=255)
@@ -175,6 +179,9 @@ def frame_filter_white_border(polygons, image_bw):
         cv.fillConvexPoly(inner_mask, p, color=255)
 
         mask = outer_mask - inner_mask
+
+        black_border_mask = inner_mask.copy()
+        cv.fillConvexPoly(black_border_mask, p_contracted, color=0)
 
         masked_laplacian_inner = laplacian * inner_mask.astype(bool)
         masked_laplacian_inner_values = masked_laplacian_inner[inner_mask > 0]
@@ -187,14 +194,37 @@ def frame_filter_white_border(polygons, image_bw):
         inner_percentile = np.percentile(masked_pixels, 90)
         masked_pixels = image_bw[mask > 0]
         border_median = np.median(masked_pixels)
+        black_border_median = np.median(image_bw[black_border_mask > 0])
 
         if (
             laplacian_variance <= inner_laplacian_variance
             and border_median >= inner_percentile
+            and black_border_median < MAX_BLACK_TO_WHITE_RATIO * border_median
         ):
             filtered_polygons.append(p)
 
     return filtered_polygons
+
+
+def _detect_frame_candidates(image_bw, threshold_method):
+    threshold_image = cv.adaptiveThreshold(
+        image_bw, 255, threshold_method, cv.THRESH_BINARY, 101, 0
+    )
+
+    contours, _ = cv.findContours(threshold_image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+
+    polygons = reduce_poly_vertices(contours)
+    filters = [
+        frame_filter_polygons_4vertex,
+        lambda polygons: frame_filter_polygons_area(polygons, 2**11),
+        frame_filter_polygons_convex,
+        frame_filter_polygons_squareish,
+        lambda polygons: frame_filter_white_border(polygons, image_bw),
+    ]
+    for filter in filters:
+        polygons = filter(polygons)
+
+    return polygons
 
 
 def detect_frames(image):
@@ -202,7 +232,8 @@ def detect_frames(image):
     Based on "Automatic generation and detection of highly reliable fiducial markers under occlusion" Pattern Recognition 2014
 
     1. Convert image to grayscale
-    2. Detect edges by local adaptive thresholding (cv.adaptiveThreshold)
+    2. Detect edges by local adaptive thresholding (cv.adaptiveThreshold), retrying
+       with Gaussian weighting when mean weighting finds no frame
     3. Detect contours by Suzuki's method (cv.findContours)
     4. Fit polygon to contours (cv.approxPolyDP)
     5. Apply filters:
@@ -210,7 +241,7 @@ def detect_frames(image):
         2. Area greater than threshold
         3. Convex polygon
         4. Shape is roughly square (perimeter/area test)
-        5. Check that border around frame is white
+        5. Check that the quiet-zone border is black inside and white outside
 
     TODO: Retain only internal contours (opposite of paper which suggests external)
     """
@@ -220,29 +251,9 @@ def detect_frames(image):
     # 1. Convert image to grayscale
     image_bw_cv = cv.cvtColor(image_cv, cv.COLOR_BGR2GRAY)
 
-    # 2. Detect edges by local adaptive thresholding (cv.adaptiveThreshold)
-    threshold_image = cv.adaptiveThreshold(
-        image_bw_cv, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 101, 0
-    )
-
-    # 3. Detect contours by Suzuki's method (cv.findContours)
-    contours, hierarchy = cv.findContours(
-        threshold_image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE
-    )
-
-    # 4. Fit polygon to contours (cv.approxPolyDP)
-    polygons = reduce_poly_vertices(contours)
-
-    # 5. Apply filters
-    filters = [
-        frame_filter_polygons_4vertex,
-        lambda polygons: frame_filter_polygons_area(polygons, 2**11),
-        frame_filter_polygons_convex,
-        frame_filter_polygons_squareish,
-        lambda polygons: frame_filter_white_border(polygons, image_bw_cv),
-    ]
-    for filter in filters:
-        polygons = filter(polygons)
+    polygons = _detect_frame_candidates(image_bw_cv, cv.ADAPTIVE_THRESH_MEAN_C)
+    if not polygons:
+        polygons = _detect_frame_candidates(image_bw_cv, cv.ADAPTIVE_THRESH_GAUSSIAN_C)
 
     return polygons
 

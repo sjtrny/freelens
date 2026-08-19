@@ -8,7 +8,9 @@ leaves it up to the implementor. However it suggests that the method in [1] may 
 In `detect_frames` we use a modified version of [1] as follows:
 
 1. Convert image to grayscale
-1. Detect edges by local adaptive thresholding
+1. Detect edges with mean-weighted local adaptive thresholding
+   1. If no credible frame remains, retry with Gaussian-weighted thresholding to reduce
+      the effect of brighter surrounding regions
 1. Detect contours by Suzuki's method
 1. Fit polygon to contours
 1. Apply filters:
@@ -16,7 +18,7 @@ In `detect_frames` we use a modified version of [1] as follows:
    1. Area greater than threshold
    1. Convex polygon
    1. Shape is roughly square (perimeter/area test)
-   1. Check that border around frame is white
+   1. Check that the quiet-zone border is black inside and white outside
 
 ## Decoding Possible Tags
 
