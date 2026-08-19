@@ -2,9 +2,21 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from freelens import Tag, detect_tags, message_length_for_N
+from freelens import Tag, _multi_scale_retinex, detect_tags, message_length_for_N
 
 MESSAGE = "010010100000000010001100"
+
+
+def test_multi_scale_retinex_flattens_smooth_illumination():
+    image = np.tile(np.linspace(64, 255, 600, dtype=np.uint8), (600, 1))
+
+    normalized = _multi_scale_retinex(image)
+
+    original_difference = abs(float(image[:, 150].mean()) - image[:, 450].mean())
+    normalized_difference = abs(
+        float(normalized[:, 150].mean()) - normalized[:, 450].mean()
+    )
+    assert normalized_difference < original_difference
 
 
 def test_detects_shadowed_tag_beside_bright_scene():

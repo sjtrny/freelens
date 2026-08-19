@@ -18,6 +18,7 @@ SUPPORTED_TAG_SIZES = (5, 7, 9, 11)
 # The largest grid starts inside 1-cell quiet zones at 11 / (11 + 2).
 QUIET_ZONE_INNER_SCALE = 11 / 13
 MAX_BLACK_TO_WHITE_RATIO = 0.6
+RETINEX_SCALES = (15, 80)
 
 CRC_TAG_SIZE = 5
 CRC_WIDTH = 16
@@ -206,6 +207,25 @@ def frame_filter_white_border(polygons, image_bw):
     return filtered_polygons
 
 
+def _multi_scale_retinex(image_bw):
+    """Return a grayscale image with low-frequency illumination removed."""
+    image_float = image_bw.astype(np.float32) + 1
+    log_image = np.log(image_float)
+    retinex = np.zeros_like(image_float)
+
+    for sigma in RETINEX_SCALES:
+        illumination = cv.GaussianBlur(image_float, (0, 0), sigma)
+        retinex += log_image - np.log(illumination)
+
+    retinex /= len(RETINEX_SCALES)
+    low, high = np.percentile(retinex, (1, 99))
+    if low == high:
+        return np.zeros_like(image_bw)
+
+    retinex = (retinex - low) * (255 / (high - low))
+    return np.clip(retinex, 0, 255).astype(np.uint8)
+
+
 def _detect_frame_candidates(image_bw, threshold_method):
     threshold_image = cv.adaptiveThreshold(
         image_bw, 255, threshold_method, cv.THRESH_BINARY, 101, 0
@@ -233,7 +253,8 @@ def detect_frames(image):
 
     1. Convert image to grayscale
     2. Detect edges by local adaptive thresholding (cv.adaptiveThreshold), retrying
-       with Gaussian weighting when mean weighting finds no frame
+       with Gaussian weighting and then Retinex illumination normalization when no
+       frame is found
     3. Detect contours by Suzuki's method (cv.findContours)
     4. Fit polygon to contours (cv.approxPolyDP)
     5. Apply filters:
@@ -254,6 +275,9 @@ def detect_frames(image):
     polygons = _detect_frame_candidates(image_bw_cv, cv.ADAPTIVE_THRESH_MEAN_C)
     if not polygons:
         polygons = _detect_frame_candidates(image_bw_cv, cv.ADAPTIVE_THRESH_GAUSSIAN_C)
+    if not polygons:
+        normalized = _multi_scale_retinex(image_bw_cv)
+        polygons = _detect_frame_candidates(normalized, cv.ADAPTIVE_THRESH_MEAN_C)
 
     return polygons
 
