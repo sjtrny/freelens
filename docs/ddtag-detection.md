@@ -24,8 +24,11 @@ This process is adapted from the patent.
 
 For each un-rectified frame polygon:
 
-1. Convert image to CIELab colour space
+1. Sample the black and white quiet zones around the frame as colour references
 1. Un-warp frame image to square aspect ratio and resize to a fixed size
+1. Correct each RGB channel using `C(x, y) = (I(x, y) - B) / (W - B)`
+   1. Keep the original colours if correction collapses two palette corners together
+1. Convert the corrected frame to CIELab colour space
 1. Get the cell colours from the center positions of each cell in the grid
 1. Rotate the sampled grid so its darkest corner is at the bottom left
 1. Obtain the palette colours from the four corners of the grid

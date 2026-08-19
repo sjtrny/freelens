@@ -160,6 +160,43 @@ def expand_polygon(polygon, scale_factor=1 + 4 / 14):
     return np.round(expanded_polygon).astype(int)
 
 
+def _quiet_zone_references(image, polygon, n):
+    polygon = np.round(polygon).astype(int)
+    outer_polygon = expand_polygon(polygon, (n + 4) / (n + 2))
+    inner_polygon = expand_polygon(polygon, n / (n + 2))
+
+    white_mask = np.zeros(image.shape[:2], dtype=np.uint8)
+    cv.fillConvexPoly(white_mask, outer_polygon, color=1)
+    cv.fillConvexPoly(white_mask, polygon, color=0)
+
+    black_mask = np.zeros(image.shape[:2], dtype=np.uint8)
+    cv.fillConvexPoly(black_mask, polygon, color=1)
+    cv.fillConvexPoly(black_mask, inner_polygon, color=0)
+
+    black_pixels = image[black_mask > 0]
+    white_pixels = image[white_mask > 0]
+    if not len(black_pixels) or not len(white_pixels):
+        return np.zeros(3), np.full(3, 255)
+
+    black = np.median(black_pixels, axis=0)
+    white = np.median(white_pixels, axis=0)
+    return black, white
+
+
+def _correct_colours(image, black, white):
+    image = image.astype(np.float32)
+    black = np.asarray(black, dtype=np.float32)
+    white = np.asarray(white, dtype=np.float32)
+    difference = white - black
+
+    corrected = image / 255
+    usable_channels = difference > 0
+    corrected[..., usable_channels] = (
+        image[..., usable_channels] - black[usable_channels]
+    ) / difference[usable_channels]
+    return np.clip(corrected, 0, 1)
+
+
 def frame_filter_white_border(polygons, image_bw):
     filtered_polygons = []
 
@@ -257,7 +294,7 @@ def decode_frames(
 ):
     _validate_crc_options(n, validate_crc, require_valid_crc)
 
-    image_cv = cv.cvtColor(np.array(image), cv.COLOR_RGB2Lab)
+    image_cv = np.array(image)
 
     cell_size = 32
     n_pixels = cell_size * (n + 2)
@@ -271,6 +308,20 @@ def decode_frames(
 
         M = cv.getPerspectiveTransform(polygon_ordered, ref_pts)
         dst = cv.warpPerspective(image_cv, M, (n_pixels, n_pixels))
+        black, white = _quiet_zone_references(image_cv, polygon, n)
+        corrected = np.round(_correct_colours(dst, black, white) * 255).astype(np.uint8)
+        corner_pixels = np.array(
+            [
+                corrected[
+                    row * cell_size + cell_size // 2,
+                    column * cell_size + cell_size // 2,
+                ]
+                for row, column in ((1, 1), (1, n), (n, n), (n, 1))
+            ]
+        )
+        if len(np.unique(corner_pixels, axis=0)) == 4:
+            dst = corrected
+        dst = cv.cvtColor(dst, cv.COLOR_RGB2Lab)
 
         values = np.zeros((n + 2, n + 2, 3))
 
