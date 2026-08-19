@@ -280,6 +280,13 @@ def decode_frames(
                 center_y = c * cell_size + cell_size // 2
                 values[r, c] = dst[center_x, center_y]
 
+        # Orient the tag so its darkest corner is at the bottom left.
+        corner_vals = np.array(
+            [values[1, 1], values[1, -2], values[-2, -2], values[-2, 1]]
+        )
+        darkest_corner = int(np.argmin(corner_vals[:, 0]))
+        values = np.rot90(values, k=(darkest_corner + 1) % 4)
+
         # Get corner colours
         corner_vals = np.array(
             [values[1, 1], values[1, -2], values[-2, -2], values[-2, 1]]
