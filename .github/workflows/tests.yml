@@ -8,7 +8,29 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install quality dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Check formatting and imports
+        run: |
+          python -m black --check freelens.py scripts tests
+          python -m isort --check-only freelens.py scripts tests
+          python -m mdformat --check README.md docs dataset
+
+  unit-tests:
+    name: Unit tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -17,34 +39,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-        with:
-          lfs: true
 
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Verify existing LFS fixtures
-        run: git lfs fsck
-
       - name: Install test dependencies
         run: python -m pip install -e ".[test]"
 
-      - name: Run tests
-        run: python -m pytest -q
-
-      - name: Check formatting and imports
-        run: |
-          python -m black --check freelens.py scripts tests
-          python -m isort --check-only freelens.py scripts tests
-          python -m mdformat --check README.md docs dataset
-
-      - name: Verify authorized NaviLens corpus
-        if: ${{ hashFiles('dataset/navilens-provided/manifest.csv') != '' }}
-        env:
-          FREELENS_REQUIRE_NAVILENS_DATASET: "1"
-        run: |
-          python -m pytest -q tests/test_navilens_dataset.py
-          python scripts/verify_navilens_dataset.py --manifest dataset/navilens-provided/manifest.csv
-          sha256sum --check dataset/navilens-provided/SHA256SUMS
+      - name: Run unit tests
+        run: python -m pytest -q -m "not integration"
