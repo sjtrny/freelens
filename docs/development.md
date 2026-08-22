@@ -24,7 +24,8 @@ python -m mdformat --check README.md docs dataset
 git lfs fsck
 ```
 
-CI runs these checks on Python 3.11 and 3.14.
+Pull request CI runs the formatting and import checks on Python 3.11. It runs unit
+tests, excluding tests marked `integration`, on Python 3.11 and 3.14.
 
 To apply formatting:
 
