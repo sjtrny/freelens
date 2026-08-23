@@ -288,15 +288,12 @@ def create_app(manifest_path=DEFAULT_MANIFEST):
     return app
 
 
-app = create_app()
-
-
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     args = parser.parse_args(argv)
-    app.run(host=args.host, port=args.port)
+    create_app().run(host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

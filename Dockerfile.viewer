@@ -16,4 +16,4 @@ USER 65534:65534
 
 EXPOSE 8899
 
-CMD ["gunicorn", "--bind=0.0.0.0:8899", "--workers=1", "--access-logfile=-", "--error-logfile=-", "scripts.view_evaluation:app"]
+CMD ["gunicorn", "--bind=0.0.0.0:8899", "--workers=1", "--access-logfile=-", "--error-logfile=-", "scripts.view_evaluation:create_app()"]

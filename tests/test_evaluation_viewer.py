@@ -643,7 +643,9 @@ def test_viewer_lists_tags_above_details_and_includes_resizable_panels(
     assert b"<h1>tagged.jpg</h1>" in response.data
     assert b"<details" not in response.data
     assert b'class="image-list"' in response.data
-    assert b'title="images/tagged.jpg" aria-current="page">tagged.jpg</a>' in response.data
+    assert (
+        b'title="images/tagged.jpg" aria-current="page">tagged.jpg</a>' in response.data
+    )
     assert b">images/tagged.jpg</a>" not in response.data
     assert b'<ul class="tag-list"' in response.data
     assert (
@@ -683,8 +685,13 @@ def test_viewer_uses_ctrl_or_command_s_to_save(evaluation_manifest):
     assert b'event.key.toLowerCase() !== "s"' in response.data
     assert b"(!event.ctrlKey && !event.metaKey)" in response.data
     assert b"event.repeat || saving" in response.data
-    assert b"document.querySelector(\"[data-tag-form]\")?.requestSubmit()" in response.data
-    assert b"unsavedDialog.querySelector('[data-unsaved-action=\"save\"]')" in response.data
+    assert (
+        b'document.querySelector("[data-tag-form]")?.requestSubmit()' in response.data
+    )
+    assert (
+        b"unsavedDialog.querySelector('[data-unsaved-action=\"save\"]')"
+        in response.data
+    )
 
 
 def test_viewer_serves_only_manifest_image_indexes(evaluation_manifest):
