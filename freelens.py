@@ -302,7 +302,9 @@ def decode_frames(
 
         tag = Tag(bit_string, n=n, validate_crc=validate_crc)
 
-        if not require_valid_crc or tag.crc_valid is True:
+        if not require_valid_crc or (
+            tag.crc_valid is True and tag.corners_valid is True
+        ):
             tags.append(tag)
 
     return tags

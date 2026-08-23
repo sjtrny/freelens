@@ -30,6 +30,8 @@ For each un-rectified frame polygon:
 1. Rotate the sampled grid so its darkest corner is at the bottom left
 1. Obtain the palette colours from the four corners of the grid
 1. Assign each cell in the grid to the closest colour in the palette
+1. When strict validation is enabled, require the four reserved corner cells to have
+   distinct palette values in canonical order
 1. Validate the deployed CRC when processing a 5×5 tag and validation is enabled
    1. Convert cells to binary using the rule that the palette is ordered clockwise
       starting at the top left with the binary values `00`, `01`, `10`, `11`.
