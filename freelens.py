@@ -73,35 +73,6 @@ def _validate_crc_options(n, validate_crc, require_valid_crc=False):
         raise ValueError("CRC validation is supported only for 5x5 tags")
 
 
-def order_points(points):
-    """
-    Sort a 2D array of points into tl, tr, br, bl order.
-    """
-
-    # Sort by horizontal position
-    x_sort_idx = np.argsort(points[:, 0])
-
-    # Find the left points and then sort by vertical positions
-    left_points = points[x_sort_idx[:2], :]
-    left_y_sort_idx = np.argsort(left_points[:, 1])
-    tl = left_points[left_y_sort_idx[0], :]
-    bl = left_points[left_y_sort_idx[1], :]
-
-    # Calculate the distance from tl to right points to find bottom right
-    right_points = points[x_sort_idx[2:], :]
-    dists = np.linalg.norm(right_points - tl, axis=1)
-    right_y_sort_idx = np.argsort(dists)
-
-    return np.array(
-        [
-            tl,
-            right_points[right_y_sort_idx[0], :],
-            right_points[right_y_sort_idx[1], :],
-            bl,
-        ]
-    ).astype(np.float32)
-
-
 def reduce_poly_vertices(contours, tolerance=0.1):
     polygons = []
     for c in contours:
@@ -254,6 +225,7 @@ def decode_frames(
     validate_crc=True,
     require_valid_crc=False,
 ):
+    """Decode four-vertex frame polygons supplied in cyclic contour order."""
     _validate_crc_options(n, validate_crc, require_valid_crc)
 
     image_cv = cv.cvtColor(np.array(image), cv.COLOR_RGB2Lab)
@@ -265,10 +237,10 @@ def decode_frames(
     tags = []
 
     for i, polygon in enumerate(polygons):
-
-        polygon_ordered = order_points(polygon)
-
-        M = cv.getPerspectiveTransform(polygon_ordered, ref_pts)
+        # Contour approximation already returns adjacent vertices in cyclic order.
+        # Its starting corner only rotates the warp, which is normalised below.
+        polygon_points = np.asarray(polygon, dtype=np.float32)
+        M = cv.getPerspectiveTransform(polygon_points, ref_pts)
         dst = cv.warpPerspective(image_cv, M, (n_pixels, n_pixels))
 
         values = np.zeros((n + 2, n + 2, 3))

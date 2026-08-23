@@ -24,6 +24,8 @@ This process is adapted from the patent.
 
 For each un-rectified frame polygon:
 
+1. Preserve the cyclic vertex order produced by contour approximation. The first vertex
+   can be any corner because tag orientation is normalised after sampling.
 1. Convert image to CIELab colour space
 1. Un-warp frame image to square aspect ratio and resize to a fixed size
 1. Get the cell colours from the center positions of each cell in the grid
