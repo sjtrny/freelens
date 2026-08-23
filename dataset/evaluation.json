@@ -1,235 +1,2279 @@
 [
   {
-    "image": "negatives/0001.jpg",
-    "messages": []
+    "image": "images/0000.jpg",
+    "tags": []
   },
   {
-    "image": "positives/0001.jpg",
-    "messages": ["4A0101"]
+    "image": "images/0001.jpg",
+    "tags": [
+      {
+        "message": "4A0101",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1663,
+            1788
+          ],
+          "top_right": [
+            1765,
+            1797
+          ],
+          "bottom_right": [
+            1764,
+            1908
+          ],
+          "bottom_left": [
+            1662,
+            1902
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0002.jpg",
-    "messages": ["4A005C"]
+    "image": "images/0002.jpg",
+    "tags": [
+      {
+        "message": "4A005C",
+        "conditions": [
+          "shadow"
+        ],
+        "location": {
+          "top_left": [
+            1421,
+            1749
+          ],
+          "top_right": [
+            1773,
+            1668
+          ],
+          "bottom_right": [
+            1754,
+            2204
+          ],
+          "bottom_left": [
+            1394,
+            2222
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0003.jpg",
-    "messages": ["4A02B3"]
+    "image": "images/0003.jpg",
+    "tags": [
+      {
+        "message": "4A02B3",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1344,
+            1622
+          ],
+          "top_right": [
+            1427,
+            1624
+          ],
+          "bottom_right": [
+            1421,
+            1705
+          ],
+          "bottom_left": [
+            1338,
+            1704
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0004.jpg",
-    "messages": ["4A0014"]
+    "image": "images/0004.jpg",
+    "tags": [
+      {
+        "message": "4A0014",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1407,
+            1286
+          ],
+          "top_right": [
+            1841,
+            1260
+          ],
+          "bottom_right": [
+            1832,
+            1718
+          ],
+          "bottom_left": [
+            1401,
+            1726
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0005.jpg",
-    "messages": ["4A00D1"]
+    "image": "images/0005.jpg",
+    "tags": [
+      {
+        "message": "4A00D1",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            483,
+            487
+          ],
+          "top_right": [
+            543,
+            490
+          ],
+          "bottom_right": [
+            546,
+            540
+          ],
+          "bottom_left": [
+            484,
+            538
+          ]
+        }
+      },
+      {
+        "message": "4A00D1",
+        "conditions": [
+          "oblique"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            885,
+            572
+          ],
+          "top_right": [
+            901,
+            580
+          ],
+          "bottom_right": [
+            918,
+            623
+          ],
+          "bottom_left": [
+            905,
+            615
+          ]
+        }
+      },
+      {
+        "message": "4A00D1",
+        "conditions": [],
+        "scorable": false,
+        "description": "oblique\r\npixelated",
+        "location": {
+          "top_left": [
+            102,
+            722
+          ],
+          "top_right": [
+            108,
+            719
+          ],
+          "bottom_right": [
+            104,
+            745
+          ],
+          "bottom_left": [
+            98,
+            748
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0006.jpg",
-    "messages": ["4A006E"]
+    "image": "images/0006.jpg",
+    "tags": [
+      {
+        "message": "4A006E",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            514,
+            749
+          ],
+          "top_right": [
+            649,
+            741
+          ],
+          "bottom_right": [
+            649,
+            896
+          ],
+          "bottom_left": [
+            511,
+            897
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0007.jpg",
-    "messages": ["4A0431"]
+    "image": "images/0007.jpg",
+    "tags": [
+      {
+        "message": "4A0431",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2120,
+            1771
+          ],
+          "top_right": [
+            2180,
+            1766
+          ],
+          "bottom_right": [
+            2177,
+            1831
+          ],
+          "bottom_left": [
+            2117,
+            1835
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0008.jpg",
-    "messages": ["4A00D9"]
+    "image": "images/0008.jpg",
+    "tags": [
+      {
+        "message": "4A00D9",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1931,
+            1828
+          ],
+          "top_right": [
+            2236,
+            1818
+          ],
+          "bottom_right": [
+            2218,
+            2108
+          ],
+          "bottom_left": [
+            1897,
+            2114
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0009.jpg",
-    "messages": ["4A0076"]
+    "image": "images/0009.jpg",
+    "tags": [
+      {
+        "message": "4A0076",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            817,
+            965
+          ],
+          "top_right": [
+            1271,
+            1122
+          ],
+          "bottom_right": [
+            1106,
+            1343
+          ],
+          "bottom_left": [
+            577,
+            1161
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0010.jpg",
-    "messages": ["4A01FB"]
+    "image": "images/0010.jpg",
+    "tags": [
+      {
+        "message": "4A01FB",
+        "conditions": [
+          "dirty"
+        ],
+        "location": {
+          "top_left": [
+            2126,
+            977
+          ],
+          "top_right": [
+            2273,
+            972
+          ],
+          "bottom_right": [
+            2271,
+            1113
+          ],
+          "bottom_left": [
+            2123,
+            1117
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0011.jpg",
-    "messages": ["4A0157"]
+    "image": "images/0011.jpg",
+    "tags": [
+      {
+        "message": "4A0157",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            775,
+            1923
+          ],
+          "top_right": [
+            845,
+            1915
+          ],
+          "bottom_right": [
+            838,
+            2000
+          ],
+          "bottom_left": [
+            767,
+            2007
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0012.jpg",
-    "messages": ["4A0157", "4A025A"]
+    "image": "images/0012.jpg",
+    "tags": [
+      {
+        "message": "4A0157",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            816,
+            1581
+          ],
+          "top_right": [
+            894,
+            1584
+          ],
+          "bottom_right": [
+            890,
+            1651
+          ],
+          "bottom_left": [
+            813,
+            1650
+          ]
+        }
+      },
+      {
+        "message": "4A025A",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2678,
+            1694
+          ],
+          "top_right": [
+            2746,
+            1693
+          ],
+          "bottom_right": [
+            2742,
+            1770
+          ],
+          "bottom_left": [
+            2674,
+            1770
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0013.jpg",
-    "messages": ["4A0157", "4A025A"]
+    "image": "images/0013.jpg",
+    "tags": [
+      {
+        "message": "4A0157",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            832,
+            1618
+          ],
+          "top_right": [
+            885,
+            1620
+          ],
+          "bottom_right": [
+            880,
+            1671
+          ],
+          "bottom_left": [
+            829,
+            1671
+          ]
+        }
+      },
+      {
+        "message": "4A025A",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2258,
+            1687
+          ],
+          "top_right": [
+            2313,
+            1684
+          ],
+          "bottom_right": [
+            2306,
+            1760
+          ],
+          "bottom_left": [
+            2251,
+            1761
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0014.jpg",
-    "messages": ["4A0157"]
+    "image": "images/0014.jpg",
+    "tags": [
+      {
+        "message": "4A0157",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1486,
+            1541
+          ],
+          "top_right": [
+            1555,
+            1557
+          ],
+          "bottom_right": [
+            1570,
+            1655
+          ],
+          "bottom_left": [
+            1495,
+            1643
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0015.jpg",
-    "messages": ["4A0157"]
+    "image": "images/0015.jpg",
+    "tags": [
+      {
+        "message": "4A0157",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1416,
+            1458
+          ],
+          "top_right": [
+            1535,
+            1448
+          ],
+          "bottom_right": [
+            1531,
+            1575
+          ],
+          "bottom_left": [
+            1410,
+            1582
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0016.jpg",
-    "messages": ["4A0A02"]
+    "image": "images/0016.jpg",
+    "tags": [
+      {
+        "message": "4A0A02",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1524,
+            1190
+          ],
+          "top_right": [
+            1684,
+            1178
+          ],
+          "bottom_right": [
+            1685,
+            1345
+          ],
+          "bottom_left": [
+            1526,
+            1356
+          ]
+        }
+      },
+      {
+        "message": null,
+        "conditions": [
+          "distant"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            2278,
+            1871
+          ],
+          "top_right": [
+            2296,
+            1871
+          ],
+          "bottom_right": [
+            2296,
+            1889
+          ],
+          "bottom_left": [
+            2278,
+            1889
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0017.jpg",
-    "messages": ["4A008C"]
+    "image": "images/0017.jpg",
+    "tags": [
+      {
+        "message": "4A008C",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1321,
+            1154
+          ],
+          "top_right": [
+            2376,
+            1161
+          ],
+          "bottom_right": [
+            2450,
+            1990
+          ],
+          "bottom_left": [
+            1280,
+            1985
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0018.jpg",
-    "messages": ["4A005C"]
+    "image": "images/0018.jpg",
+    "tags": [
+      {
+        "message": "4A005C",
+        "conditions": [
+          "partial shadow"
+        ],
+        "location": {
+          "top_left": [
+            1817,
+            526
+          ],
+          "top_right": [
+            2305,
+            267
+          ],
+          "bottom_right": [
+            2269,
+            928
+          ],
+          "bottom_left": [
+            1781,
+            1094
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0019.jpg",
-    "messages": ["4A043D"]
+    "image": "images/0019.jpg",
+    "tags": [
+      {
+        "message": "4A043D",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1102,
+            343
+          ],
+          "top_right": [
+            1538,
+            331
+          ],
+          "bottom_right": [
+            1540,
+            724
+          ],
+          "bottom_left": [
+            1094,
+            736
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0020.jpg",
-    "messages": ["4A043D"]
+    "image": "images/0020.jpg",
+    "tags": [
+      {
+        "message": "4A043D",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1903,
+            205
+          ],
+          "top_right": [
+            2179,
+            204
+          ],
+          "bottom_right": [
+            2185,
+            462
+          ],
+          "bottom_left": [
+            1902,
+            465
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0021.jpg",
-    "messages": ["4A00C3"]
+    "image": "images/0021.jpg",
+    "tags": [
+      {
+        "message": "4A00C3",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2053,
+            1707
+          ],
+          "top_right": [
+            2147,
+            1704
+          ],
+          "bottom_right": [
+            2133,
+            1793
+          ],
+          "bottom_left": [
+            2038,
+            1793
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0022.jpg",
-    "messages": ["4A03CC"]
+    "image": "images/0022.jpg",
+    "tags": [
+      {
+        "message": "4A03CC",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            575,
+            1574
+          ],
+          "top_right": [
+            709,
+            1579
+          ],
+          "bottom_right": [
+            712,
+            1707
+          ],
+          "bottom_left": [
+            578,
+            1704
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0023.jpg",
-    "messages": ["4A0240", "4A010F"]
+    "image": "images/0023.jpg",
+    "tags": [
+      {
+        "message": "4A0240",
+        "conditions": [
+          "dirty"
+        ],
+        "location": {
+          "top_left": [
+            27,
+            1009
+          ],
+          "top_right": [
+            117,
+            1006
+          ],
+          "bottom_right": [
+            92,
+            1097
+          ],
+          "bottom_left": [
+            2,
+            1101
+          ]
+        }
+      },
+      {
+        "message": "4A010F",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2411,
+            1107
+          ],
+          "top_right": [
+            2496,
+            1100
+          ],
+          "bottom_right": [
+            2510,
+            1174
+          ],
+          "bottom_left": [
+            2424,
+            1181
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0024.jpg",
-    "messages": ["4A010F", "4A0240"]
+    "image": "images/0024.jpg",
+    "tags": [
+      {
+        "message": "4A010F",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1936,
+            997
+          ],
+          "top_right": [
+            1986,
+            993
+          ],
+          "bottom_right": [
+            1994,
+            1037
+          ],
+          "bottom_left": [
+            1943,
+            1040
+          ]
+        }
+      },
+      {
+        "message": "4A0240",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            472,
+            958
+          ],
+          "top_right": [
+            523,
+            956
+          ],
+          "bottom_right": [
+            510,
+            1009
+          ],
+          "bottom_left": [
+            459,
+            1011
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0025.jpg",
-    "messages": ["4A030D"]
+    "image": "images/0025.jpg",
+    "tags": [
+      {
+        "message": "4A030D",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1068,
+            1400
+          ],
+          "top_right": [
+            1598,
+            1331
+          ],
+          "bottom_right": [
+            1565,
+            1759
+          ],
+          "bottom_left": [
+            979,
+            1818
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0026.jpg",
-    "messages": ["4A0231"]
+    "image": "images/0026.jpg",
+    "tags": [
+      {
+        "message": "4A0231",
+        "conditions": [
+          "dirty"
+        ],
+        "location": {
+          "top_left": [
+            1528,
+            1613
+          ],
+          "top_right": [
+            1620,
+            1607
+          ],
+          "bottom_right": [
+            1612,
+            1702
+          ],
+          "bottom_left": [
+            1520,
+            1708
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0027.jpg",
-    "messages": ["4A00ED"]
+    "image": "images/0027.jpg",
+    "tags": [
+      {
+        "message": "4A00ED",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2321,
+            1406
+          ],
+          "top_right": [
+            2399,
+            1408
+          ],
+          "bottom_right": [
+            2413,
+            1487
+          ],
+          "bottom_left": [
+            2336,
+            1484
+          ]
+        }
+      },
+      {
+        "message": "4A00ED",
+        "conditions": [
+          "oblique"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            1711,
+            1446
+          ],
+          "top_right": [
+            1733,
+            1438
+          ],
+          "bottom_right": [
+            1705,
+            1512
+          ],
+          "bottom_left": [
+            1688,
+            1519
+          ]
+        }
+      },
+      {
+        "message": null,
+        "conditions": [
+          "dirty",
+          "pixelated"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            1199,
+            1421
+          ],
+          "top_right": [
+            1228,
+            1426
+          ],
+          "bottom_right": [
+            1230,
+            1470
+          ],
+          "bottom_left": [
+            1201,
+            1466
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0028.jpg",
-    "messages": ["4A0121"]
+    "image": "images/0028.jpg",
+    "tags": [
+      {
+        "message": "4A0121",
+        "conditions": [
+          "night"
+        ],
+        "location": {
+          "top_left": [
+            2117,
+            2070
+          ],
+          "top_right": [
+            2162,
+            2068
+          ],
+          "bottom_right": [
+            2164,
+            2109
+          ],
+          "bottom_left": [
+            2119,
+            2110
+          ]
+        }
+      },
+      {
+        "message": "4A0121",
+        "conditions": [
+          "night"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            1769,
+            2093
+          ],
+          "top_right": [
+            1795,
+            2091
+          ],
+          "bottom_right": [
+            1788,
+            2127
+          ],
+          "bottom_left": [
+            1762,
+            2130
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0029.jpg",
-    "messages": ["4A010F"]
+    "image": "images/0029.jpg",
+    "tags": [
+      {
+        "message": "4A010F",
+        "conditions": [
+          "night",
+          "dark"
+        ],
+        "location": {
+          "top_left": [
+            1420,
+            1403
+          ],
+          "top_right": [
+            1578,
+            1416
+          ],
+          "bottom_right": [
+            1575,
+            1563
+          ],
+          "bottom_left": [
+            1414,
+            1553
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0030.jpg",
-    "messages": ["4A01B3"]
+    "image": "images/0030.jpg",
+    "tags": [
+      {
+        "message": "4A01B3",
+        "conditions": [
+          "dark",
+          "reflection"
+        ],
+        "location": {
+          "top_left": [
+            1373,
+            1430
+          ],
+          "top_right": [
+            1564,
+            1427
+          ],
+          "bottom_right": [
+            1564,
+            1617
+          ],
+          "bottom_left": [
+            1372,
+            1623
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0031.jpg",
-    "messages": null,
-    "conditions": ["blur"]
+    "image": "images/0031.jpg",
+    "tags": [
+      {
+        "message": null,
+        "conditions": [
+          "blurry",
+          "night",
+          "dark"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            1021,
+            1525
+          ],
+          "top_right": [
+            1090,
+            1528
+          ],
+          "bottom_right": [
+            1086,
+            1598
+          ],
+          "bottom_left": [
+            1017,
+            1594
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0032.jpg",
-    "messages": ["4A00EB"]
+    "image": "images/0032.jpg",
+    "tags": [
+      {
+        "message": "4A00EB",
+        "conditions": [
+          "blurry",
+          "night",
+          "dark"
+        ],
+        "scorable": false,
+        "description": "Message identified from images/0033.jpg.",
+        "location": {
+          "top_left": [
+            870,
+            1744
+          ],
+          "top_right": [
+            960,
+            1740
+          ],
+          "bottom_right": [
+            960,
+            1817
+          ],
+          "bottom_left": [
+            868,
+            1823
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0033.jpg",
-    "messages": ["4A00EB"]
+    "image": "images/0033.jpg",
+    "tags": [
+      {
+        "message": "4A00EB",
+        "conditions": [
+          "dark",
+          "night"
+        ],
+        "location": {
+          "top_left": [
+            1656,
+            1632
+          ],
+          "top_right": [
+            1741,
+            1629
+          ],
+          "bottom_right": [
+            1740,
+            1713
+          ],
+          "bottom_left": [
+            1655,
+            1715
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0034.jpg",
-    "messages": ["4A00EB"]
+    "image": "images/0034.jpg",
+    "tags": [
+      {
+        "message": "4A00EB",
+        "conditions": [
+          "night",
+          "dark"
+        ],
+        "location": {
+          "top_left": [
+            2786,
+            304
+          ],
+          "top_right": [
+            2895,
+            293
+          ],
+          "bottom_right": [
+            2884,
+            401
+          ],
+          "bottom_left": [
+            2776,
+            413
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0035.jpg",
-    "messages": ["4A010F"]
+    "image": "images/0035.jpg",
+    "tags": [
+      {
+        "message": "4A010F",
+        "conditions": [
+          "dark",
+          "night"
+        ],
+        "location": {
+          "top_left": [
+            1020,
+            1577
+          ],
+          "top_right": [
+            1119,
+            1577
+          ],
+          "bottom_right": [
+            1116,
+            1668
+          ],
+          "bottom_left": [
+            1017,
+            1668
+          ]
+        }
+      },
+      {
+        "message": "4A010F",
+        "conditions": [
+          "dark",
+          "night"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            1870,
+            1617
+          ],
+          "top_right": [
+            1938,
+            1626
+          ],
+          "bottom_right": [
+            1952,
+            1715
+          ],
+          "bottom_left": [
+            1890,
+            1710
+          ]
+        }
+      },
+      {
+        "message": "4A010F",
+        "conditions": [
+          "dark",
+          "night",
+          "oblique",
+          "pixelated"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            216,
+            1715
+          ],
+          "top_right": [
+            242,
+            1707
+          ],
+          "bottom_right": [
+            236,
+            1815
+          ],
+          "bottom_left": [
+            215,
+            1813
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0036.jpg",
-    "messages": ["4A0193"]
+    "image": "images/0036.jpg",
+    "tags": [
+      {
+        "message": "4A0193",
+        "conditions": [
+          "dirty"
+        ],
+        "location": {
+          "top_left": [
+            2282,
+            2465
+          ],
+          "top_right": [
+            2383,
+            2468
+          ],
+          "bottom_right": [
+            2389,
+            2572
+          ],
+          "bottom_left": [
+            2287,
+            2571
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0037.jpg",
-    "messages": ["4A0193"]
+    "image": "images/0037.jpg",
+    "tags": [
+      {
+        "message": "4A0193",
+        "conditions": [
+          "dirty"
+        ],
+        "location": {
+          "top_left": [
+            1933,
+            2319
+          ],
+          "top_right": [
+            1999,
+            2312
+          ],
+          "bottom_right": [
+            1994,
+            2398
+          ],
+          "bottom_left": [
+            1927,
+            2404
+          ]
+        }
+      },
+      {
+        "message": "4A0193",
+        "conditions": [
+          "oblique",
+          "obscured",
+          "distant"
+        ],
+        "location": {
+          "top_left": [
+            180,
+            2529
+          ],
+          "top_right": [
+            188,
+            2528
+          ],
+          "bottom_right": [
+            185,
+            2582
+          ],
+          "bottom_left": [
+            179,
+            2584
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0038.jpg",
-    "messages": ["4A0193"]
+    "image": "images/0038.jpg",
+    "tags": [
+      {
+        "message": "4A0193",
+        "conditions": [
+          "oblique",
+          "distant"
+        ],
+        "location": {
+          "top_left": [
+            2107,
+            2450
+          ],
+          "top_right": [
+            2142,
+            2454
+          ],
+          "bottom_right": [
+            2149,
+            2515
+          ],
+          "bottom_left": [
+            2113,
+            2513
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0039.jpg",
-    "messages": ["4A0193"]
+    "image": "images/0039.jpg",
+    "tags": [
+      {
+        "message": "4A0193",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1454,
+            1498
+          ],
+          "top_right": [
+            1528,
+            1487
+          ],
+          "bottom_right": [
+            1522,
+            1610
+          ],
+          "bottom_left": [
+            1449,
+            1620
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0040.jpg",
-    "messages": ["4A0A19"]
+    "image": "images/0040.jpg",
+    "tags": [
+      {
+        "message": "4A0A19",
+        "conditions": [
+          "distant"
+        ],
+        "location": {
+          "top_left": [
+            1615,
+            1791
+          ],
+          "top_right": [
+            1664,
+            1791
+          ],
+          "bottom_right": [
+            1664,
+            1841
+          ],
+          "bottom_left": [
+            1615,
+            1842
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0041.jpg",
-    "messages": ["4A019F"]
+    "image": "images/0041.jpg",
+    "tags": [
+      {
+        "message": "4A019F",
+        "conditions": [
+          "dirty"
+        ],
+        "location": {
+          "top_left": [
+            1502,
+            1434
+          ],
+          "top_right": [
+            1587,
+            1453
+          ],
+          "bottom_right": [
+            1595,
+            1607
+          ],
+          "bottom_left": [
+            1509,
+            1592
+          ]
+        }
+      },
+      {
+        "message": "4A019F",
+        "conditions": [
+          "oblique",
+          "distant"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            2484,
+            1763
+          ],
+          "top_right": [
+            2495,
+            1768
+          ],
+          "bottom_right": [
+            2503,
+            1850
+          ],
+          "bottom_left": [
+            2495,
+            1847
+          ]
+        }
+      },
+      {
+        "message": "4A019F",
+        "conditions": [
+          "oblique",
+          "distant"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            2733,
+            1925
+          ],
+          "top_right": [
+            2738,
+            1927
+          ],
+          "bottom_right": [
+            2746,
+            1983
+          ],
+          "bottom_left": [
+            2740,
+            1982
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0042.jpg",
-    "messages": ["4A036E"]
+    "image": "images/0042.jpg",
+    "tags": [
+      {
+        "message": "4A036E",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2245,
+            2110
+          ],
+          "top_right": [
+            2464,
+            2150
+          ],
+          "bottom_right": [
+            2462,
+            2368
+          ],
+          "bottom_left": [
+            2242,
+            2332
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0043.jpg",
-    "messages": ["4A036E"]
+    "image": "images/0043.jpg",
+    "tags": [
+      {
+        "message": "4A036E",
+        "conditions": [
+          "oblique"
+        ],
+        "location": {
+          "top_left": [
+            1370,
+            2101
+          ],
+          "top_right": [
+            1482,
+            1933
+          ],
+          "bottom_right": [
+            1538,
+            1958
+          ],
+          "bottom_left": [
+            1428,
+            2125
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0044.jpg",
-    "messages": ["4A00EE"]
+    "image": "images/0044.jpg",
+    "tags": [
+      {
+        "message": "4A00EE",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1576,
+            2238
+          ],
+          "top_right": [
+            1634,
+            2240
+          ],
+          "bottom_right": [
+            1644,
+            2297
+          ],
+          "bottom_left": [
+            1586,
+            2297
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0045.jpg",
-    "messages": ["4A00EE"]
+    "image": "images/0045.jpg",
+    "tags": [
+      {
+        "message": "4A00EE",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1867,
+            2305
+          ],
+          "top_right": [
+            1923,
+            2307
+          ],
+          "bottom_right": [
+            1934,
+            2365
+          ],
+          "bottom_left": [
+            1877,
+            2365
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0046.jpg",
-    "messages": ["4A00EE", "4A00EE"]
+    "image": "images/0046.jpg",
+    "tags": [
+      {
+        "message": "4A00EE",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            3144,
+            2282
+          ],
+          "top_right": [
+            3194,
+            2283
+          ],
+          "bottom_right": [
+            3211,
+            2345
+          ],
+          "bottom_left": [
+            3160,
+            2346
+          ]
+        }
+      },
+      {
+        "message": "4A00EE",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1143,
+            2336
+          ],
+          "top_right": [
+            1201,
+            2336
+          ],
+          "bottom_right": [
+            1201,
+            2398
+          ],
+          "bottom_left": [
+            1142,
+            2399
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0047.jpg",
-    "messages": ["4A00EE"]
+    "image": "images/0047.jpg",
+    "tags": [
+      {
+        "message": "4A00EE",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1444,
+            2648
+          ],
+          "top_right": [
+            1484,
+            2646
+          ],
+          "bottom_right": [
+            1483,
+            2697
+          ],
+          "bottom_left": [
+            1443,
+            2700
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0048.jpg",
-    "messages": ["4A00EE"]
+    "image": "images/0048.jpg",
+    "tags": [
+      {
+        "message": "4A00EE",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1161,
+            2800
+          ],
+          "top_right": [
+            1214,
+            2801
+          ],
+          "bottom_right": [
+            1213,
+            2848
+          ],
+          "bottom_left": [
+            1159,
+            2848
+          ]
+        }
+      },
+      {
+        "message": "4A00EE",
+        "conditions": [
+          "oblique",
+          "distant"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            2222,
+            2873
+          ],
+          "top_right": [
+            2245,
+            2875
+          ],
+          "bottom_right": [
+            2246,
+            2913
+          ],
+          "bottom_left": [
+            2224,
+            2912
+          ]
+        }
+      },
+      {
+        "message": "4A00EE",
+        "conditions": [
+          "oblique",
+          "distant"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            3099,
+            2936
+          ],
+          "top_right": [
+            3110,
+            2936
+          ],
+          "bottom_right": [
+            3113,
+            2964
+          ],
+          "bottom_left": [
+            3100,
+            2963
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0049.jpg",
-    "messages": ["4A022C"]
+    "image": "images/0049.jpg",
+    "tags": [
+      {
+        "message": "4A022C",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2105,
+            1977
+          ],
+          "top_right": [
+            2241,
+            1979
+          ],
+          "bottom_right": [
+            2249,
+            2112
+          ],
+          "bottom_left": [
+            2112,
+            2110
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0050.jpg",
-    "messages": ["4A022C"]
+    "image": "images/0050.jpg",
+    "tags": [
+      {
+        "message": "4A022C",
+        "conditions": [
+          "blurry",
+          "motion"
+        ],
+        "location": {
+          "top_left": [
+            1675,
+            2309
+          ],
+          "top_right": [
+            1752,
+            2311
+          ],
+          "bottom_right": [
+            1764,
+            2396
+          ],
+          "bottom_left": [
+            1688,
+            2396
+          ]
+        }
+      },
+      {
+        "message": "4A022C",
+        "conditions": [
+          "oblique",
+          "distant",
+          "reflection"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            3088,
+            2383
+          ],
+          "top_right": [
+            3108,
+            2387
+          ],
+          "bottom_right": [
+            3118,
+            2435
+          ],
+          "bottom_left": [
+            3102,
+            2435
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0051.jpg",
-    "messages": ["4A02AD"]
+    "image": "images/0051.jpg",
+    "tags": [
+      {
+        "message": "4A02AD",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2031,
+            2253
+          ],
+          "top_right": [
+            2077,
+            2245
+          ],
+          "bottom_right": [
+            2074,
+            2325
+          ],
+          "bottom_left": [
+            2028,
+            2333
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0052.jpg",
-    "messages": ["4A008B"]
+    "image": "images/0052.jpg",
+    "tags": [
+      {
+        "message": "4A008B",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2329,
+            1356
+          ],
+          "top_right": [
+            2601,
+            1356
+          ],
+          "bottom_right": [
+            2594,
+            1625
+          ],
+          "bottom_left": [
+            2325,
+            1622
+          ]
+        }
+      },
+      {
+        "message": "4A008B",
+        "conditions": [
+          "reflected"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            2548,
+            917
+          ],
+          "top_right": [
+            2721,
+            989
+          ],
+          "bottom_right": [
+            2617,
+            1211
+          ],
+          "bottom_left": [
+            2400,
+            1144
+          ]
+        }
+      },
+      {
+        "message": "4A008B",
+        "conditions": [
+          "distant",
+          "pixelated"
+        ],
+        "location": {
+          "top_left": [
+            1927,
+            1777
+          ],
+          "top_right": [
+            1978,
+            1778
+          ],
+          "bottom_right": [
+            1978,
+            1829
+          ],
+          "bottom_left": [
+            1928,
+            1828
+          ]
+        }
+      },
+      {
+        "message": "4A008B",
+        "conditions": [
+          "distant",
+          "pixelated"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            1059,
+            1783
+          ],
+          "top_right": [
+            1110,
+            1783
+          ],
+          "bottom_right": [
+            1110,
+            1834
+          ],
+          "bottom_left": [
+            1059,
+            1834
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0053.jpg",
-    "messages": ["4A0183"]
+    "image": "images/0053.jpg",
+    "tags": [
+      {
+        "message": "4A0183",
+        "conditions": [
+          "blurry",
+          "dark",
+          "night"
+        ],
+        "location": {
+          "top_left": [
+            2519,
+            2145
+          ],
+          "top_right": [
+            2586,
+            2147
+          ],
+          "bottom_right": [
+            2586,
+            2217
+          ],
+          "bottom_left": [
+            2518,
+            2215
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0054.jpg",
-    "messages": ["4A00ED"]
+    "image": "images/0054.jpg",
+    "tags": [
+      {
+        "message": "4A00ED",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            4218,
+            1819
+          ],
+          "top_right": [
+            4272,
+            1816
+          ],
+          "bottom_right": [
+            4274,
+            1861
+          ],
+          "bottom_left": [
+            4221,
+            1865
+          ]
+        }
+      },
+      {
+        "message": "4A00ED",
+        "conditions": [
+          "distant",
+          "pixelated"
+        ],
+        "location": {
+          "top_left": [
+            2515,
+            2029
+          ],
+          "top_right": [
+            2526,
+            2028
+          ],
+          "bottom_right": [
+            2527,
+            2055
+          ],
+          "bottom_left": [
+            2516,
+            2056
+          ]
+        }
+      },
+      {
+        "message": "4A00ED",
+        "conditions": [
+          "distant",
+          "pixelated",
+          "oblique"
+        ],
+        "location": {
+          "top_left": [
+            2102,
+            2086
+          ],
+          "top_right": [
+            2111,
+            2085
+          ],
+          "bottom_right": [
+            2111,
+            2105
+          ],
+          "bottom_left": [
+            2103,
+            2106
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0055.jpg",
-    "messages": ["4A0217"]
+    "image": "images/0055.jpg",
+    "tags": [
+      {
+        "message": "4A0217",
+        "conditions": [
+          "dirty"
+        ],
+        "location": {
+          "top_left": [
+            2046,
+            3905
+          ],
+          "top_right": [
+            2099,
+            3905
+          ],
+          "bottom_right": [
+            2096,
+            3963
+          ],
+          "bottom_left": [
+            2043,
+            3964
+          ]
+        }
+      },
+      {
+        "message": "4A0217",
+        "conditions": [
+          "distant",
+          "blurry",
+          "dirty"
+        ],
+        "scorable": false,
+        "location": {
+          "top_left": [
+            2191,
+            2114
+          ],
+          "top_right": [
+            2230,
+            2114
+          ],
+          "bottom_right": [
+            2227,
+            2142
+          ],
+          "bottom_left": [
+            2188,
+            2143
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0056.jpg",
-    "messages": ["4A023B"]
+    "image": "images/0056.jpg",
+    "tags": [
+      {
+        "message": "4A023B",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            4136,
+            1663
+          ],
+          "top_right": [
+            4212,
+            1662
+          ],
+          "bottom_right": [
+            4211,
+            1732
+          ],
+          "bottom_left": [
+            4133,
+            1733
+          ]
+        }
+      },
+      {
+        "message": "4A023B",
+        "conditions": [
+          "distant",
+          "pixelated"
+        ],
+        "scorable": false,
+        "description": "Message inferred from tag 0 on the same tram; not independently readable.",
+        "location": {
+          "top_left": [
+            1122,
+            1776
+          ],
+          "top_right": [
+            1147,
+            1775
+          ],
+          "bottom_right": [
+            1136,
+            1813
+          ],
+          "bottom_left": [
+            1112,
+            1814
+          ]
+        }
+      }
+    ]
   },
   {
-    "image": "positives/0057.jpg",
-    "messages": ["4A023B", "4A023B"]
+    "image": "images/0057.jpg",
+    "tags": [
+      {
+        "message": "4A023B",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1331,
+            1597
+          ],
+          "top_right": [
+            1388,
+            1597
+          ],
+          "bottom_right": [
+            1380,
+            1665
+          ],
+          "bottom_left": [
+            1321,
+            1664
+          ]
+        }
+      },
+      {
+        "message": "4A023B",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            4244,
+            1633
+          ],
+          "top_right": [
+            4319,
+            1635
+          ],
+          "bottom_right": [
+            4322,
+            1703
+          ],
+          "bottom_left": [
+            4246,
+            1701
+          ]
+        }
+      }
+    ]
   }
 ]

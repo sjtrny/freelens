@@ -17,8 +17,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+viewer = [
+    "Flask>=3.1,<4",
+    "gunicorn>=23,<24",
+]
 test = [
     "black==26.3.1",
+    "Flask>=3.1,<4",
     "isort==5.13.2",
     "mdformat==1.0.0",
     "mdformat-gfm==1.0.0",

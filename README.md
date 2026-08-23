@@ -58,7 +58,7 @@ assert tag.crc_valid is None
 from freelens import detect_tags
 from PIL import Image
 
-img = Image.open("dataset/positives/0001.jpg")
+img = Image.open("dataset/images/0001.jpg")
 
 tags_list = detect_tags(
     img,
