@@ -666,6 +666,9 @@ def test_viewer_lists_tags_above_details_and_includes_resizable_panels(
     assert b".tag-list a::after" not in response.data
     assert b"cursor: pointer" in response.data
     assert b"justify-content: flex-start" in response.data
+    assert b"height: 1rem" in response.data
+    assert b"width: 1rem" in response.data
+    assert b'.corner-handle::before { content: ""; inset: -.5rem' in response.data
     assert b"transform: translate(-115%, -115%)" in response.data
     assert b"localStorage.setItem" in response.data
     assert b'.image-list a:not([aria-current="page"]):hover' in response.data

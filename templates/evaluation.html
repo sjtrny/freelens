@@ -157,6 +157,7 @@
         width: 1rem;
         z-index: 1;
       }
+      .corner-handle::before { content: ""; inset: -.5rem; position: absolute; }
       .corner-handle[data-corner="top_left"] { transform: translate(-115%, -115%); }
       .corner-handle[data-corner="top_right"] { transform: translate(15%, -115%); }
       .corner-handle[data-corner="bottom_right"] { transform: translate(15%, 15%); }
