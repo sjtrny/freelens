@@ -1,4 +1,6 @@
 import json
+from io import BytesIO
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -181,10 +183,18 @@ def test_viewer_selects_a_tag_and_draws_its_location(evaluation_manifest):
     assert b"AABBCC" in response.data
     assert b"occluded" in response.data
     assert (
-        b'<polygon data-overlay-polygon points="10,10 90,10 90,70 10,70">'
+        b"<polygon data-overlay-polygon data-bounding-region "
+        b'points="10,10 90,10 90,70 10,70">' in response.data
+    )
+    assert b'class="tag-overlay is-selected"' in response.data
+    assert b'data-tag-index="1" data-selected' in response.data
+    assert b".tag-overlay polygon { fill: #34c75922; stroke: #1e9e45" in response.data
+    assert (
+        b".tag-overlay.is-selected polygon { cursor: move; fill: #ff3b3033"
         in response.data
     )
     assert response.data.count(b'class="corner-handle"') == 4
+    assert b'data-initial-location="true"' in response.data
     assert b'data-corner="top_left"' in response.data
     assert b'data-x="10"' in response.data
     assert b'data-y="10"' in response.data
@@ -228,7 +238,8 @@ def test_viewer_updates_a_tag_and_redirects_to_its_details(evaluation_manifest):
     updated_page = client.get(response.headers["Location"]).data
     assert b"123ABC" in updated_page
     assert (
-        b'<polygon data-overlay-polygon points="5,6 70,6 70,60 5,60">' in updated_page
+        b"<polygon data-overlay-polygon data-bounding-region "
+        b'points="5,6 70,6 70,60 5,60">' in updated_page
     )
 
 
@@ -299,9 +310,24 @@ def test_viewer_renders_and_submits_an_editable_tag_form(evaluation_manifest):
     )
     assert b'status.classList.add("is-fading"), 10000' in response.data
     assert b".form-status.is-fading { opacity: 0; }" in response.data
+    assert b'event.target.closest("[data-add-location]")' in response.data
+    assert b"const left = Math.round(maximumX * 0.25)" in response.data
+    assert b'overlay?.dataset.initialLocation === "false"' in response.data
+    assert b'event.target.closest("[data-bounding-region]")' in response.data
+    assert b"imageWidth - 1 - maximumX" in response.data
+    assert b'event.target.closest("[data-image-stage] img")' in response.data
+    assert b"viewport.scrollLeft = startScrollLeft" in response.data
+    assert (
+        b'class="tag-preview" data-tag-preview data-url="/rectified/0.png"'
+        in response.data
+    )
+    assert b">Rectified tag</h2>" in response.data
+    assert b"scheduleTagPreview(form)" in response.data
+    assert b"image.src = url" in response.data
     assert response.data.index(b'class="form-actions"') < response.data.index(
         b"data-form-status"
     )
+    assert response.data.index(b"</form>") < response.data.index(b'class="tag-preview"')
 
 
 def test_viewer_handles_missing_locations_and_review_states(evaluation_manifest):
@@ -309,7 +335,24 @@ def test_viewer_handles_missing_locations_and_review_states(evaluation_manifest)
     app.config.update(TESTING=True)
     client = app.test_client()
 
-    assert b"<polygon" not in client.get("/?image=0&tag=0").data
+    missing_location = client.get("/?image=0&tag=0").data
+    assert b'data-selected data-initial-location="false" hidden' in missing_location
+    assert (
+        b"<polygon data-overlay-polygon data-bounding-region></polygon>"
+        in missing_location
+    )
+    assert (
+        b'<div class="tag-overlay" data-tag-overlay data-tag-index="1">'
+        in missing_location
+    )
+    assert b'points="10,10 90,10 90,70 10,70"' in missing_location
+    assert missing_location.count(b'class="corner-handle"') == 4
+    assert (
+        b'<button class="add-location" type="button" data-add-location>'
+        b"Add bounding box</button>" in missing_location
+    )
+    assert b'name="top_left_x" value=""' in missing_location
+    assert b"Add a complete location to see the tag region." in missing_location
     assert b"No tags" in client.get("/?image=1").data
     assert b"Not reviewed" in client.get("/?image=2").data
 
@@ -325,6 +368,11 @@ def test_viewer_includes_fit_and_zoom_controls(evaluation_manifest):
     assert b'data-action="zoom-in"' in response.data
     assert b'data-width="100" data-height="80"' in response.data
     assert b"imageObserver = new ResizeObserver(render)" in response.data
+    assert b'stage.addEventListener("wheel"' in response.data
+    assert b"{ passive: false }" in response.data
+    assert b"stage.dataset.zoom = zoom" in response.data
+    assert b"maximumZoom" not in response.data
+    assert b"zoomIn.disabled" not in response.data
 
 
 def test_viewer_uses_partial_navigation_to_preserve_list_scroll(evaluation_manifest):
@@ -337,7 +385,8 @@ def test_viewer_uses_partial_navigation_to_preserve_list_scroll(evaluation_manif
     assert b"await fetch(url" in response.data
     assert b"new DOMParser()" in response.data
     assert b'document.querySelector("main").replaceWith(nextMain)' in response.data
-    assert b'stage.querySelector("[data-tag-overlay]")?.remove()' in response.data
+    assert b'stage.querySelectorAll("[data-tag-overlay]")' in response.data
+    assert b'nextMain.querySelectorAll("[data-tag-overlay]")' in response.data
     assert b'activeImage?.scrollIntoView({ block: "nearest" })' in response.data
     assert b'history.pushState(null, "", response.url)' in response.data
     assert b'window.addEventListener("popstate"' in response.data
@@ -395,3 +444,58 @@ def test_viewer_serves_only_manifest_image_indexes(evaluation_manifest):
     assert client.get("/image/99").status_code == 404
     assert client.get("/?image=99").status_code == 404
     assert client.get("/?image=0&tag=99").status_code == 404
+
+
+def test_viewer_rectifies_current_coordinates_to_a_square(evaluation_manifest):
+    app = create_app(evaluation_manifest)
+    app.config.update(TESTING=True)
+    client = app.test_client()
+    query = {
+        "top_left_x": 10,
+        "top_left_y": 10,
+        "top_right_x": 90,
+        "top_right_y": 10,
+        "bottom_right_x": 90,
+        "bottom_right_y": 70,
+        "bottom_left_x": 10,
+        "bottom_left_y": 70,
+    }
+
+    response = client.get("/rectified/0.png", query_string=query)
+
+    assert response.status_code == 200
+    assert response.mimetype == "image/png"
+    assert response.headers["Cache-Control"] == "no-store"
+    with Image.open(BytesIO(response.data)) as image:
+        assert image.size == (320, 320)
+        assert image.getpixel((160, 160)) == (255, 255, 255)
+
+
+def test_viewer_rejects_invalid_rectification_coordinates(evaluation_manifest):
+    app = create_app(evaluation_manifest)
+    app.config.update(TESTING=True)
+    client = app.test_client()
+    degenerate = {
+        "top_left_x": 10,
+        "top_left_y": 10,
+        "top_right_x": 20,
+        "top_right_y": 20,
+        "bottom_right_x": 30,
+        "bottom_right_y": 30,
+        "bottom_left_x": 40,
+        "bottom_left_y": 40,
+    }
+    outside = dict(degenerate, top_right_x=100)
+
+    assert client.get("/rectified/0.png").status_code == 400
+    assert client.get("/rectified/0.png", query_string=degenerate).status_code == 400
+    assert client.get("/rectified/0.png", query_string=outside).status_code == 400
+    assert client.get("/rectified/99.png", query_string=degenerate).status_code == 404
+
+
+def test_compose_bind_mounts_the_repository_dataset_for_edits():
+    compose = (Path(__file__).parents[1] / "compose.yaml").read_text(encoding="utf-8")
+
+    assert "${VIEWER_DATASET_PATH:-./dataset}:/app/dataset" in compose
+    assert "${VIEWER_UID:-1000}:${VIEWER_GID:-1000}" in compose
+    assert "evaluation-data" not in compose

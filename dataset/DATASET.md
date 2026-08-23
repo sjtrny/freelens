@@ -50,21 +50,30 @@ docker compose up --build
 ```
 
 Open http://localhost:8899 on the Docker host, or use the host's address from another
-machine. Compose publishes port 8899 on all host interfaces. Drag any of a located tag's
-four corner handles to update its outline and coordinate fields. Use Save to persist or
-Cancel to restore all unsaved changes. Tag edits are validated and atomically replace
-`evaluation.json` in the `evaluation-data` Docker volume, the container's only writable
-application path. The volume persists across container and image rebuilds. Export the
-edited manifest back to the project with:
+machine. Compose publishes port 8899 on all host interfaces. Located tags are outlined
+in green; selecting one changes it to red and displays its four draggable corner
+handles. Use Save to persist or Cancel to restore all unsaved changes. For a tag without
+a location, use Add bounding box to create an adjustable centered rectangle. Drag inside
+a box to move the whole region; when zoomed in, drag elsewhere on the image to pan.
+Scrolling over the image zooms around the pointer without an upper zoom limit. Tag edits
+also update the square, perspective-corrected preview below the details. Tag edits are
+validated and atomically replace `dataset/evaluation.json` directly in the repository
+through Compose's writable `./dataset:/app/dataset` bind mount. Every other application
+path remains read-only.
+
+Compose runs as UID/GID 1000 by default. On Linux, override these values if the checkout
+has a different owner. If Docker runs outside a development container, also set
+`VIEWER_DATASET_PATH` to the checkout path visible to the Docker daemon. These values
+may be placed in the ignored `.env` file:
 
 ```bash
-docker compose cp evaluation-viewer:/app/dataset/evaluation.json dataset/evaluation.json
+VIEWER_DATASET_PATH=/daemon/path/to/freelens/dataset
+VIEWER_UID=1000
+VIEWER_GID=1000
 ```
 
 The viewer has no user authentication, so expose it only on a trusted network. Stop the
-service with `docker compose down`. Removing the volume with
-`docker compose down --volumes` discards edits and seeds a fresh dataset from the image
-on the next start.
+service with `docker compose down`.
 
 ## PyCon AU 2024 Contributors
 

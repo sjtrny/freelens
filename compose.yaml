@@ -6,12 +6,10 @@ services:
       dockerfile: Dockerfile.viewer
     init: true
     read_only: true
+    user: "${VIEWER_UID:-1000}:${VIEWER_GID:-1000}"
     volumes:
-      - evaluation-data:/app/dataset
+      - ${VIEWER_DATASET_PATH:-./dataset}:/app/dataset
     tmpfs:
       - /tmp:size=16m,mode=1777
     ports:
       - 8899:8899
-
-volumes:
-  evaluation-data:

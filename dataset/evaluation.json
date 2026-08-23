@@ -19,12 +19,12 @@
             1797
           ],
           "bottom_right": [
-            1763,
+            1765,
             1909
           ],
           "bottom_left": [
             1661,
-            1901
+            1903
           ]
         }
       }
@@ -35,7 +35,25 @@
     "tags": [
       {
         "message": "4A005C",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1421,
+            1749
+          ],
+          "top_right": [
+            1774,
+            1666
+          ],
+          "bottom_right": [
+            1759,
+            2202
+          ],
+          "bottom_left": [
+            1394,
+            2222
+          ]
+        }
       }
     ]
   },
@@ -44,7 +62,25 @@
     "tags": [
       {
         "message": "4A02B3",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1344,
+            1621
+          ],
+          "top_right": [
+            1428,
+            1624
+          ],
+          "bottom_right": [
+            1421,
+            1706
+          ],
+          "bottom_left": [
+            1337,
+            1703
+          ]
+        }
       }
     ]
   },
@@ -53,7 +89,25 @@
     "tags": [
       {
         "message": "4A0014",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1407,
+            1286
+          ],
+          "top_right": [
+            1841,
+            1260
+          ],
+          "bottom_right": [
+            1832,
+            1718
+          ],
+          "bottom_left": [
+            1401,
+            1726
+          ]
+        }
       }
     ]
   },
@@ -62,7 +116,25 @@
     "tags": [
       {
         "message": "4A00D1",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            482,
+            487
+          ],
+          "top_right": [
+            541,
+            490
+          ],
+          "bottom_right": [
+            546,
+            540
+          ],
+          "bottom_left": [
+            485,
+            539
+          ]
+        }
       }
     ]
   },
@@ -71,7 +143,25 @@
     "tags": [
       {
         "message": "4A006E",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            512,
+            750
+          ],
+          "top_right": [
+            648,
+            739
+          ],
+          "bottom_right": [
+            649,
+            895
+          ],
+          "bottom_left": [
+            511,
+            899
+          ]
+        }
       }
     ]
   },
@@ -80,7 +170,25 @@
     "tags": [
       {
         "message": "4A0431",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2119,
+            1770
+          ],
+          "top_right": [
+            2180,
+            1764
+          ],
+          "bottom_right": [
+            2177,
+            1831
+          ],
+          "bottom_left": [
+            2116,
+            1836
+          ]
+        }
       }
     ]
   },
@@ -89,7 +197,25 @@
     "tags": [
       {
         "message": "4A00D9",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1931,
+            1828
+          ],
+          "top_right": [
+            2236,
+            1818
+          ],
+          "bottom_right": [
+            2218,
+            2108
+          ],
+          "bottom_left": [
+            1897,
+            2114
+          ]
+        }
       }
     ]
   },
@@ -98,7 +224,25 @@
     "tags": [
       {
         "message": "4A0076",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            824,
+            954
+          ],
+          "top_right": [
+            1281,
+            1123
+          ],
+          "bottom_right": [
+            1111,
+            1354
+          ],
+          "bottom_left": [
+            568,
+            1147
+          ]
+        }
       }
     ]
   },
@@ -107,7 +251,25 @@
     "tags": [
       {
         "message": "4A01FB",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2126,
+            977
+          ],
+          "top_right": [
+            2273,
+            972
+          ],
+          "bottom_right": [
+            2271,
+            1113
+          ],
+          "bottom_left": [
+            2122,
+            1117
+          ]
+        }
       }
     ]
   },
@@ -116,7 +278,25 @@
     "tags": [
       {
         "message": "4A0157",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            774,
+            1923
+          ],
+          "top_right": [
+            844,
+            1913
+          ],
+          "bottom_right": [
+            838,
+            2000
+          ],
+          "bottom_left": [
+            768,
+            2008
+          ]
+        }
       }
     ]
   },
@@ -125,11 +305,47 @@
     "tags": [
       {
         "message": "4A0157",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            816,
+            1581
+          ],
+          "top_right": [
+            893,
+            1583
+          ],
+          "bottom_right": [
+            890,
+            1649
+          ],
+          "bottom_left": [
+            812,
+            1650
+          ]
+        }
       },
       {
         "message": "4A025A",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2676,
+            1694
+          ],
+          "top_right": [
+            2746,
+            1691
+          ],
+          "bottom_right": [
+            2743,
+            1769
+          ],
+          "bottom_left": [
+            2674,
+            1770
+          ]
+        }
       }
     ]
   },
@@ -138,11 +354,47 @@
     "tags": [
       {
         "message": "4A0157",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            832,
+            1618
+          ],
+          "top_right": [
+            885,
+            1620
+          ],
+          "bottom_right": [
+            879,
+            1672
+          ],
+          "bottom_left": [
+            827,
+            1671
+          ]
+        }
       },
       {
         "message": "4A025A",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2256,
+            1687
+          ],
+          "top_right": [
+            2314,
+            1683
+          ],
+          "bottom_right": [
+            2307,
+            1759
+          ],
+          "bottom_left": [
+            2252,
+            1762
+          ]
+        }
       }
     ]
   },
@@ -151,7 +403,25 @@
     "tags": [
       {
         "message": "4A0157",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1485,
+            1540
+          ],
+          "top_right": [
+            1555,
+            1557
+          ],
+          "bottom_right": [
+            1570,
+            1657
+          ],
+          "bottom_left": [
+            1491,
+            1645
+          ]
+        }
       }
     ]
   },
@@ -160,7 +430,25 @@
     "tags": [
       {
         "message": "4A0157",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1414,
+            1459
+          ],
+          "top_right": [
+            1535,
+            1448
+          ],
+          "bottom_right": [
+            1531,
+            1575
+          ],
+          "bottom_left": [
+            1411,
+            1584
+          ]
+        }
       }
     ]
   },
@@ -169,7 +457,25 @@
     "tags": [
       {
         "message": "4A0A02",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1523,
+            1190
+          ],
+          "top_right": [
+            1683,
+            1177
+          ],
+          "bottom_right": [
+            1685,
+            1345
+          ],
+          "bottom_left": [
+            1526,
+            1357
+          ]
+        }
       }
     ]
   },
@@ -178,7 +484,25 @@
     "tags": [
       {
         "message": "4A008C",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1321,
+            1154
+          ],
+          "top_right": [
+            2376,
+            1161
+          ],
+          "bottom_right": [
+            2450,
+            1990
+          ],
+          "bottom_left": [
+            1280,
+            1985
+          ]
+        }
       }
     ]
   },
@@ -187,7 +511,25 @@
     "tags": [
       {
         "message": "4A005C",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1817,
+            526
+          ],
+          "top_right": [
+            2305,
+            267
+          ],
+          "bottom_right": [
+            2269,
+            928
+          ],
+          "bottom_left": [
+            1781,
+            1094
+          ]
+        }
       }
     ]
   },
@@ -196,7 +538,25 @@
     "tags": [
       {
         "message": "4A043D",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1102,
+            343
+          ],
+          "top_right": [
+            1538,
+            331
+          ],
+          "bottom_right": [
+            1539,
+            726
+          ],
+          "bottom_left": [
+            1094,
+            736
+          ]
+        }
       }
     ]
   },
@@ -205,7 +565,25 @@
     "tags": [
       {
         "message": "4A043D",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1902,
+            204
+          ],
+          "top_right": [
+            2181,
+            203
+          ],
+          "bottom_right": [
+            2184,
+            463
+          ],
+          "bottom_left": [
+            1899,
+            464
+          ]
+        }
       }
     ]
   },
@@ -214,7 +592,25 @@
     "tags": [
       {
         "message": "4A00C3",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2053,
+            1705
+          ],
+          "top_right": [
+            2147,
+            1704
+          ],
+          "bottom_right": [
+            2132,
+            1793
+          ],
+          "bottom_left": [
+            2036,
+            1792
+          ]
+        }
       }
     ]
   },
@@ -223,7 +619,25 @@
     "tags": [
       {
         "message": "4A03CC",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            573,
+            1575
+          ],
+          "top_right": [
+            708,
+            1577
+          ],
+          "bottom_right": [
+            714,
+            1706
+          ],
+          "bottom_left": [
+            578,
+            1705
+          ]
+        }
       }
     ]
   },
@@ -232,11 +646,47 @@
     "tags": [
       {
         "message": "4A0240",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            27,
+            1007
+          ],
+          "top_right": [
+            119,
+            1006
+          ],
+          "bottom_right": [
+            93,
+            1098
+          ],
+          "bottom_left": [
+            1,
+            1101
+          ]
+        }
       },
       {
         "message": "4A010F",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2410,
+            1107
+          ],
+          "top_right": [
+            2496,
+            1099
+          ],
+          "bottom_right": [
+            2510,
+            1174
+          ],
+          "bottom_left": [
+            2424,
+            1181
+          ]
+        }
       }
     ]
   },
@@ -245,11 +695,47 @@
     "tags": [
       {
         "message": "4A010F",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1935,
+            997
+          ],
+          "top_right": [
+            1986,
+            992
+          ],
+          "bottom_right": [
+            1994,
+            1036
+          ],
+          "bottom_left": [
+            1943,
+            1041
+          ]
+        }
       },
       {
         "message": "4A0240",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            472,
+            956
+          ],
+          "top_right": [
+            525,
+            956
+          ],
+          "bottom_right": [
+            510,
+            1009
+          ],
+          "bottom_left": [
+            458,
+            1011
+          ]
+        }
       }
     ]
   },
@@ -258,7 +744,25 @@
     "tags": [
       {
         "message": "4A030D",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1068,
+            1400
+          ],
+          "top_right": [
+            1598,
+            1331
+          ],
+          "bottom_right": [
+            1565,
+            1759
+          ],
+          "bottom_left": [
+            979,
+            1818
+          ]
+        }
       }
     ]
   },
@@ -267,7 +771,25 @@
     "tags": [
       {
         "message": "4A0231",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1526,
+            1612
+          ],
+          "top_right": [
+            1621,
+            1605
+          ],
+          "bottom_right": [
+            1613,
+            1702
+          ],
+          "bottom_left": [
+            1519,
+            1710
+          ]
+        }
       }
     ]
   },
@@ -276,7 +798,25 @@
     "tags": [
       {
         "message": "4A00ED",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2320,
+            1406
+          ],
+          "top_right": [
+            2398,
+            1407
+          ],
+          "bottom_right": [
+            2413,
+            1487
+          ],
+          "bottom_left": [
+            2336,
+            1484
+          ]
+        }
       }
     ]
   },
@@ -285,7 +825,25 @@
     "tags": [
       {
         "message": "4A0121",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2116,
+            2071
+          ],
+          "top_right": [
+            2161,
+            2068
+          ],
+          "bottom_right": [
+            2164,
+            2109
+          ],
+          "bottom_left": [
+            2119,
+            2110
+          ]
+        }
       }
     ]
   },
@@ -294,7 +852,25 @@
     "tags": [
       {
         "message": "4A010F",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1420,
+            1402
+          ],
+          "top_right": [
+            1579,
+            1416
+          ],
+          "bottom_right": [
+            1577,
+            1565
+          ],
+          "bottom_left": [
+            1412,
+            1554
+          ]
+        }
       }
     ]
   },
@@ -303,7 +879,25 @@
     "tags": [
       {
         "message": "4A01B3",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1373,
+            1430
+          ],
+          "top_right": [
+            1564,
+            1427
+          ],
+          "bottom_right": [
+            1564,
+            1617
+          ],
+          "bottom_left": [
+            1372,
+            1623
+          ]
+        }
       }
     ]
   },
@@ -328,7 +922,25 @@
     "tags": [
       {
         "message": "4A00EB",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1655,
+            1632
+          ],
+          "top_right": [
+            1740,
+            1628
+          ],
+          "bottom_right": [
+            1739,
+            1711
+          ],
+          "bottom_left": [
+            1655,
+            1716
+          ]
+        }
       }
     ]
   },
@@ -337,7 +949,25 @@
     "tags": [
       {
         "message": "4A00EB",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2785,
+            304
+          ],
+          "top_right": [
+            2895,
+            291
+          ],
+          "bottom_right": [
+            2884,
+            401
+          ],
+          "bottom_left": [
+            2776,
+            413
+          ]
+        }
       }
     ]
   },
@@ -346,7 +976,25 @@
     "tags": [
       {
         "message": "4A010F",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1024,
+            1577
+          ],
+          "top_right": [
+            1118,
+            1579
+          ],
+          "bottom_right": [
+            1113,
+            1668
+          ],
+          "bottom_left": [
+            1017,
+            1668
+          ]
+        }
       }
     ]
   },
@@ -355,7 +1003,25 @@
     "tags": [
       {
         "message": "4A0193",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2280,
+            2464
+          ],
+          "top_right": [
+            2383,
+            2466
+          ],
+          "bottom_right": [
+            2389,
+            2571
+          ],
+          "bottom_left": [
+            2287,
+            2571
+          ]
+        }
       }
     ]
   },
@@ -364,7 +1030,25 @@
     "tags": [
       {
         "message": "4A0193",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1931,
+            2319
+          ],
+          "top_right": [
+            1998,
+            2310
+          ],
+          "bottom_right": [
+            1994,
+            2398
+          ],
+          "bottom_left": [
+            1927,
+            2405
+          ]
+        }
       }
     ]
   },
@@ -373,7 +1057,25 @@
     "tags": [
       {
         "message": "4A0193",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2106,
+            2448
+          ],
+          "top_right": [
+            2144,
+            2454
+          ],
+          "bottom_right": [
+            2148,
+            2517
+          ],
+          "bottom_left": [
+            2111,
+            2512
+          ]
+        }
       }
     ]
   },
@@ -382,7 +1084,25 @@
     "tags": [
       {
         "message": "4A0193",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1452,
+            1499
+          ],
+          "top_right": [
+            1528,
+            1485
+          ],
+          "bottom_right": [
+            1522,
+            1610
+          ],
+          "bottom_left": [
+            1449,
+            1620
+          ]
+        }
       }
     ]
   },
@@ -391,7 +1111,25 @@
     "tags": [
       {
         "message": "4A0A19",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1613,
+            1790
+          ],
+          "top_right": [
+            1664,
+            1789
+          ],
+          "bottom_right": [
+            1665,
+            1840
+          ],
+          "bottom_left": [
+            1615,
+            1842
+          ]
+        }
       }
     ]
   },
@@ -400,7 +1138,25 @@
     "tags": [
       {
         "message": "4A019F",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1502,
+            1433
+          ],
+          "top_right": [
+            1587,
+            1453
+          ],
+          "bottom_right": [
+            1595,
+            1607
+          ],
+          "bottom_left": [
+            1508,
+            1592
+          ]
+        }
       }
     ]
   },
@@ -409,7 +1165,25 @@
     "tags": [
       {
         "message": "4A036E",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2245,
+            2110
+          ],
+          "top_right": [
+            2464,
+            2150
+          ],
+          "bottom_right": [
+            2462,
+            2368
+          ],
+          "bottom_left": [
+            2242,
+            2332
+          ]
+        }
       }
     ]
   },
@@ -418,7 +1192,25 @@
     "tags": [
       {
         "message": "4A036E",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1369,
+            2100
+          ],
+          "top_right": [
+            1480,
+            1932
+          ],
+          "bottom_right": [
+            1538,
+            1958
+          ],
+          "bottom_left": [
+            1427,
+            2126
+          ]
+        }
       }
     ]
   },
@@ -427,7 +1219,25 @@
     "tags": [
       {
         "message": "4A00EE",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1576,
+            2238
+          ],
+          "top_right": [
+            1633,
+            2239
+          ],
+          "bottom_right": [
+            1644,
+            2297
+          ],
+          "bottom_left": [
+            1586,
+            2297
+          ]
+        }
       }
     ]
   },
@@ -436,7 +1246,25 @@
     "tags": [
       {
         "message": "4A00EE",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1866,
+            2305
+          ],
+          "top_right": [
+            1922,
+            2306
+          ],
+          "bottom_right": [
+            1934,
+            2365
+          ],
+          "bottom_left": [
+            1877,
+            2365
+          ]
+        }
       }
     ]
   },
@@ -445,11 +1273,47 @@
     "tags": [
       {
         "message": "4A00EE",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            3144,
+            2282
+          ],
+          "top_right": [
+            3194,
+            2283
+          ],
+          "bottom_right": [
+            3211,
+            2345
+          ],
+          "bottom_left": [
+            3160,
+            2346
+          ]
+        }
       },
       {
         "message": "4A00EE",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1142,
+            2335
+          ],
+          "top_right": [
+            1202,
+            2336
+          ],
+          "bottom_right": [
+            1199,
+            2399
+          ],
+          "bottom_left": [
+            1142,
+            2399
+          ]
+        }
       }
     ]
   },
@@ -458,7 +1322,25 @@
     "tags": [
       {
         "message": "4A00EE",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1443,
+            2648
+          ],
+          "top_right": [
+            1484,
+            2645
+          ],
+          "bottom_right": [
+            1483,
+            2697
+          ],
+          "bottom_left": [
+            1443,
+            2700
+          ]
+        }
       }
     ]
   },
@@ -467,7 +1349,25 @@
     "tags": [
       {
         "message": "4A00EE",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1160,
+            2800
+          ],
+          "top_right": [
+            1214,
+            2800
+          ],
+          "bottom_right": [
+            1213,
+            2848
+          ],
+          "bottom_left": [
+            1159,
+            2848
+          ]
+        }
       }
     ]
   },
@@ -476,7 +1376,25 @@
     "tags": [
       {
         "message": "4A022C",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2103,
+            1977
+          ],
+          "top_right": [
+            2240,
+            1978
+          ],
+          "bottom_right": [
+            2249,
+            2112
+          ],
+          "bottom_left": [
+            2112,
+            2110
+          ]
+        }
       }
     ]
   },
@@ -485,7 +1403,25 @@
     "tags": [
       {
         "message": "4A022C",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1674,
+            2309
+          ],
+          "top_right": [
+            1752,
+            2311
+          ],
+          "bottom_right": [
+            1764,
+            2396
+          ],
+          "bottom_left": [
+            1688,
+            2396
+          ]
+        }
       }
     ]
   },
@@ -494,7 +1430,25 @@
     "tags": [
       {
         "message": "4A02AD",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2030,
+            2253
+          ],
+          "top_right": [
+            2077,
+            2243
+          ],
+          "bottom_right": [
+            2074,
+            2325
+          ],
+          "bottom_left": [
+            2028,
+            2333
+          ]
+        }
       }
     ]
   },
@@ -503,7 +1457,25 @@
     "tags": [
       {
         "message": "4A008B",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2329,
+            1356
+          ],
+          "top_right": [
+            2601,
+            1356
+          ],
+          "bottom_right": [
+            2594,
+            1625
+          ],
+          "bottom_left": [
+            2324,
+            1622
+          ]
+        }
       }
     ]
   },
@@ -512,7 +1484,25 @@
     "tags": [
       {
         "message": "4A0183",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2520,
+            2144
+          ],
+          "top_right": [
+            2590,
+            2147
+          ],
+          "bottom_right": [
+            2588,
+            2218
+          ],
+          "bottom_left": [
+            2518,
+            2215
+          ]
+        }
       }
     ]
   },
@@ -521,7 +1511,25 @@
     "tags": [
       {
         "message": "4A00ED",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            4217,
+            1821
+          ],
+          "top_right": [
+            4270,
+            1815
+          ],
+          "bottom_right": [
+            4274,
+            1860
+          ],
+          "bottom_left": [
+            4221,
+            1865
+          ]
+        }
       }
     ]
   },
@@ -530,7 +1538,25 @@
     "tags": [
       {
         "message": "4A0217",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            2046,
+            3905
+          ],
+          "top_right": [
+            2099,
+            3905
+          ],
+          "bottom_right": [
+            2095,
+            3963
+          ],
+          "bottom_left": [
+            2041,
+            3963
+          ]
+        }
       }
     ]
   },
@@ -539,7 +1565,25 @@
     "tags": [
       {
         "message": "4A023B",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            4134,
+            1662
+          ],
+          "top_right": [
+            4213,
+            1661
+          ],
+          "bottom_right": [
+            4212,
+            1733
+          ],
+          "bottom_left": [
+            4132,
+            1734
+          ]
+        }
       }
     ]
   },
@@ -548,11 +1592,47 @@
     "tags": [
       {
         "message": "4A023B",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1331,
+            1597
+          ],
+          "top_right": [
+            1388,
+            1597
+          ],
+          "bottom_right": [
+            1380,
+            1665
+          ],
+          "bottom_left": [
+            1321,
+            1664
+          ]
+        }
       },
       {
         "message": "4A023B",
-        "conditions": []
+        "conditions": [],
+        "location": {
+          "top_left": [
+            4244,
+            1633
+          ],
+          "top_right": [
+            4318,
+            1635
+          ],
+          "bottom_right": [
+            4322,
+            1703
+          ],
+          "bottom_left": [
+            4246,
+            1701
+          ]
+        }
       }
     ]
   }

@@ -89,6 +89,7 @@
       .coordinate-row { display: grid; gap: .25rem .5rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .coordinate-row > span { font-size: .85rem; font-weight: 700; grid-column: 1 / -1; }
       .coordinate-row label { align-items: center; display: grid; gap: .25rem; grid-template-columns: auto minmax(0, 1fr); }
+      .add-location { cursor: pointer; margin-bottom: .65rem; padding: .35rem .55rem; }
       .form-hint { color: #777; font-size: .8rem; margin: .5rem 0 0; }
       .form-footer { display: grid; gap: .25rem; }
       .form-actions { align-items: center; display: flex; gap: .6rem; }
@@ -98,6 +99,10 @@
       .form-status { margin: 0; min-height: 1.2em; opacity: 1; transition: opacity .4s ease; }
       .form-status.is-error { color: #d33; }
       .form-status.is-fading { opacity: 0; }
+      .tag-preview { border-top: 1px solid #8888; margin-top: 1rem; padding-top: 1rem; }
+      .tag-preview h2 { margin-bottom: .75rem; }
+      .tag-preview img { aspect-ratio: 1; background: #8881; border: 1px solid #8888; display: block; height: auto; width: 100%; }
+      .tag-preview-status { margin: .5rem 0 0; }
       [aria-current="page"] { background: #2878d0; color: white; }
       .image-toolbar { align-items: center; display: flex; gap: .4rem; justify-content: flex-start; }
       .image-toolbar button { cursor: pointer; font: inherit; min-width: 2.5rem; padding: .3rem .6rem; }
@@ -106,10 +111,16 @@
       .image-viewport { background: #8881; border: 1px solid #8888; flex: 1; min-height: 0; overflow: auto; }
       .image-canvas { display: grid; height: max-content; min-height: 100%; min-width: 100%; padding: 20px; place-items: center; width: max-content; }
       .stage { flex: none; line-height: 0; position: relative; }
-      .stage img { display: block; height: 100%; width: 100%; }
+      .stage img { display: block; height: 100%; touch-action: none; user-select: none; width: 100%; }
+      .stage.is-pannable img { cursor: grab; }
+      .image-viewport.is-panning,
+      .image-viewport.is-panning .stage img { cursor: grabbing; }
       .tag-overlay { inset: 0; pointer-events: none; position: absolute; }
       .tag-overlay svg { inset: 0; height: 100%; position: absolute; width: 100%; }
-      .tag-overlay polygon { fill: #ffcc0033; stroke: #ff3b30; stroke-width: 4; vector-effect: non-scaling-stroke; }
+      .tag-overlay polygon { fill: #34c75922; stroke: #1e9e45; stroke-width: 3; vector-effect: non-scaling-stroke; }
+      .tag-overlay.is-selected { z-index: 1; }
+      .tag-overlay.is-selected polygon { cursor: move; fill: #ff3b3033; pointer-events: all; stroke: #ff3b30; stroke-width: 4; }
+      .tag-overlay polygon.is-dragging { cursor: grabbing; }
       .corner-handle {
         appearance: none;
         background: white;
@@ -166,14 +177,17 @@
         <div class="image-viewport" data-image-viewport>
           <div class="image-canvas">
             <div class="stage" data-image-stage data-width="{{ image_width }}" data-height="{{ image_height }}" style="width: {{ image_width }}px; height: {{ image_height }}px">
-              <img src="{{ url_for('image', case_index=image_index) }}" width="{{ image_width }}" height="{{ image_height }}" alt="Dataset image {{ case.image }}">
-              {% if selected_tag and selected_tag.location %}
-                <div class="tag-overlay" data-tag-overlay>
+              <img src="{{ url_for('image', case_index=image_index) }}" width="{{ image_width }}" height="{{ image_height }}" alt="Dataset image {{ case.image }}" draggable="false">
+              {% for tag in case.tags or [] %}
+                {% set is_selected = loop.index0 == selected_tag_index %}
+                {% if tag.location or is_selected %}
+                <div class="tag-overlay{% if is_selected %} is-selected{% endif %}" data-tag-overlay data-tag-index="{{ loop.index0 }}"{% if is_selected %} data-selected data-initial-location="{{ 'true' if tag.location else 'false' }}"{% endif %}{% if not tag.location %} hidden{% endif %}>
                   <svg viewBox="0 0 {{ image_width }} {{ image_height }}" aria-hidden="true">
-                    <polygon data-overlay-polygon points="{{ selected_tag.location.top_left | join(',') }} {{ selected_tag.location.top_right | join(',') }} {{ selected_tag.location.bottom_right | join(',') }} {{ selected_tag.location.bottom_left | join(',') }}"></polygon>
+                    <polygon data-overlay-polygon{% if is_selected %} data-bounding-region{% endif %}{% if tag.location %} points="{{ tag.location.top_left | join(',') }} {{ tag.location.top_right | join(',') }} {{ tag.location.bottom_right | join(',') }} {{ tag.location.bottom_left | join(',') }}"{% endif %}></polygon>
                   </svg>
+                  {% if is_selected %}
                   {% for corner in ('top_left', 'top_right', 'bottom_right', 'bottom_left') %}
-                    {% set point = selected_tag.location[corner] %}
+                    {% set point = tag.location[corner] if tag.location else ('', '') %}
                     <button
                       class="corner-handle"
                       type="button"
@@ -181,14 +195,18 @@
                       data-corner="{{ corner }}"
                       data-x="{{ point[0] }}"
                       data-y="{{ point[1] }}"
-                      aria-label="Drag {{ corner | replace('_', ' ') }} corner at x {{ point[0] }}, y {{ point[1] }}"
+                      aria-label="Drag {{ corner | replace('_', ' ') }} corner{% if tag.location %} at x {{ point[0] }}, y {{ point[1] }}{% endif %}"
                       aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
                       title="Drag this corner, or use the arrow keys"
+                      {% if tag.location %}
                       style="left: {{ point[0] / image_width * 100 }}%; top: {{ point[1] / image_height * 100 }}%"
+                      {% endif %}
                     ></button>
                   {% endfor %}
+                  {% endif %}
                 </div>
-              {% endif %}
+                {% endif %}
+              {% endfor %}
             </div>
           </div>
         </div>
@@ -228,6 +246,9 @@
             </label>
             <fieldset>
               <legend>Location (optional)</legend>
+              {% if not selected_tag.location %}
+                <button class="add-location" type="button" data-add-location>Add bounding box</button>
+              {% endif %}
               <div class="coordinate-list">
                 {% for corner in ('top_left', 'top_right', 'bottom_right', 'bottom_left') %}
                   <div class="coordinate-row">
@@ -247,6 +268,11 @@
               <p class="form-status" data-form-status role="status" aria-live="polite"></p>
             </div>
           </form>
+          <section class="tag-preview" data-tag-preview data-url="{{ url_for('rectified_tag', case_index=image_index) }}">
+            <h2>Rectified tag</h2>
+            <img data-tag-preview-image alt="Cropped and rectified view of tag {{ selected_tag.message }}" hidden>
+            <p class="muted tag-preview-status" data-tag-preview-status role="status" aria-live="polite">{% if selected_tag.location %}Rectifying…{% else %}Add a complete location to see the tag region.{% endif %}</p>
+          </section>
         {% else %}
           <p class="muted">Select a tag.</p>
         {% endif %}
@@ -268,7 +294,6 @@
           const imageWidth = Number(stage.dataset.width);
           const imageHeight = Number(stage.dataset.height);
           const minimumZoom = 0.25;
-          const maximumZoom = 8;
           const zoomStep = 1.25;
           let zoom = 1;
 
@@ -285,13 +310,25 @@
             stage.style.height = `${Math.max(1, Math.round(imageHeight * scale))}px`;
             level.textContent = `${Math.round(zoom * 100)}%`;
             zoomOut.disabled = zoom <= minimumZoom;
-            zoomIn.disabled = zoom >= maximumZoom;
             fit.disabled = zoom === 1;
+            stage.dataset.zoom = zoom;
+            stage.classList.toggle("is-pannable", zoom > 1);
           }
 
-          function setZoom(value) {
-            zoom = Math.min(maximumZoom, Math.max(minimumZoom, value));
+          function setZoom(value, clientX, clientY) {
+            const currentBounds = stage.getBoundingClientRect();
+            const viewportBounds = viewport.getBoundingClientRect();
+            const focusX = clientX ?? viewportBounds.left + viewportBounds.width / 2;
+            const focusY = clientY ?? viewportBounds.top + viewportBounds.height / 2;
+            const imageX = (focusX - currentBounds.left) / currentBounds.width;
+            const imageY = (focusY - currentBounds.top) / currentBounds.height;
+            const nextZoom = Math.max(minimumZoom, value);
+            if (nextZoom === zoom) return;
+            zoom = nextZoom;
             render();
+            const nextBounds = stage.getBoundingClientRect();
+            viewport.scrollLeft += nextBounds.left + imageX * nextBounds.width - focusX;
+            viewport.scrollTop += nextBounds.top + imageY * nextBounds.height - focusY;
           }
 
           toolbar.addEventListener("click", (event) => {
@@ -300,6 +337,18 @@
             if (action === "fit") setZoom(1);
             if (action === "zoom-in") setZoom(zoom * zoomStep);
           });
+
+          stage.addEventListener("wheel", (event) => {
+            event.preventDefault();
+            const unit = event.deltaMode === 1
+              ? 16
+              : event.deltaMode === 2 ? viewport.clientHeight : 1;
+            setZoom(
+              zoom * Math.exp(-event.deltaY * unit * 0.002),
+              event.clientX,
+              event.clientY,
+            );
+          }, { passive: false });
 
           imageObserver = new ResizeObserver(render);
           imageObserver.observe(viewport);
@@ -421,7 +470,58 @@
         let saving = false;
         let dragging = false;
         let statusTimer;
+        let previewTimer;
         const cornerOrder = ["top_left", "top_right", "bottom_right", "bottom_left"];
+
+        function refreshTagPreview(form) {
+          if (!form?.isConnected) return;
+          const preview = form.parentElement.querySelector("[data-tag-preview]");
+          const image = preview.querySelector("[data-tag-preview-image]");
+          const status = preview.querySelector("[data-tag-preview-status]");
+          const parameters = new URLSearchParams();
+
+          for (const corner of cornerOrder) {
+            for (const axis of ["x", "y"]) {
+              const name = `${corner}_${axis}`;
+              const value = form.elements.namedItem(name).value.trim();
+              if (!/^\d+$/.test(value)) {
+                image.onload = null;
+                image.onerror = null;
+                image.removeAttribute("src");
+                image.hidden = true;
+                status.textContent = "Add a complete location to see the tag region.";
+                status.hidden = false;
+                return;
+              }
+              parameters.set(name, value);
+            }
+          }
+
+          const url = new URL(preview.dataset.url, window.location.href);
+          url.search = parameters;
+          image.dataset.request = url.href;
+          status.textContent = "Rectifying…";
+          status.hidden = false;
+          image.onload = () => {
+            if (image.dataset.request !== url.href) return;
+            image.hidden = false;
+            status.hidden = true;
+          };
+          image.onerror = () => {
+            if (image.dataset.request !== url.href) return;
+            image.hidden = true;
+            status.textContent = "Unable to rectify this location.";
+            status.hidden = false;
+          };
+          image.src = url;
+        }
+
+        function scheduleTagPreview(form) {
+          clearTimeout(previewTimer);
+          previewTimer = setTimeout(() => refreshTagPreview(form), 100);
+        }
+
+        refreshTagPreview(document.querySelector("[data-tag-form]"));
 
         function showStatus(form, message, error = false, fade = false) {
           clearTimeout(statusTimer);
@@ -473,13 +573,70 @@
             return `${point.dataset.x},${point.dataset.y}`;
           });
           overlay.querySelector("[data-overlay-polygon]").setAttribute("points", points.join(" "));
+          scheduleTagPreview(form);
           if (track) markUnsaved(form);
         }
+
+        function startPointerDrag(event, target, move, finish) {
+          const pointerId = event.pointerId;
+          const listeners = new AbortController();
+          event.preventDefault();
+          dragging = true;
+          target.setPointerCapture(pointerId);
+
+          const update = (moveEvent) => {
+            if (moveEvent.pointerId !== pointerId) return;
+            moveEvent.preventDefault();
+            move(moveEvent);
+          };
+          const stop = (finishEvent) => {
+            if (finishEvent.pointerId !== pointerId) return;
+            if (finishEvent.type === "pointerup") update(finishEvent);
+            listeners.abort();
+            if (target.hasPointerCapture(pointerId)) target.releasePointerCapture(pointerId);
+            dragging = false;
+            finish();
+          };
+
+          document.addEventListener("pointermove", update, { signal: listeners.signal });
+          document.addEventListener("pointerup", stop, { signal: listeners.signal });
+          document.addEventListener("pointercancel", stop, { signal: listeners.signal });
+        }
+
+        document.addEventListener("click", (event) => {
+          const button = event.target.closest("[data-add-location]");
+          if (!button || saving) return;
+          const form = button.closest("[data-tag-form]");
+          const stage = document.querySelector("[data-image-stage]");
+          const overlay = stage.querySelector("[data-tag-overlay][data-selected]");
+          const maximumX = Number(stage.dataset.width) - 1;
+          const maximumY = Number(stage.dataset.height) - 1;
+          const left = Math.round(maximumX * 0.25);
+          const right = Math.round(maximumX * 0.75);
+          const top = Math.round(maximumY * 0.25);
+          const bottom = Math.round(maximumY * 0.75);
+          const points = {
+            top_left: [left, top],
+            top_right: [right, top],
+            bottom_right: [right, bottom],
+            bottom_left: [left, bottom],
+          };
+
+          overlay.hidden = false;
+          button.hidden = true;
+          for (const corner of cornerOrder) {
+            updateCorner(
+              overlay.querySelector(`[data-corner="${corner}"]`),
+              ...points[corner],
+              false,
+            );
+          }
+          markUnsaved(form);
+        });
 
         document.addEventListener("pointerdown", (event) => {
           const handle = event.target.closest("[data-corner-handle]");
           if (!handle || event.button !== 0 || saving || dragging) return;
-          event.preventDefault();
 
           const stage = handle.closest("[data-image-stage]");
           const bounds = stage.getBoundingClientRect();
@@ -489,35 +646,96 @@
           const startClientY = event.clientY;
           const startX = Number(handle.dataset.x);
           const startY = Number(handle.dataset.y);
-          const pointerId = event.pointerId;
-          const listeners = new AbortController();
-
-          dragging = true;
           handle.classList.add("is-dragging");
-          handle.setPointerCapture(pointerId);
 
-          const move = (moveEvent) => {
-            if (moveEvent.pointerId !== pointerId) return;
-            moveEvent.preventDefault();
-            updateCorner(
+          startPointerDrag(
+            event,
+            handle,
+            (moveEvent) => updateCorner(
               handle,
               startX + (moveEvent.clientX - startClientX) * imageWidth / bounds.width,
               startY + (moveEvent.clientY - startClientY) * imageHeight / bounds.height,
-            );
-          };
+            ),
+            () => handle.classList.remove("is-dragging"),
+          );
+        });
 
-          const finish = (finishEvent) => {
-            if (finishEvent.pointerId !== pointerId) return;
-            if (finishEvent.type === "pointerup") move(finishEvent);
-            listeners.abort();
-            if (handle.hasPointerCapture(pointerId)) handle.releasePointerCapture(pointerId);
-            handle.classList.remove("is-dragging");
-            dragging = false;
-          };
+        document.addEventListener("pointerdown", (event) => {
+          const region = event.target.closest("[data-bounding-region]");
+          if (!region || event.button !== 0 || saving || dragging) return;
+          const overlay = region.closest("[data-tag-overlay]");
+          const stage = region.closest("[data-image-stage]");
+          const form = document.querySelector("[data-tag-form]");
+          const bounds = stage.getBoundingClientRect();
+          const imageWidth = Number(stage.dataset.width);
+          const imageHeight = Number(stage.dataset.height);
+          const startClientX = event.clientX;
+          const startClientY = event.clientY;
+          const points = Object.fromEntries(cornerOrder.map((corner) => {
+            const handle = overlay.querySelector(`[data-corner="${corner}"]`);
+            return [corner, [Number(handle.dataset.x), Number(handle.dataset.y)]];
+          }));
+          const xValues = Object.values(points).map((point) => point[0]);
+          const yValues = Object.values(points).map((point) => point[1]);
+          const minimumX = Math.min(...xValues);
+          const maximumX = Math.max(...xValues);
+          const minimumY = Math.min(...yValues);
+          const maximumY = Math.max(...yValues);
 
-          document.addEventListener("pointermove", move, { signal: listeners.signal });
-          document.addEventListener("pointerup", finish, { signal: listeners.signal });
-          document.addEventListener("pointercancel", finish, { signal: listeners.signal });
+          region.classList.add("is-dragging");
+          startPointerDrag(
+            event,
+            region,
+            (moveEvent) => {
+              const requestedX = Math.round(
+                (moveEvent.clientX - startClientX) * imageWidth / bounds.width,
+              );
+              const requestedY = Math.round(
+                (moveEvent.clientY - startClientY) * imageHeight / bounds.height,
+              );
+              const deltaX = Math.min(
+                imageWidth - 1 - maximumX,
+                Math.max(-minimumX, requestedX),
+              );
+              const deltaY = Math.min(
+                imageHeight - 1 - maximumY,
+                Math.max(-minimumY, requestedY),
+              );
+              for (const corner of cornerOrder) {
+                updateCorner(
+                  overlay.querySelector(`[data-corner="${corner}"]`),
+                  points[corner][0] + deltaX,
+                  points[corner][1] + deltaY,
+                  false,
+                );
+              }
+              markUnsaved(form);
+            },
+            () => region.classList.remove("is-dragging"),
+          );
+        });
+
+        document.addEventListener("pointerdown", (event) => {
+          const image = event.target.closest("[data-image-stage] img");
+          if (!image || event.button !== 0 || saving || dragging) return;
+          const stage = image.closest("[data-image-stage]");
+          if (Number(stage.dataset.zoom) <= 1) return;
+          const viewport = stage.closest("[data-image-viewport]");
+          const startClientX = event.clientX;
+          const startClientY = event.clientY;
+          const startScrollLeft = viewport.scrollLeft;
+          const startScrollTop = viewport.scrollTop;
+
+          viewport.classList.add("is-panning");
+          startPointerDrag(
+            event,
+            image,
+            (moveEvent) => {
+              viewport.scrollLeft = startScrollLeft - (moveEvent.clientX - startClientX);
+              viewport.scrollTop = startScrollTop - (moveEvent.clientY - startClientY);
+            },
+            () => viewport.classList.remove("is-panning"),
+          );
         });
 
         const arrowMoves = {
@@ -543,6 +761,10 @@
         document.addEventListener("input", (event) => {
           const form = event.target.closest("[data-tag-form]");
           if (!form) return;
+          if (cornerOrder.some(
+            (corner) => event.target.name === `${corner}_x`
+              || event.target.name === `${corner}_y`,
+          )) scheduleTagPreview(form);
           markUnsaved(form);
         });
 
@@ -550,16 +772,23 @@
           const form = event.target.closest("[data-tag-form]");
           if (!form) return;
           requestAnimationFrame(() => {
-            for (const corner of cornerOrder) {
-              const handle = document.querySelector(`[data-corner="${corner}"]`);
-              if (!handle) continue;
-              updateCorner(
-                handle,
-                Number(form.elements.namedItem(`${corner}_x`).value),
-                Number(form.elements.namedItem(`${corner}_y`).value),
-                false,
-              );
+            const overlay = document.querySelector("[data-tag-overlay][data-selected]");
+            if (overlay?.dataset.initialLocation === "false") {
+              overlay.hidden = true;
+              form.querySelector("[data-add-location]").hidden = false;
+            } else {
+              for (const corner of cornerOrder) {
+                const handle = overlay?.querySelector(`[data-corner="${corner}"]`);
+                if (!handle) continue;
+                updateCorner(
+                  handle,
+                  Number(form.elements.namedItem(`${corner}_x`).value),
+                  Number(form.elements.namedItem(`${corner}_y`).value),
+                  false,
+                );
+              }
             }
+            scheduleTagPreview(form);
             syncCancel(form);
             showStatus(form, "Changes discarded.", false, true);
           });
@@ -620,15 +849,19 @@
 
             if (sameImage) {
               const stage = document.querySelector("[data-image-stage]");
-              stage.querySelector("[data-tag-overlay]")?.remove();
-              const overlay = nextMain.querySelector("[data-tag-overlay]");
-              if (overlay) stage.append(overlay);
+              for (const overlay of stage.querySelectorAll("[data-tag-overlay]")) {
+                overlay.remove();
+              }
+              for (const overlay of nextMain.querySelectorAll("[data-tag-overlay]")) {
+                stage.append(overlay);
+              }
             } else {
               document.querySelector("main").replaceWith(nextMain);
               initializeImage();
             }
 
             currentPanel.replaceWith(nextPanel);
+            refreshTagPreview(nextPanel.querySelector("[data-tag-form]"));
             const nextTagList = nextPanel.querySelector(".tag-list");
             nextTagList.scrollTop = tagScroll;
             nextTagList.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest" });
