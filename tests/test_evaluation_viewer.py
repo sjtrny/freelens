@@ -674,6 +674,19 @@ def test_viewer_lists_tags_above_details_and_includes_resizable_panels(
     assert b'.image-list a:not([aria-current="page"]):hover' in response.data
 
 
+def test_viewer_uses_ctrl_or_command_s_to_save(evaluation_manifest):
+    app = create_app(evaluation_manifest)
+    app.config.update(TESTING=True)
+    response = app.test_client().get("/?image=0&tag=1")
+
+    assert response.status_code == 200
+    assert b'event.key.toLowerCase() !== "s"' in response.data
+    assert b"(!event.ctrlKey && !event.metaKey)" in response.data
+    assert b"event.repeat || saving" in response.data
+    assert b"document.querySelector(\"[data-tag-form]\")?.requestSubmit()" in response.data
+    assert b"unsavedDialog.querySelector('[data-unsaved-action=\"save\"]')" in response.data
+
+
 def test_viewer_serves_only_manifest_image_indexes(evaluation_manifest):
     app = create_app(evaluation_manifest)
     app.config.update(TESTING=True)

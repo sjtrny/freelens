@@ -1103,6 +1103,22 @@
           }
         });
 
+        document.addEventListener("keydown", (event) => {
+          if (
+            event.key.toLowerCase() !== "s"
+            || (!event.ctrlKey && !event.metaKey)
+            || event.altKey
+            || event.shiftKey
+          ) return;
+          event.preventDefault();
+          if (event.repeat || saving) return;
+          if (unsavedDialog.open) {
+            unsavedDialog.querySelector('[data-unsaved-action="save"]').click();
+            return;
+          }
+          document.querySelector("[data-tag-form]")?.requestSubmit();
+        });
+
         document.addEventListener("click", (event) => {
           const link = event.target.closest(".image-list a, .tag-list a");
           const newTag = event.target.closest("[data-new-tag-url]");
