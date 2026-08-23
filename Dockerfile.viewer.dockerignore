@@ -1,0 +1,11 @@
+**
+!README.md
+!freelens.py
+!pyproject.toml
+!dataset/
+!dataset/**
+!scripts/
+!scripts/evaluation_dataset.py
+!scripts/view_evaluation.py
+!templates/
+!templates/evaluation.html

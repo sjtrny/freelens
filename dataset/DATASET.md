@@ -11,12 +11,15 @@ free-kit corpus; no corpus files are currently included.
 
 ## Field Photograph Benchmark
 
-`evaluation.json` records the expected 5x5 messages as six-digit hexadecimal strings.
-The initial values were bootstrapped from CRC-valid FreeLens detections, so they are
-provisional benchmark data rather than independent proof of correctness. Entries with
-`messages: null` need independent labelling and are excluded from message accuracy.
+`evaluation.json` records the expected 5x5 tags. Each tag has a six-digit hexadecimal
+`message`, a `conditions` list, and an optional four-corner `location`. Locations use
+integer `[x, y]` pairs in original-image pixels, clockwise from `top_left`. The initial
+messages were bootstrapped from CRC-valid FreeLens detections, so they are provisional
+benchmark data rather than independent proof of correctness. `tags: null` means the
+image needs independent labelling and is excluded from message accuracy; `tags: []`
+means it has been reviewed and contains no tags.
 
-An optional `conditions` list records observable image properties such as `blur`.
+An optional case-level `conditions` list records image-wide properties such as `blur`.
 Conditioned positive images are also reported as a separate challenging subset.
 
 Run the benchmark with:
@@ -30,6 +33,38 @@ run. It is intentionally not part of pytest or CI. Use `--output results.json` t
 detailed result that can be compared between implementations. All photographs contribute
 to the positive/negative detection rates; only entries with known messages contribute to
 message accuracy.
+
+## Evaluation Viewer
+
+Start the viewer locally with:
+
+```bash
+python -m pip install -e ".[viewer]"
+python -m scripts.view_evaluation
+```
+
+Or build and start the containerized service:
+
+```bash
+docker compose up --build
+```
+
+Open http://localhost:8899 on the Docker host, or use the host's address from another
+machine. Compose publishes port 8899 on all host interfaces. Drag any of a located tag's
+four corner handles to update its outline and coordinate fields. Use Save to persist or
+Cancel to restore all unsaved changes. Tag edits are validated and atomically replace
+`evaluation.json` in the `evaluation-data` Docker volume, the container's only writable
+application path. The volume persists across container and image rebuilds. Export the
+edited manifest back to the project with:
+
+```bash
+docker compose cp evaluation-viewer:/app/dataset/evaluation.json dataset/evaluation.json
+```
+
+The viewer has no user authentication, so expose it only on a trusted network. Stop the
+service with `docker compose down`. Removing the volume with
+`docker compose down --volumes` discards edits and seeds a fresh dataset from the image
+on the next start.
 
 ## PyCon AU 2024 Contributors
 

@@ -1,235 +1,559 @@
 [
   {
     "image": "negatives/0001.jpg",
-    "messages": []
+    "tags": []
   },
   {
     "image": "positives/0001.jpg",
-    "messages": ["4A0101"]
+    "tags": [
+      {
+        "message": "4A0101",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            1663,
+            1787
+          ],
+          "top_right": [
+            1767,
+            1797
+          ],
+          "bottom_right": [
+            1763,
+            1909
+          ],
+          "bottom_left": [
+            1661,
+            1901
+          ]
+        }
+      }
+    ]
   },
   {
     "image": "positives/0002.jpg",
-    "messages": ["4A005C"]
+    "tags": [
+      {
+        "message": "4A005C",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0003.jpg",
-    "messages": ["4A02B3"]
+    "tags": [
+      {
+        "message": "4A02B3",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0004.jpg",
-    "messages": ["4A0014"]
+    "tags": [
+      {
+        "message": "4A0014",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0005.jpg",
-    "messages": ["4A00D1"]
+    "tags": [
+      {
+        "message": "4A00D1",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0006.jpg",
-    "messages": ["4A006E"]
+    "tags": [
+      {
+        "message": "4A006E",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0007.jpg",
-    "messages": ["4A0431"]
+    "tags": [
+      {
+        "message": "4A0431",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0008.jpg",
-    "messages": ["4A00D9"]
+    "tags": [
+      {
+        "message": "4A00D9",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0009.jpg",
-    "messages": ["4A0076"]
+    "tags": [
+      {
+        "message": "4A0076",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0010.jpg",
-    "messages": ["4A01FB"]
+    "tags": [
+      {
+        "message": "4A01FB",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0011.jpg",
-    "messages": ["4A0157"]
+    "tags": [
+      {
+        "message": "4A0157",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0012.jpg",
-    "messages": ["4A0157", "4A025A"]
+    "tags": [
+      {
+        "message": "4A0157",
+        "conditions": []
+      },
+      {
+        "message": "4A025A",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0013.jpg",
-    "messages": ["4A0157", "4A025A"]
+    "tags": [
+      {
+        "message": "4A0157",
+        "conditions": []
+      },
+      {
+        "message": "4A025A",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0014.jpg",
-    "messages": ["4A0157"]
+    "tags": [
+      {
+        "message": "4A0157",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0015.jpg",
-    "messages": ["4A0157"]
+    "tags": [
+      {
+        "message": "4A0157",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0016.jpg",
-    "messages": ["4A0A02"]
+    "tags": [
+      {
+        "message": "4A0A02",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0017.jpg",
-    "messages": ["4A008C"]
+    "tags": [
+      {
+        "message": "4A008C",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0018.jpg",
-    "messages": ["4A005C"]
+    "tags": [
+      {
+        "message": "4A005C",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0019.jpg",
-    "messages": ["4A043D"]
+    "tags": [
+      {
+        "message": "4A043D",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0020.jpg",
-    "messages": ["4A043D"]
+    "tags": [
+      {
+        "message": "4A043D",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0021.jpg",
-    "messages": ["4A00C3"]
+    "tags": [
+      {
+        "message": "4A00C3",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0022.jpg",
-    "messages": ["4A03CC"]
+    "tags": [
+      {
+        "message": "4A03CC",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0023.jpg",
-    "messages": ["4A0240", "4A010F"]
+    "tags": [
+      {
+        "message": "4A0240",
+        "conditions": []
+      },
+      {
+        "message": "4A010F",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0024.jpg",
-    "messages": ["4A010F", "4A0240"]
+    "tags": [
+      {
+        "message": "4A010F",
+        "conditions": []
+      },
+      {
+        "message": "4A0240",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0025.jpg",
-    "messages": ["4A030D"]
+    "tags": [
+      {
+        "message": "4A030D",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0026.jpg",
-    "messages": ["4A0231"]
+    "tags": [
+      {
+        "message": "4A0231",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0027.jpg",
-    "messages": ["4A00ED"]
+    "tags": [
+      {
+        "message": "4A00ED",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0028.jpg",
-    "messages": ["4A0121"]
+    "tags": [
+      {
+        "message": "4A0121",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0029.jpg",
-    "messages": ["4A010F"]
+    "tags": [
+      {
+        "message": "4A010F",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0030.jpg",
-    "messages": ["4A01B3"]
+    "tags": [
+      {
+        "message": "4A01B3",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0031.jpg",
-    "messages": null,
-    "conditions": ["blur"]
+    "tags": null,
+    "conditions": [
+      "blur"
+    ]
   },
   {
     "image": "positives/0032.jpg",
-    "messages": ["4A00EB"]
+    "tags": [
+      {
+        "message": "4A00EB",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0033.jpg",
-    "messages": ["4A00EB"]
+    "tags": [
+      {
+        "message": "4A00EB",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0034.jpg",
-    "messages": ["4A00EB"]
+    "tags": [
+      {
+        "message": "4A00EB",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0035.jpg",
-    "messages": ["4A010F"]
+    "tags": [
+      {
+        "message": "4A010F",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0036.jpg",
-    "messages": ["4A0193"]
+    "tags": [
+      {
+        "message": "4A0193",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0037.jpg",
-    "messages": ["4A0193"]
+    "tags": [
+      {
+        "message": "4A0193",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0038.jpg",
-    "messages": ["4A0193"]
+    "tags": [
+      {
+        "message": "4A0193",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0039.jpg",
-    "messages": ["4A0193"]
+    "tags": [
+      {
+        "message": "4A0193",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0040.jpg",
-    "messages": ["4A0A19"]
+    "tags": [
+      {
+        "message": "4A0A19",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0041.jpg",
-    "messages": ["4A019F"]
+    "tags": [
+      {
+        "message": "4A019F",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0042.jpg",
-    "messages": ["4A036E"]
+    "tags": [
+      {
+        "message": "4A036E",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0043.jpg",
-    "messages": ["4A036E"]
+    "tags": [
+      {
+        "message": "4A036E",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0044.jpg",
-    "messages": ["4A00EE"]
+    "tags": [
+      {
+        "message": "4A00EE",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0045.jpg",
-    "messages": ["4A00EE"]
+    "tags": [
+      {
+        "message": "4A00EE",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0046.jpg",
-    "messages": ["4A00EE", "4A00EE"]
+    "tags": [
+      {
+        "message": "4A00EE",
+        "conditions": []
+      },
+      {
+        "message": "4A00EE",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0047.jpg",
-    "messages": ["4A00EE"]
+    "tags": [
+      {
+        "message": "4A00EE",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0048.jpg",
-    "messages": ["4A00EE"]
+    "tags": [
+      {
+        "message": "4A00EE",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0049.jpg",
-    "messages": ["4A022C"]
+    "tags": [
+      {
+        "message": "4A022C",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0050.jpg",
-    "messages": ["4A022C"]
+    "tags": [
+      {
+        "message": "4A022C",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0051.jpg",
-    "messages": ["4A02AD"]
+    "tags": [
+      {
+        "message": "4A02AD",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0052.jpg",
-    "messages": ["4A008B"]
+    "tags": [
+      {
+        "message": "4A008B",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0053.jpg",
-    "messages": ["4A0183"]
+    "tags": [
+      {
+        "message": "4A0183",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0054.jpg",
-    "messages": ["4A00ED"]
+    "tags": [
+      {
+        "message": "4A00ED",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0055.jpg",
-    "messages": ["4A0217"]
+    "tags": [
+      {
+        "message": "4A0217",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0056.jpg",
-    "messages": ["4A023B"]
+    "tags": [
+      {
+        "message": "4A023B",
+        "conditions": []
+      }
+    ]
   },
   {
     "image": "positives/0057.jpg",
-    "messages": ["4A023B", "4A023B"]
+    "tags": [
+      {
+        "message": "4A023B",
+        "conditions": []
+      },
+      {
+        "message": "4A023B",
+        "conditions": []
+      }
+    ]
   }
 ]

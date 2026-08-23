@@ -3,61 +3,13 @@
 
 import argparse
 import json
-import re
 import time
 from pathlib import Path
 
 from PIL import Image
 
 from freelens import detect_tags
-
-REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_MANIFEST = REPOSITORY_ROOT / "dataset" / "evaluation.json"
-MESSAGE_PATTERN = re.compile(r"[0-9A-F]{6}")
-
-
-def load_cases(manifest_path):
-    manifest_path = Path(manifest_path)
-    with manifest_path.open(encoding="utf-8") as file:
-        cases = json.load(file)
-
-    if not isinstance(cases, list):
-        raise ValueError("evaluation manifest must contain a list")
-
-    listed_images = [case["image"] for case in cases]
-    if len(listed_images) != len(set(listed_images)):
-        raise ValueError("evaluation manifest contains duplicate images")
-
-    dataset_root = manifest_path.parent
-    dataset_images = {
-        path.relative_to(dataset_root).as_posix()
-        for directory in ("positives", "negatives")
-        for path in (dataset_root / directory).iterdir()
-        if path.is_file()
-    }
-    if set(listed_images) != dataset_images:
-        missing = sorted(dataset_images - set(listed_images))
-        extra = sorted(set(listed_images) - dataset_images)
-        raise ValueError(f"manifest coverage differs: missing={missing}, extra={extra}")
-
-    for case in cases:
-        messages = case["messages"]
-        if messages is not None and (
-            not isinstance(messages, list)
-            or not all(
-                isinstance(message, str) and MESSAGE_PATTERN.fullmatch(message)
-                for message in messages
-            )
-        ):
-            raise ValueError(f"invalid messages for {case['image']}")
-
-        conditions = case.get("conditions", [])
-        if not isinstance(conditions, list) or not all(
-            isinstance(condition, str) and condition for condition in conditions
-        ):
-            raise ValueError(f"invalid conditions for {case['image']}")
-
-    return cases
+from scripts.evaluation_dataset import DEFAULT_MANIFEST, load_cases
 
 
 def benchmark_dataset(manifest_path=DEFAULT_MANIFEST, detector=detect_tags):
@@ -66,7 +18,9 @@ def benchmark_dataset(manifest_path=DEFAULT_MANIFEST, detector=detect_tags):
     results = []
 
     for case in load_cases(manifest_path):
-        expected = case["messages"]
+        expected = (
+            None if case["tags"] is None else [tag["message"] for tag in case["tags"]]
+        )
         result = {
             "image": case["image"],
             "expected": expected,

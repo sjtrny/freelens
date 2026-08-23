@@ -1,0 +1,17 @@
+services:
+  evaluation-viewer:
+    image: freelens-evaluation-viewer:local
+    build:
+      context: .
+      dockerfile: Dockerfile.viewer
+    init: true
+    read_only: true
+    volumes:
+      - evaluation-data:/app/dataset
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    ports:
+      - 8899:8899
+
+volumes:
+  evaluation-data:
