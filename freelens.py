@@ -210,7 +210,7 @@ def detect_frames(image):
         2. Area greater than threshold
         3. Convex polygon
         4. Shape is roughly square (perimeter/area test)
-        5. Check that border around frame is white
+        5. Quiet-zone filtering is disabled for this experiment.
 
     TODO: Retain only internal contours (opposite of paper which suggests external)
     """
@@ -239,7 +239,6 @@ def detect_frames(image):
         lambda polygons: frame_filter_polygons_area(polygons, 2**11),
         frame_filter_polygons_convex,
         frame_filter_polygons_squareish,
-        lambda polygons: frame_filter_white_border(polygons, image_bw_cv),
     ]
     for filter in filters:
         polygons = filter(polygons)
