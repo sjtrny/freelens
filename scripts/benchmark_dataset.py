@@ -82,12 +82,8 @@ def benchmark_dataset(manifest_path=DEFAULT_MANIFEST, detector=detect_tags):
 
 
 def summarize(results):
-    positives = [
-        result for result in results if result["image"].startswith("positives/")
-    ]
-    negatives = [
-        result for result in results if result["image"].startswith("negatives/")
-    ]
+    positives = [result for result in results if result["expected"]]
+    negatives = [result for result in results if not result["expected"]]
     exact = sum(result["status"] == "pass" for result in results)
     expected = sum(len(result["expected"]) for result in results)
     matched = sum(result["matched"] for result in results)

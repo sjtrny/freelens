@@ -1,10 +1,10 @@
 [
   {
-    "image": "negatives/0001.jpg",
+    "image": "images/0000.jpg",
     "tags": []
   },
   {
-    "image": "positives/0001.jpg",
+    "image": "images/0001.jpg",
     "tags": [
       {
         "message": "4A0101",
@@ -31,7 +31,7 @@
     ]
   },
   {
-    "image": "positives/0002.jpg",
+    "image": "images/0002.jpg",
     "tags": [
       {
         "message": "4A005C",
@@ -58,7 +58,7 @@
     ]
   },
   {
-    "image": "positives/0003.jpg",
+    "image": "images/0003.jpg",
     "tags": [
       {
         "message": "4A02B3",
@@ -85,7 +85,7 @@
     ]
   },
   {
-    "image": "positives/0004.jpg",
+    "image": "images/0004.jpg",
     "tags": [
       {
         "message": "4A0014",
@@ -112,7 +112,7 @@
     ]
   },
   {
-    "image": "positives/0005.jpg",
+    "image": "images/0005.jpg",
     "tags": [
       {
         "message": "4A00D1",
@@ -139,7 +139,7 @@
     ]
   },
   {
-    "image": "positives/0006.jpg",
+    "image": "images/0006.jpg",
     "tags": [
       {
         "message": "4A006E",
@@ -166,7 +166,7 @@
     ]
   },
   {
-    "image": "positives/0007.jpg",
+    "image": "images/0007.jpg",
     "tags": [
       {
         "message": "4A0431",
@@ -193,7 +193,7 @@
     ]
   },
   {
-    "image": "positives/0008.jpg",
+    "image": "images/0008.jpg",
     "tags": [
       {
         "message": "4A00D9",
@@ -220,7 +220,7 @@
     ]
   },
   {
-    "image": "positives/0009.jpg",
+    "image": "images/0009.jpg",
     "tags": [
       {
         "message": "4A0076",
@@ -247,7 +247,7 @@
     ]
   },
   {
-    "image": "positives/0010.jpg",
+    "image": "images/0010.jpg",
     "tags": [
       {
         "message": "4A01FB",
@@ -274,7 +274,7 @@
     ]
   },
   {
-    "image": "positives/0011.jpg",
+    "image": "images/0011.jpg",
     "tags": [
       {
         "message": "4A0157",
@@ -301,7 +301,7 @@
     ]
   },
   {
-    "image": "positives/0012.jpg",
+    "image": "images/0012.jpg",
     "tags": [
       {
         "message": "4A0157",
@@ -350,7 +350,7 @@
     ]
   },
   {
-    "image": "positives/0013.jpg",
+    "image": "images/0013.jpg",
     "tags": [
       {
         "message": "4A0157",
@@ -399,7 +399,7 @@
     ]
   },
   {
-    "image": "positives/0014.jpg",
+    "image": "images/0014.jpg",
     "tags": [
       {
         "message": "4A0157",
@@ -426,7 +426,7 @@
     ]
   },
   {
-    "image": "positives/0015.jpg",
+    "image": "images/0015.jpg",
     "tags": [
       {
         "message": "4A0157",
@@ -453,7 +453,7 @@
     ]
   },
   {
-    "image": "positives/0016.jpg",
+    "image": "images/0016.jpg",
     "tags": [
       {
         "message": "4A0A02",
@@ -480,7 +480,7 @@
     ]
   },
   {
-    "image": "positives/0017.jpg",
+    "image": "images/0017.jpg",
     "tags": [
       {
         "message": "4A008C",
@@ -507,7 +507,7 @@
     ]
   },
   {
-    "image": "positives/0018.jpg",
+    "image": "images/0018.jpg",
     "tags": [
       {
         "message": "4A005C",
@@ -534,7 +534,7 @@
     ]
   },
   {
-    "image": "positives/0019.jpg",
+    "image": "images/0019.jpg",
     "tags": [
       {
         "message": "4A043D",
@@ -561,7 +561,7 @@
     ]
   },
   {
-    "image": "positives/0020.jpg",
+    "image": "images/0020.jpg",
     "tags": [
       {
         "message": "4A043D",
@@ -588,7 +588,7 @@
     ]
   },
   {
-    "image": "positives/0021.jpg",
+    "image": "images/0021.jpg",
     "tags": [
       {
         "message": "4A00C3",
@@ -615,7 +615,7 @@
     ]
   },
   {
-    "image": "positives/0022.jpg",
+    "image": "images/0022.jpg",
     "tags": [
       {
         "message": "4A03CC",
@@ -642,7 +642,7 @@
     ]
   },
   {
-    "image": "positives/0023.jpg",
+    "image": "images/0023.jpg",
     "tags": [
       {
         "message": "4A0240",
@@ -691,7 +691,7 @@
     ]
   },
   {
-    "image": "positives/0024.jpg",
+    "image": "images/0024.jpg",
     "tags": [
       {
         "message": "4A010F",
@@ -740,7 +740,7 @@
     ]
   },
   {
-    "image": "positives/0025.jpg",
+    "image": "images/0025.jpg",
     "tags": [
       {
         "message": "4A030D",
@@ -767,7 +767,7 @@
     ]
   },
   {
-    "image": "positives/0026.jpg",
+    "image": "images/0026.jpg",
     "tags": [
       {
         "message": "4A0231",
@@ -794,7 +794,7 @@
     ]
   },
   {
-    "image": "positives/0027.jpg",
+    "image": "images/0027.jpg",
     "tags": [
       {
         "message": "4A00ED",
@@ -821,7 +821,7 @@
     ]
   },
   {
-    "image": "positives/0028.jpg",
+    "image": "images/0028.jpg",
     "tags": [
       {
         "message": "4A0121",
@@ -848,7 +848,7 @@
     ]
   },
   {
-    "image": "positives/0029.jpg",
+    "image": "images/0029.jpg",
     "tags": [
       {
         "message": "4A010F",
@@ -875,7 +875,7 @@
     ]
   },
   {
-    "image": "positives/0030.jpg",
+    "image": "images/0030.jpg",
     "tags": [
       {
         "message": "4A01B3",
@@ -902,7 +902,7 @@
     ]
   },
   {
-    "image": "positives/0031.jpg",
+    "image": "images/0031.jpg",
     "tags": [
       {
         "message": null,
@@ -931,14 +931,14 @@
     ]
   },
   {
-    "image": "positives/0032.jpg",
+    "image": "images/0032.jpg",
     "tags": [
       {
         "message": "4A00EB",
         "conditions": [
           "severe_blur"
         ],
-        "description": "Message identified from positives/0033.jpg.",
+        "description": "Message identified from images/0033.jpg.",
         "location": {
           "top_left": [
             870,
@@ -961,7 +961,7 @@
     ]
   },
   {
-    "image": "positives/0033.jpg",
+    "image": "images/0033.jpg",
     "tags": [
       {
         "message": "4A00EB",
@@ -988,7 +988,7 @@
     ]
   },
   {
-    "image": "positives/0034.jpg",
+    "image": "images/0034.jpg",
     "tags": [
       {
         "message": "4A00EB",
@@ -1015,7 +1015,7 @@
     ]
   },
   {
-    "image": "positives/0035.jpg",
+    "image": "images/0035.jpg",
     "tags": [
       {
         "message": "4A010F",
@@ -1042,7 +1042,7 @@
     ]
   },
   {
-    "image": "positives/0036.jpg",
+    "image": "images/0036.jpg",
     "tags": [
       {
         "message": "4A0193",
@@ -1069,7 +1069,7 @@
     ]
   },
   {
-    "image": "positives/0037.jpg",
+    "image": "images/0037.jpg",
     "tags": [
       {
         "message": "4A0193",
@@ -1096,7 +1096,7 @@
     ]
   },
   {
-    "image": "positives/0038.jpg",
+    "image": "images/0038.jpg",
     "tags": [
       {
         "message": "4A0193",
@@ -1123,7 +1123,7 @@
     ]
   },
   {
-    "image": "positives/0039.jpg",
+    "image": "images/0039.jpg",
     "tags": [
       {
         "message": "4A0193",
@@ -1150,7 +1150,7 @@
     ]
   },
   {
-    "image": "positives/0040.jpg",
+    "image": "images/0040.jpg",
     "tags": [
       {
         "message": "4A0A19",
@@ -1177,7 +1177,7 @@
     ]
   },
   {
-    "image": "positives/0041.jpg",
+    "image": "images/0041.jpg",
     "tags": [
       {
         "message": "4A019F",
@@ -1204,7 +1204,7 @@
     ]
   },
   {
-    "image": "positives/0042.jpg",
+    "image": "images/0042.jpg",
     "tags": [
       {
         "message": "4A036E",
@@ -1231,7 +1231,7 @@
     ]
   },
   {
-    "image": "positives/0043.jpg",
+    "image": "images/0043.jpg",
     "tags": [
       {
         "message": "4A036E",
@@ -1258,7 +1258,7 @@
     ]
   },
   {
-    "image": "positives/0044.jpg",
+    "image": "images/0044.jpg",
     "tags": [
       {
         "message": "4A00EE",
@@ -1285,7 +1285,7 @@
     ]
   },
   {
-    "image": "positives/0045.jpg",
+    "image": "images/0045.jpg",
     "tags": [
       {
         "message": "4A00EE",
@@ -1312,7 +1312,7 @@
     ]
   },
   {
-    "image": "positives/0046.jpg",
+    "image": "images/0046.jpg",
     "tags": [
       {
         "message": "4A00EE",
@@ -1361,7 +1361,7 @@
     ]
   },
   {
-    "image": "positives/0047.jpg",
+    "image": "images/0047.jpg",
     "tags": [
       {
         "message": "4A00EE",
@@ -1388,7 +1388,7 @@
     ]
   },
   {
-    "image": "positives/0048.jpg",
+    "image": "images/0048.jpg",
     "tags": [
       {
         "message": "4A00EE",
@@ -1415,7 +1415,7 @@
     ]
   },
   {
-    "image": "positives/0049.jpg",
+    "image": "images/0049.jpg",
     "tags": [
       {
         "message": "4A022C",
@@ -1442,7 +1442,7 @@
     ]
   },
   {
-    "image": "positives/0050.jpg",
+    "image": "images/0050.jpg",
     "tags": [
       {
         "message": "4A022C",
@@ -1469,7 +1469,7 @@
     ]
   },
   {
-    "image": "positives/0051.jpg",
+    "image": "images/0051.jpg",
     "tags": [
       {
         "message": "4A02AD",
@@ -1496,7 +1496,7 @@
     ]
   },
   {
-    "image": "positives/0052.jpg",
+    "image": "images/0052.jpg",
     "tags": [
       {
         "message": "4A008B",
@@ -1523,7 +1523,7 @@
     ]
   },
   {
-    "image": "positives/0053.jpg",
+    "image": "images/0053.jpg",
     "tags": [
       {
         "message": "4A0183",
@@ -1550,7 +1550,7 @@
     ]
   },
   {
-    "image": "positives/0054.jpg",
+    "image": "images/0054.jpg",
     "tags": [
       {
         "message": "4A00ED",
@@ -1577,7 +1577,7 @@
     ]
   },
   {
-    "image": "positives/0055.jpg",
+    "image": "images/0055.jpg",
     "tags": [
       {
         "message": "4A0217",
@@ -1604,7 +1604,7 @@
     ]
   },
   {
-    "image": "positives/0056.jpg",
+    "image": "images/0056.jpg",
     "tags": [
       {
         "message": "4A023B",
@@ -1655,7 +1655,7 @@
     ]
   },
   {
-    "image": "positives/0057.jpg",
+    "image": "images/0057.jpg",
     "tags": [
       {
         "message": "4A023B",

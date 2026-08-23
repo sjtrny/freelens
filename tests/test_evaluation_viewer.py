@@ -13,18 +13,17 @@ from scripts.view_evaluation import create_app
 
 @pytest.fixture
 def evaluation_manifest(tmp_path):
-    (tmp_path / "positives").mkdir()
-    (tmp_path / "negatives").mkdir()
-    Image.new("RGB", (100, 80), "white").save(tmp_path / "positives/tagged.jpg")
-    Image.new("RGB", (40, 30), "black").save(tmp_path / "negatives/empty.jpg")
-    Image.new("RGB", (60, 50), "gray").save(tmp_path / "positives/review.jpg")
+    (tmp_path / "images").mkdir()
+    Image.new("RGB", (100, 80), "white").save(tmp_path / "images/tagged.jpg")
+    Image.new("RGB", (40, 30), "black").save(tmp_path / "images/empty.jpg")
+    Image.new("RGB", (60, 50), "gray").save(tmp_path / "images/review.jpg")
 
     manifest = tmp_path / "evaluation.json"
     manifest.write_text(
         json.dumps(
             [
                 {
-                    "image": "positives/tagged.jpg",
+                    "image": "images/tagged.jpg",
                     "tags": [
                         {"message": "AABBCC", "conditions": []},
                         {
@@ -40,9 +39,9 @@ def evaluation_manifest(tmp_path):
                         },
                     ],
                 },
-                {"image": "negatives/empty.jpg", "tags": []},
+                {"image": "images/empty.jpg", "tags": []},
                 {
-                    "image": "positives/review.jpg",
+                    "image": "images/review.jpg",
                     "tags": [
                         {
                             "message": None,
@@ -70,7 +69,7 @@ def test_load_dataset_preserves_tag_identity_and_review_states(evaluation_manife
     assert dataset.cases[2]["tags"] == [
         {"message": None, "conditions": ["severe_blur"]}
     ]
-    assert dataset.image_size("positives/tagged.jpg") == (100, 80)
+    assert dataset.image_size("images/tagged.jpg") == (100, 80)
 
 
 def test_load_dataset_preserves_an_unreviewed_case(evaluation_manifest):
@@ -248,9 +247,11 @@ def test_benchmark_reads_expected_messages_from_tags(evaluation_manifest):
     assert results[0]["status"] == "pass"
     assert results[1]["status"] == "pass"
     assert len(results) == 2
-    assert all(result["image"] != "positives/review.jpg" for result in results)
+    assert all(result["image"] != "images/review.jpg" for result in results)
     summary = summarize(results)
     assert summary["scorable_images"] == 2
+    assert summary["positive_images"] == 1
+    assert summary["negative_images"] == 1
     assert "manual_review_images" not in summary
 
 
@@ -638,8 +639,12 @@ def test_viewer_lists_tags_above_details_and_includes_resizable_panels(
     response = app.test_client().get("/?image=0&tag=1")
 
     assert response.status_code == 200
+    assert b"<title>tagged.jpg \xc2\xb7 FreeLens evaluation</title>" in response.data
+    assert b"<h1>tagged.jpg</h1>" in response.data
     assert b"<details" not in response.data
     assert b'class="image-list"' in response.data
+    assert b'title="images/tagged.jpg" aria-current="page">tagged.jpg</a>' in response.data
+    assert b">images/tagged.jpg</a>" not in response.data
     assert b'<ul class="tag-list"' in response.data
     assert (
         response.data.index(b'id="image-list-panel"')
@@ -675,8 +680,7 @@ def test_viewer_serves_only_manifest_image_indexes(evaluation_manifest):
     assert response.status_code == 200
     assert response.mimetype == "image/jpeg"
     assert (
-        response.data
-        == (evaluation_manifest.parent / "positives/tagged.jpg").read_bytes()
+        response.data == (evaluation_manifest.parent / "images/tagged.jpg").read_bytes()
     )
 
     assert client.get("/image/99").status_code == 404

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ case.image }} · FreeLens evaluation</title>
+    <title>{{ case.image.split('/')[-1] }} · FreeLens evaluation</title>
     <style>
       :root { color-scheme: light dark; font: 15px system-ui, sans-serif; }
       * { box-sizing: border-box; }
@@ -181,7 +181,7 @@
         <h2>Images</h2>
         <nav class="image-list" aria-label="Dataset images">
           {% for item in cases %}
-            <a href="{{ url_for('index', image=loop.index0) }}" title="{{ item.image }}"{% if loop.index0 == image_index %} aria-current="page"{% endif %}>{{ item.image }}</a>
+            <a href="{{ url_for('index', image=loop.index0) }}" title="{{ item.image }}"{% if loop.index0 == image_index %} aria-current="page"{% endif %}>{{ item.image.split('/')[-1] }}</a>
           {% endfor %}
         </nav>
       </aside>
@@ -189,7 +189,7 @@
       <div class="panel-resizer" data-resizer="left" role="separator" aria-label="Resize image list" aria-controls="image-list-panel" aria-orientation="vertical" tabindex="0"></div>
 
       <main>
-        <h1>{{ case.image }}</h1>
+        <h1>{{ case.image.split('/')[-1] }}</h1>
         <div class="image-toolbar" aria-label="Image controls" data-image-toolbar>
           <button type="button" data-action="zoom-out" aria-label="Zoom out">−</button>
           <button type="button" data-action="fit">Fit</button>

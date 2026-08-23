@@ -1,7 +1,6 @@
 # Dataset
 
-The contributor-supplied photographs under `positives/` and `negatives/` are licensed
-under `CC-BY-4.0`.
+The contributor-supplied photographs under `images/` are licensed under `CC-BY-4.0`.
 
 Refer to the `LICENSE` file or https://creativecommons.org/licenses/by/4.0/ for details.
 

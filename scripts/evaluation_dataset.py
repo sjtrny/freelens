@@ -140,18 +140,16 @@ def _find_dataset_images(dataset_root):
     resolved_root = dataset_root.resolve()
     images = {}
 
-    for directory_name in ("positives", "negatives"):
-        directory = dataset_root / directory_name
-        for path in directory.iterdir():
-            if not path.is_file():
-                continue
+    for path in (dataset_root / "images").iterdir():
+        if not path.is_file():
+            continue
 
-            resolved = path.resolve()
-            if not resolved.is_relative_to(resolved_root):
-                raise ValueError(f"dataset image resolves outside dataset: {path}")
+        resolved = path.resolve()
+        if not resolved.is_relative_to(resolved_root):
+            raise ValueError(f"dataset image resolves outside dataset: {path}")
 
-            image_id = path.relative_to(dataset_root).as_posix()
-            images[image_id] = resolved
+        image_id = path.relative_to(dataset_root).as_posix()
+        images[image_id] = resolved
 
     return images
 
