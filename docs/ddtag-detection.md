@@ -13,7 +13,7 @@ In `detect_frames` we use a modified version of [1] as follows:
 1. Fit polygon to contours
 1. Apply filters:
    1. 4-vertex polygons.
-   1. Area greater than threshold
+   1. Area of at least 1,500 px²
    1. Convex polygon
    1. Shape is roughly square (perimeter/area test)
    1. Check that border around frame is white

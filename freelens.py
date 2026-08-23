@@ -15,6 +15,7 @@ ind_bit_map = {
 center_bit_map = {5: "00", 7: "01", 9: "10", 11: "11"}
 
 SUPPORTED_TAG_SIZES = (5, 7, 9, 11)
+MIN_FRAME_AREA = 1500
 
 CRC_TAG_SIZE = 5
 CRC_WIDTH = 16
@@ -207,7 +208,7 @@ def detect_frames(image):
     # 5. Apply filters
     filters = [
         frame_filter_polygons_4vertex,
-        lambda polygons: frame_filter_polygons_area(polygons, 2**11),
+        lambda polygons: frame_filter_polygons_area(polygons, MIN_FRAME_AREA),
         frame_filter_polygons_convex,
         frame_filter_polygons_squareish,
     ]
