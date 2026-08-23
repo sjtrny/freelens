@@ -56,12 +56,11 @@ def _tag_from_form(form):
             if condition.strip()
         ],
     }
-    message_source_image = form.get("message_source_image", "").strip()
-    if message_source_image:
-        tag["message_provenance"] = {
-            "type": "related_image",
-            "image": message_source_image,
-        }
+    description = form.get("description", "").strip()
+    if description:
+        tag["description"] = description
+    if form.get("scorable") != "true":
+        tag["scorable"] = False
     values = {
         corner: [
             form.get(f"{corner}_x", "").strip(),

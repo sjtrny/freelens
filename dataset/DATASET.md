@@ -15,9 +15,10 @@ free-kit corpus; no corpus files are currently included.
 `null` `message`, a `conditions` list, and an optional four-corner `location`. A null
 message records a confirmed tag whose identity cannot be determined. Locations use
 integer `[x, y]` pairs in original-image pixels, clockwise from `top_left`. Conditions
-describe the individual tag region, not the whole image. A message inferred from another
-photograph may include `message_provenance` with `type: "related_image"` and that
-image's manifest path.
+describe the individual tag region, not the whole image. An optional free-form
+`description` records any additional context about the tag. Tags are included in scoring
+by default; optional `scorable: false` retains a tag as ground-truth metadata without
+requiring a detector to recover it.
 
 The initial messages were bootstrapped from CRC-valid FreeLens detections, so they are
 provisional benchmark data rather than independent proof of correctness. `tags: null`
@@ -33,9 +34,9 @@ python scripts/benchmark_dataset.py
 The command reports scores and timing but always exits successfully after a completed
 run. It is intentionally not part of pytest or CI. Use `--output results.json` to save a
 detailed result that can be compared between implementations. The current end-to-end
-benchmark only evaluates scorable images: reviewed empty images and images for which
-every present tag has a known message. It omits unreviewed images and images containing
-any null message because their decoded output cannot be compared completely.
+benchmark evaluates reviewed images whose scorable tags all have known messages. It
+omits unreviewed images and images containing a scorable tag with a null message.
+Non-scorable tags are omitted from expected detector output.
 
 ## Evaluation Viewer
 
@@ -58,16 +59,16 @@ in green; selecting one changes it to red and displays its four draggable corner
 handles. Click a green tag to select it, or an untagged part of the image to clear the
 selection. Leaving a tag with unsaved changes prompts to save, discard, or keep editing.
 Use Save to persist or Cancel to restore all unsaved changes. For a tag without a
-location, use Add bounding box to create an adjustable centered rectangle. Drag inside a
-box to move the whole region, or hold Shift when starting a corner drag to scale the box
-proportionally around its opposite corner. When zoomed in, drag elsewhere on the image
-to pan. Use Add tag beside the tag-list heading to start an unsaved tag with a centered
-box ready for adjustment. Leave its message blank if it cannot be determined. Scrolling
-over the image zooms around the pointer without an upper zoom limit. Tag edits also
-update the square, perspective-corrected preview below the details. Tag edits are
-validated and atomically replace `dataset/evaluation.json` directly in the repository
-through Compose's writable `./dataset:/app/dataset` bind mount. Every other application
-path remains read-only.
+location, use Add bounding box to create an adjustable square centered in the visible
+image region and sized for the current zoom. Drag inside a box to move the whole region,
+or hold Shift when starting a corner drag to scale the box proportionally around its
+opposite corner. When zoomed in, drag elsewhere on the image to pan. Use Add tag beside
+the tag-list heading to start an unsaved tag with the same visible-region box ready for
+adjustment. Leave its message blank if it cannot be determined. Scrolling over the image
+zooms around the pointer without an upper zoom limit. Tag edits also update the square,
+perspective-corrected preview below the details. Tag edits are validated and atomically
+replace `dataset/evaluation.json` directly in the repository through Compose's writable
+`./dataset:/app/dataset` bind mount. Every other application path remains read-only.
 
 Compose runs as UID/GID 1000 by default. On Linux, override these values if the checkout
 has a different owner. If Docker runs outside a development container, also set

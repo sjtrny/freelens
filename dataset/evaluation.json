@@ -908,7 +908,25 @@
         "message": null,
         "conditions": [
           "severe_blur"
-        ]
+        ],
+        "location": {
+          "top_left": [
+            1021,
+            1525
+          ],
+          "top_right": [
+            1090,
+            1528
+          ],
+          "bottom_right": [
+            1086,
+            1598
+          ],
+          "bottom_left": [
+            1017,
+            1594
+          ]
+        }
       }
     ]
   },
@@ -920,10 +938,7 @@
         "conditions": [
           "severe_blur"
         ],
-        "message_provenance": {
-          "type": "related_image",
-          "image": "positives/0033.jpg"
-        },
+        "description": "Message identified from positives/0033.jpg.",
         "location": {
           "top_left": [
             870,
@@ -1610,6 +1625,30 @@
           "bottom_left": [
             4132,
             1734
+          ]
+        }
+      },
+      {
+        "message": "4A023B",
+        "conditions": [],
+        "scorable": false,
+        "description": "Message inferred from tag 0 on the same tram; not independently readable.",
+        "location": {
+          "top_left": [
+            1122,
+            1776
+          ],
+          "top_right": [
+            1147,
+            1775
+          ],
+          "bottom_right": [
+            1136,
+            1813
+          ],
+          "bottom_left": [
+            1112,
+            1814
           ]
         }
       }

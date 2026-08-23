@@ -36,6 +36,7 @@ def evaluation_manifest(tmp_path):
                                 "bottom_left": [10, 70],
                             },
                             "conditions": ["occluded"],
+                            "scorable": False,
                         },
                     ],
                 },
@@ -65,6 +66,7 @@ def test_load_dataset_preserves_tag_identity_and_review_states(evaluation_manife
         "AABBCC",
     ]
     assert dataset.cases[1]["tags"] == []
+    assert dataset.cases[0]["tags"][1]["scorable"] is False
     assert dataset.cases[2]["tags"] == [
         {"message": None, "conditions": ["severe_blur"]}
     ]
@@ -100,6 +102,10 @@ def test_load_dataset_preserves_an_unreviewed_case(evaluation_manifest):
             lambda cases: cases[0]["tags"][0].update(message="aabbcc"),
             "invalid message",
         ),
+        (
+            lambda cases: cases[0]["tags"][0].update(scorable="false"),
+            "invalid scorable value",
+        ),
     ),
 )
 def test_load_dataset_rejects_invalid_tags(evaluation_manifest, change, message):
@@ -120,26 +126,17 @@ def test_load_dataset_rejects_image_level_conditions(evaluation_manifest):
         load_dataset(evaluation_manifest)
 
 
-def test_load_dataset_validates_related_image_message_provenance(
-    evaluation_manifest,
-):
+def test_load_dataset_normalizes_and_validates_a_tag_description(evaluation_manifest):
     cases = json.loads(evaluation_manifest.read_text(encoding="utf-8"))
-    cases[2]["tags"][0]["message"] = "AABBCC"
-    cases[0]["tags"][0]["message_provenance"] = {
-        "type": "related_image",
-        "image": "positives/review.jpg",
-    }
+    cases[0]["tags"][0]["description"] = "  Message seen in another image.  "
     evaluation_manifest.write_text(json.dumps(cases), encoding="utf-8")
 
     tag = load_dataset(evaluation_manifest).case(0)["tags"][0]
-    assert tag["message_provenance"] == {
-        "type": "related_image",
-        "image": "positives/review.jpg",
-    }
+    assert tag["description"] == "Message seen in another image."
 
-    cases[2]["tags"][0]["message"] = "123ABC"
+    cases[0]["tags"][0]["description"] = 123
     evaluation_manifest.write_text(json.dumps(cases), encoding="utf-8")
-    with pytest.raises(ValueError, match="does not reference the same message"):
+    with pytest.raises(ValueError, match="invalid description"):
         load_dataset(evaluation_manifest)
 
 
@@ -245,7 +242,9 @@ def test_benchmark_reads_expected_messages_from_tags(evaluation_manifest):
 
     results = benchmark_dataset(evaluation_manifest, detector=detector)
 
-    assert results[0]["expected"] == ["AABBCC", "AABBCC"]
+    assert results[0]["expected"] == ["AABBCC"]
+    assert results[0]["actual"] == ["AABBCC", "AABBCC"]
+    assert results[0]["unexpected"] == []
     assert results[0]["status"] == "pass"
     assert results[1]["status"] == "pass"
     assert len(results) == 2
@@ -312,6 +311,7 @@ def test_viewer_updates_a_tag_and_redirects_to_its_details(evaluation_manifest):
     assert tag == {
         "message": "123ABC",
         "conditions": ["blur", "occluded"],
+        "scorable": False,
         "location": {
             "top_left": [5, 6],
             "top_right": [70, 6],
@@ -375,7 +375,10 @@ def test_viewer_renders_and_submits_an_editable_tag_form(evaluation_manifest):
     assert b'name="csrf_token"' in response.data
     assert b'name="message" value="AABBCC"' in response.data
     assert b"Leave blank when the message cannot be determined." in response.data
-    assert b'name="message_source_image" value=""' in response.data
+    assert b"Description" in response.data
+    assert b'name="description"' in response.data
+    assert b'name="scorable" value="true">' in response.data
+    assert b"Include in scoring" in response.data
     assert b'name="conditions"' in response.data
     assert b">occluded</textarea>" in response.data
     assert b'name="top_left_x" value="10" min="0" max="99"' in response.data
@@ -383,6 +386,7 @@ def test_viewer_renders_and_submits_an_editable_tag_form(evaluation_manifest):
     assert b'<button type="submit">Save</button>' in response.data
     assert b'<button type="reset" disabled>Cancel</button>' in response.data
     assert b'event.target.closest("[data-tag-form]")' in response.data
+    assert b"control.checked !== control.defaultChecked" in response.data
     assert b"body: new FormData(form)" in response.data
     assert b'method: "POST"' in response.data
     assert b'event.target.closest("[data-corner-handle]")' in response.data
@@ -404,8 +408,11 @@ def test_viewer_renders_and_submits_an_editable_tag_form(evaluation_manifest):
     assert b'status.classList.add("is-fading"), 10000' in response.data
     assert b".form-status.is-fading { opacity: 0; }" in response.data
     assert b'event.target.closest("[data-add-location]")' in response.data
-    assert b"Math.round(Math.min(imageWidth, imageHeight) * 0.25)" in response.data
+    assert b"function defaultLocationInView(stage)" in response.data
+    assert b"Math.max(stageBounds.left, viewportBounds.left)" in response.data
+    assert b"Math.min(imageWidth, imageHeight) * 0.25 / zoom" in response.data
     assert b"const right = left + sideLength - 1" in response.data
+    assert b"applyDefaultLocation(nextForm, true)" in response.data
     assert b'overlay?.dataset.initialLocation === "false"' in response.data
     assert b'event.target.closest("[data-bounding-region]")' in response.data
     assert b"imageWidth - 1 - maximumX" in response.data
@@ -473,7 +480,8 @@ def test_viewer_saves_a_tag_with_an_unknown_message(evaluation_manifest):
         data={
             "csrf_token": app.config["CSRF_TOKEN"],
             "message": "",
-            "message_source_image": "",
+            "description": "Too blurred to identify.",
+            "scorable": "true",
             "conditions": "severe_blur",
         },
     )
@@ -481,6 +489,7 @@ def test_viewer_saves_a_tag_with_an_unknown_message(evaluation_manifest):
     assert response.status_code == 303
     assert load_dataset(evaluation_manifest).case(2)["tags"][0] == {
         "message": None,
+        "description": "Too blurred to identify.",
         "conditions": ["severe_blur"],
     }
     assert b"Unknown message" in client.get(response.headers["Location"]).data
@@ -568,6 +577,7 @@ def test_viewer_opens_a_new_tag_draft_with_a_default_location(evaluation_manifes
         in response.data
     )
     assert b'name="message" value=""' in response.data
+    assert b'name="scorable" value="true" checked>' in response.data
     assert (
         b'data-tag-index="2" data-selected data-initial-location="true"'
         in response.data
@@ -593,6 +603,7 @@ def test_viewer_saves_a_new_tag_to_the_manifest(evaluation_manifest):
         data={
             "csrf_token": app.config["CSRF_TOKEN"],
             "message": "123abc",
+            "scorable": "true",
             "conditions": "blur",
             "top_left_x": "25",
             "top_left_y": "20",

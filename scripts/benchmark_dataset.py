@@ -18,9 +18,17 @@ def benchmark_dataset(manifest_path=DEFAULT_MANIFEST, detector=detect_tags):
     results = []
 
     for case in load_cases(manifest_path):
-        if case["tags"] is None or any(tag["message"] is None for tag in case["tags"]):
+        if case["tags"] is None:
             continue
-        expected = [tag["message"] for tag in case["tags"]]
+        scorable_tags = [tag for tag in case["tags"] if tag.get("scorable", True)]
+        if any(tag["message"] is None for tag in scorable_tags):
+            continue
+        expected = [tag["message"] for tag in scorable_tags]
+        ignored = [
+            tag["message"]
+            for tag in case["tags"]
+            if not tag.get("scorable", True) and tag["message"] is not None
+        ]
         result = {
             "image": case["image"],
             "expected": expected,
@@ -56,9 +64,12 @@ def benchmark_dataset(manifest_path=DEFAULT_MANIFEST, detector=detect_tags):
                 matched += 1
             else:
                 missed.append(message)
+        for message in ignored:
+            if message in unmatched:
+                unmatched.remove(message)
 
         result.update(
-            status="pass" if actual == sorted(expected) else "fail",
+            status="pass" if not missed and not unmatched else "fail",
             actual=actual,
             seconds=round(time.perf_counter() - started, 6),
             matched=matched,

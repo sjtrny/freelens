@@ -95,6 +95,8 @@
       }
       .tag-form input[readonly] { background: #8881; color: inherit; }
       .tag-form textarea { resize: vertical; }
+      .tag-form > .checkbox-field { align-items: center; display: flex; gap: .5rem; }
+      .tag-form > .checkbox-field input { margin: 0; padding: 0; width: auto; }
       .tag-form fieldset { border: 1px solid #8888; border-radius: .3rem; margin: 0; min-width: 0; padding: .65rem; }
       .tag-form legend { font-weight: 700; padding: 0 .25rem; }
       .coordinate-list { display: grid; gap: .6rem; }
@@ -267,8 +269,12 @@
               <span class="form-hint">Leave blank when the message cannot be determined.</span>
             </label>
             <label>
-              Message source image
-              <input type="text" name="message_source_image" value="{{ selected_tag.message_provenance.image if selected_tag.message_provenance else '' }}" autocomplete="off" spellcheck="false" placeholder="Optional related image path">
+              Description
+              <textarea name="description" rows="3" placeholder="Optional notes about this tag">{{ selected_tag.description or '' }}</textarea>
+            </label>
+            <label class="checkbox-field">
+              <input type="checkbox" name="scorable" value="true"{% if selected_tag.get('scorable', true) %} checked{% endif %}>
+              Include in scoring
             </label>
             <label>
               Conditions
@@ -577,10 +583,13 @@
         }
 
         function formIsDirty(form) {
-          return [...form.elements].some(
-            (control) => control.matches('input:not([type="hidden"]), textarea')
-              && control.value !== control.defaultValue,
-          );
+          return [...form.elements].some((control) => {
+            if (control.matches('input[type="checkbox"]')) {
+              return control.checked !== control.defaultChecked;
+            }
+            return control.matches('input:not([type="hidden"]), textarea')
+              && control.value !== control.defaultValue;
+          });
         }
 
         function syncCancel(form) {
@@ -651,31 +660,55 @@
           document.addEventListener("pointercancel", stop, { signal: listeners.signal });
         }
 
-        document.addEventListener("click", (event) => {
-          const button = event.target.closest("[data-add-location]");
-          if (!button || saving) return;
-          const form = button.closest("[data-tag-form]");
-          const stage = document.querySelector("[data-image-stage]");
-          const overlay = stage.querySelector("[data-tag-overlay][data-selected]");
+        function defaultLocationInView(stage) {
+          const viewport = stage.closest("[data-image-viewport]");
+          const stageBounds = stage.getBoundingClientRect();
+          const viewportBounds = viewport.getBoundingClientRect();
           const imageWidth = Number(stage.dataset.width);
           const imageHeight = Number(stage.dataset.height);
+          const zoom = Number(stage.dataset.zoom) || 1;
+          const visibleLeft = Math.max(stageBounds.left, viewportBounds.left);
+          const visibleRight = Math.min(stageBounds.right, viewportBounds.right);
+          const visibleTop = Math.max(stageBounds.top, viewportBounds.top);
+          const visibleBottom = Math.min(stageBounds.bottom, viewportBounds.bottom);
+          const centerX = (
+            ((visibleLeft + visibleRight) / 2 - stageBounds.left)
+            * imageWidth / stageBounds.width
+          );
+          const centerY = (
+            ((visibleTop + visibleBottom) / 2 - stageBounds.top)
+            * imageHeight / stageBounds.height
+          );
           const sideLength = Math.max(
             1,
-            Math.round(Math.min(imageWidth, imageHeight) * 0.25),
+            Math.min(
+              imageWidth,
+              imageHeight,
+              Math.round(Math.min(imageWidth, imageHeight) * 0.25 / zoom),
+            ),
           );
-          const left = Math.floor((imageWidth - sideLength) / 2);
-          const top = Math.floor((imageHeight - sideLength) / 2);
+          const left = Math.min(
+            imageWidth - sideLength,
+            Math.max(0, Math.round(centerX - sideLength / 2)),
+          );
+          const top = Math.min(
+            imageHeight - sideLength,
+            Math.max(0, Math.round(centerY - sideLength / 2)),
+          );
           const right = left + sideLength - 1;
           const bottom = top + sideLength - 1;
-          const points = {
+          return {
             top_left: [left, top],
             top_right: [right, top],
             bottom_right: [right, bottom],
             bottom_left: [left, bottom],
           };
+        }
 
-          overlay.hidden = false;
-          button.hidden = true;
+        function applyDefaultLocation(form, setBaseline = false) {
+          const stage = document.querySelector("[data-image-stage]");
+          const overlay = stage.querySelector("[data-tag-overlay][data-selected]");
+          const points = defaultLocationInView(stage);
           for (const corner of cornerOrder) {
             updateCorner(
               overlay.querySelector(`[data-corner="${corner}"]`),
@@ -683,6 +716,26 @@
               false,
             );
           }
+          if (setBaseline) {
+            for (const corner of cornerOrder) {
+              for (const axis of ["x", "y"]) {
+                const input = form.elements.namedItem(`${corner}_${axis}`);
+                input.defaultValue = input.value;
+              }
+            }
+          }
+        }
+
+        document.addEventListener("click", (event) => {
+          const button = event.target.closest("[data-add-location]");
+          if (!button || saving) return;
+          const form = button.closest("[data-tag-form]");
+          const stage = document.querySelector("[data-image-stage]");
+          const overlay = stage.querySelector("[data-tag-overlay][data-selected]");
+
+          overlay.hidden = false;
+          button.hidden = true;
+          applyDefaultLocation(form);
           markUnsaved(form);
         });
 
@@ -990,7 +1043,11 @@
             }
 
             currentPanel.replaceWith(nextPanel);
-            refreshTagPreview(nextPanel.querySelector("[data-tag-form]"));
+            const nextForm = nextPanel.querySelector("[data-tag-form]");
+            if (sameImage && nextForm?.hasAttribute("data-new-tag-form")) {
+              applyDefaultLocation(nextForm, true);
+            }
+            refreshTagPreview(nextForm);
             const nextTagList = nextPanel.querySelector(".tag-list");
             nextTagList.scrollTop = tagScroll;
             nextTagList.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest" });

@@ -75,18 +75,6 @@ def _validate_location(location, owner):
     return normalized
 
 
-def _validate_message_provenance(provenance, owner):
-    if (
-        not isinstance(provenance, dict)
-        or set(provenance) != {"type", "image"}
-        or provenance.get("type") != "related_image"
-        or not isinstance(provenance.get("image"), str)
-        or not provenance["image"]
-    ):
-        raise ValueError(f"invalid message provenance for {owner}")
-    return dict(provenance)
-
-
 def _normalize_tag(tag, image_id, index):
     owner = f"tag {index} in {image_id}"
     if not isinstance(tag, dict):
@@ -104,12 +92,16 @@ def _normalize_tag(tag, image_id, index):
         "message": message,
         "conditions": _validate_conditions(tag.get("conditions", []), owner),
     }
-    if "message_provenance" in tag:
-        if message is None:
-            raise ValueError(f"message provenance requires a known message for {owner}")
-        normalized["message_provenance"] = _validate_message_provenance(
-            tag["message_provenance"], owner
-        )
+    if "scorable" in tag:
+        if type(tag["scorable"]) is not bool:
+            raise ValueError(f"invalid scorable value for {owner}")
+        if not tag["scorable"]:
+            normalized["scorable"] = False
+    if "description" in tag:
+        description = tag["description"]
+        if not isinstance(description, str) or not description.strip():
+            raise ValueError(f"invalid description for {owner}")
+        normalized["description"] = description.strip()
     if "location" in tag:
         normalized["location"] = _validate_location(tag["location"], owner)
     return normalized
@@ -142,24 +134,6 @@ def _normalize_case(case, index):
             ]
         ),
     }
-
-
-def _validate_message_provenance_references(cases):
-    cases_by_image = {case["image"]: case for case in cases}
-    for case in cases:
-        for tag_index, tag in enumerate(case["tags"] or []):
-            provenance = tag.get("message_provenance")
-            if provenance is None:
-                continue
-            source = cases_by_image.get(provenance["image"])
-            source_messages = {
-                source_tag["message"] for source_tag in (source or {}).get("tags") or []
-            }
-            if tag["message"] not in source_messages:
-                raise ValueError(
-                    f"message provenance for tag {tag_index} in {case['image']} "
-                    f"does not reference the same message"
-                )
 
 
 def _find_dataset_images(dataset_root):
@@ -218,7 +192,6 @@ def load_dataset(manifest_path=DEFAULT_MANIFEST):
     normalized_cases = tuple(
         _normalize_case(case, index) for index, case in enumerate(cases)
     )
-    _validate_message_provenance_references(normalized_cases)
     listed_images = [case["image"] for case in normalized_cases]
     if len(listed_images) != len(set(listed_images)):
         raise ValueError("evaluation manifest contains duplicate images")
