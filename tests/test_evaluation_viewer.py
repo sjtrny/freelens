@@ -6,8 +6,8 @@ from types import SimpleNamespace
 import pytest
 from PIL import Image
 
-from scripts.benchmark_dataset import benchmark_dataset
-from scripts.evaluation_dataset import load_dataset, update_tag
+from scripts.benchmark_dataset import benchmark_dataset, summarize
+from scripts.evaluation_dataset import add_tag, load_dataset, update_tag
 from scripts.view_evaluation import create_app
 
 
@@ -42,8 +42,12 @@ def evaluation_manifest(tmp_path):
                 {"image": "negatives/empty.jpg", "tags": []},
                 {
                     "image": "positives/review.jpg",
-                    "tags": None,
-                    "conditions": ["blur"],
+                    "tags": [
+                        {
+                            "message": None,
+                            "conditions": ["severe_blur"],
+                        }
+                    ],
                 },
             ]
         ),
@@ -61,9 +65,18 @@ def test_load_dataset_preserves_tag_identity_and_review_states(evaluation_manife
         "AABBCC",
     ]
     assert dataset.cases[1]["tags"] == []
-    assert dataset.cases[2]["tags"] is None
-    assert dataset.cases[2]["conditions"] == ["blur"]
+    assert dataset.cases[2]["tags"] == [
+        {"message": None, "conditions": ["severe_blur"]}
+    ]
     assert dataset.image_size("positives/tagged.jpg") == (100, 80)
+
+
+def test_load_dataset_preserves_an_unreviewed_case(evaluation_manifest):
+    cases = json.loads(evaluation_manifest.read_text(encoding="utf-8"))
+    cases[2]["tags"] = None
+    evaluation_manifest.write_text(json.dumps(cases), encoding="utf-8")
+
+    assert load_dataset(evaluation_manifest).case(2)["tags"] is None
 
 
 @pytest.mark.parametrize(
@@ -95,6 +108,38 @@ def test_load_dataset_rejects_invalid_tags(evaluation_manifest, change, message)
     evaluation_manifest.write_text(json.dumps(cases), encoding="utf-8")
 
     with pytest.raises(ValueError, match=message):
+        load_dataset(evaluation_manifest)
+
+
+def test_load_dataset_rejects_image_level_conditions(evaluation_manifest):
+    cases = json.loads(evaluation_manifest.read_text(encoding="utf-8"))
+    cases[2]["conditions"] = ["severe_blur"]
+    evaluation_manifest.write_text(json.dumps(cases), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="conditions .* must be attached to tags"):
+        load_dataset(evaluation_manifest)
+
+
+def test_load_dataset_validates_related_image_message_provenance(
+    evaluation_manifest,
+):
+    cases = json.loads(evaluation_manifest.read_text(encoding="utf-8"))
+    cases[2]["tags"][0]["message"] = "AABBCC"
+    cases[0]["tags"][0]["message_provenance"] = {
+        "type": "related_image",
+        "image": "positives/review.jpg",
+    }
+    evaluation_manifest.write_text(json.dumps(cases), encoding="utf-8")
+
+    tag = load_dataset(evaluation_manifest).case(0)["tags"][0]
+    assert tag["message_provenance"] == {
+        "type": "related_image",
+        "image": "positives/review.jpg",
+    }
+
+    cases[2]["tags"][0]["message"] = "123ABC"
+    evaluation_manifest.write_text(json.dumps(cases), encoding="utf-8")
+    with pytest.raises(ValueError, match="does not reference the same message"):
         load_dataset(evaluation_manifest)
 
 
@@ -152,6 +197,40 @@ def test_update_tag_does_not_replace_manifest_when_validation_fails(
     assert not list(evaluation_manifest.parent.glob(".evaluation.json.*.tmp"))
 
 
+def test_add_tag_appends_to_an_unreviewed_case(evaluation_manifest):
+    cases = json.loads(evaluation_manifest.read_text(encoding="utf-8"))
+    cases[2]["tags"] = None
+    evaluation_manifest.write_text(json.dumps(cases), encoding="utf-8")
+    dataset = add_tag(
+        load_dataset(evaluation_manifest),
+        2,
+        {
+            "message": "123ABC",
+            "conditions": [],
+            "location": {
+                "top_left": [15, 12],
+                "top_right": [44, 12],
+                "bottom_right": [44, 37],
+                "bottom_left": [15, 37],
+            },
+        },
+    )
+
+    assert dataset.case(2)["tags"] == [
+        {
+            "message": "123ABC",
+            "conditions": [],
+            "location": {
+                "top_left": [15, 12],
+                "top_right": [44, 12],
+                "bottom_right": [44, 37],
+                "bottom_left": [15, 37],
+            },
+        }
+    ]
+    assert load_dataset(evaluation_manifest).case(2)["tags"] == dataset.case(2)["tags"]
+
+
 def test_benchmark_reads_expected_messages_from_tags(evaluation_manifest):
     def detector(image, **options):
         assert options == {
@@ -169,7 +248,11 @@ def test_benchmark_reads_expected_messages_from_tags(evaluation_manifest):
     assert results[0]["expected"] == ["AABBCC", "AABBCC"]
     assert results[0]["status"] == "pass"
     assert results[1]["status"] == "pass"
-    assert results[2]["status"] == "manual-review"
+    assert len(results) == 2
+    assert all(result["image"] != "positives/review.jpg" for result in results)
+    summary = summarize(results)
+    assert summary["scorable_images"] == 2
+    assert "manual_review_images" not in summary
 
 
 def test_viewer_selects_a_tag_and_draws_its_location(evaluation_manifest):
@@ -183,12 +266,13 @@ def test_viewer_selects_a_tag_and_draws_its_location(evaluation_manifest):
     assert b"AABBCC" in response.data
     assert b"occluded" in response.data
     assert (
-        b"<polygon data-overlay-polygon data-bounding-region "
+        b'<polygon data-overlay-polygon data-tag-region data-tag-url="/?image=0&amp;tag=1" '
+        b"data-bounding-region "
         b'points="10,10 90,10 90,70 10,70">' in response.data
     )
     assert b'class="tag-overlay is-selected"' in response.data
     assert b'data-tag-index="1" data-selected' in response.data
-    assert b".tag-overlay polygon { fill: #34c75922; stroke: #1e9e45" in response.data
+    assert b".tag-overlay polygon { cursor: pointer; fill: #34c75922" in response.data
     assert (
         b".tag-overlay.is-selected polygon { cursor: move; fill: #ff3b3033"
         in response.data
@@ -238,7 +322,8 @@ def test_viewer_updates_a_tag_and_redirects_to_its_details(evaluation_manifest):
     updated_page = client.get(response.headers["Location"]).data
     assert b"123ABC" in updated_page
     assert (
-        b"<polygon data-overlay-polygon data-bounding-region "
+        b'<polygon data-overlay-polygon data-tag-region data-tag-url="/?image=0&amp;tag=1" '
+        b"data-bounding-region "
         b'points="5,6 70,6 70,60 5,60">' in updated_page
     )
 
@@ -289,6 +374,8 @@ def test_viewer_renders_and_submits_an_editable_tag_form(evaluation_manifest):
     assert b'action="/tag/0/1" method="post" data-tag-form' in response.data
     assert b'name="csrf_token"' in response.data
     assert b'name="message" value="AABBCC"' in response.data
+    assert b"Leave blank when the message cannot be determined." in response.data
+    assert b'name="message_source_image" value=""' in response.data
     assert b'name="conditions"' in response.data
     assert b">occluded</textarea>" in response.data
     assert b'name="top_left_x" value="10" min="0" max="99"' in response.data
@@ -301,6 +388,12 @@ def test_viewer_renders_and_submits_an_editable_tag_form(evaluation_manifest):
     assert b'event.target.closest("[data-corner-handle]")' in response.data
     assert b"form.elements.namedItem(`${corner}_x`).value = nextX" in response.data
     assert b'overlay.querySelector("[data-overlay-polygon]")' in response.data
+    assert b"hold Shift to scale the box" in response.data
+    assert b"const scaleBox = event.shiftKey" in response.data
+    assert b'top_left: "bottom_right"' in response.data
+    assert b"const requestedScale = (" in response.data
+    assert b"Math.min(maximumScale, requestedScale)" in response.data
+    assert b"updateCorner(point, nextX, nextY, false)" in response.data
     assert b'document.addEventListener("reset"' in response.data
     assert b"form.requestSubmit()" not in response.data
     assert b'showStatus(form, "Changes discarded.", false, true)' in response.data
@@ -311,7 +404,8 @@ def test_viewer_renders_and_submits_an_editable_tag_form(evaluation_manifest):
     assert b'status.classList.add("is-fading"), 10000' in response.data
     assert b".form-status.is-fading { opacity: 0; }" in response.data
     assert b'event.target.closest("[data-add-location]")' in response.data
-    assert b"const left = Math.round(maximumX * 0.25)" in response.data
+    assert b"Math.round(Math.min(imageWidth, imageHeight) * 0.25)" in response.data
+    assert b"const right = left + sideLength - 1" in response.data
     assert b'overlay?.dataset.initialLocation === "false"' in response.data
     assert b'event.target.closest("[data-bounding-region]")' in response.data
     assert b"imageWidth - 1 - maximumX" in response.data
@@ -338,8 +432,8 @@ def test_viewer_handles_missing_locations_and_review_states(evaluation_manifest)
     missing_location = client.get("/?image=0&tag=0").data
     assert b'data-selected data-initial-location="false" hidden' in missing_location
     assert (
-        b"<polygon data-overlay-polygon data-bounding-region></polygon>"
-        in missing_location
+        b'<polygon data-overlay-polygon data-tag-region data-tag-url="/?image=0&amp;tag=0" '
+        b"data-bounding-region></polygon>" in missing_location
     )
     assert (
         b'<div class="tag-overlay" data-tag-overlay data-tag-index="1">'
@@ -352,9 +446,44 @@ def test_viewer_handles_missing_locations_and_review_states(evaluation_manifest)
         b"Add bounding box</button>" in missing_location
     )
     assert b'name="top_left_x" value=""' in missing_location
-    assert b"Add a complete location to see the tag region." in missing_location
+    assert b"No location" in missing_location
+    assert b".tag-preview img[hidden] { display: none; }" in missing_location
     assert b"No tags" in client.get("/?image=1").data
-    assert b"Not reviewed" in client.get("/?image=2").data
+
+    unknown_message = client.get("/?image=2&tag=0").data
+    assert b"Unknown message" in unknown_message
+    assert b'name="message" value=""' in unknown_message
+    assert b">severe_blur</textarea>" in unknown_message
+
+    cases = json.loads(evaluation_manifest.read_text(encoding="utf-8"))
+    cases[2]["tags"] = None
+    evaluation_manifest.write_text(json.dumps(cases), encoding="utf-8")
+    unreviewed_app = create_app(evaluation_manifest)
+    unreviewed_app.config.update(TESTING=True)
+    assert b"Not reviewed" in unreviewed_app.test_client().get("/?image=2").data
+
+
+def test_viewer_saves_a_tag_with_an_unknown_message(evaluation_manifest):
+    app = create_app(evaluation_manifest)
+    app.config.update(TESTING=True)
+    client = app.test_client()
+
+    response = client.post(
+        "/tag/2/0",
+        data={
+            "csrf_token": app.config["CSRF_TOKEN"],
+            "message": "",
+            "message_source_image": "",
+            "conditions": "severe_blur",
+        },
+    )
+
+    assert response.status_code == 303
+    assert load_dataset(evaluation_manifest).case(2)["tags"][0] == {
+        "message": None,
+        "conditions": ["severe_blur"],
+    }
+    assert b"Unknown message" in client.get(response.headers["Location"]).data
 
 
 def test_viewer_includes_fit_and_zoom_controls(evaluation_manifest):
@@ -390,6 +519,104 @@ def test_viewer_uses_partial_navigation_to_preserve_list_scroll(evaluation_manif
     assert b'activeImage?.scrollIntoView({ block: "nearest" })' in response.data
     assert b'history.pushState(null, "", response.url)' in response.data
     assert b'window.addEventListener("popstate"' in response.data
+
+
+def test_viewer_selects_overlays_and_guards_unsaved_navigation(
+    evaluation_manifest,
+):
+    app = create_app(evaluation_manifest)
+    app.config.update(TESTING=True)
+    response = app.test_client().get("/?image=0&tag=0")
+
+    assert response.status_code == 200
+    assert b'data-deselect-url="/?image=0"' in response.data
+    assert b'data-tag-region data-tag-url="/?image=0&amp;tag=1"' in response.data
+    assert b"pointer-events: all" in response.data
+    assert b'class="unsaved-dialog" data-unsaved-dialog' in response.data
+    assert b">Save and continue</button>" in response.data
+    assert b">Discard changes</button>" in response.data
+    assert b">Keep editing</button>" in response.data
+    assert b'event.target.closest("[data-tag-region]")' in response.data
+    assert b"image.dataset.deselectUrl" in response.data
+    assert b"function formIsDirty(form)" in response.data
+    assert b"function requestNavigation(url)" in response.data
+    assert b"unsavedDialog.showModal()" in response.data
+    assert b'if (action === "discard") navigate(destination)' in response.data
+    assert b"saveTag(form, destination)" in response.data
+
+
+def test_viewer_opens_a_new_tag_draft_with_a_default_location(evaluation_manifest):
+    app = create_app(evaluation_manifest)
+    app.config.update(TESTING=True)
+    client = app.test_client()
+    original = evaluation_manifest.read_bytes()
+
+    response = client.get("/?image=0&tag=new")
+
+    assert response.status_code == 200
+    assert b"<h2>Tags</h2>" in response.data
+    assert (
+        b'<button class="add-tag" type="button" '
+        b'data-new-tag-url="/?image=0&amp;tag=new">Add tag</button>' in response.data
+    )
+    assert response.data.index(b"<h2>Tags</h2>") < response.data.index(
+        b">Add tag</button>"
+    )
+    assert b"<span>New tag</span>" in response.data
+    assert (
+        b'action="/tag/0" method="post" data-tag-form data-new-tag-form'
+        in response.data
+    )
+    assert b'name="message" value=""' in response.data
+    assert (
+        b'data-tag-index="2" data-selected data-initial-location="true"'
+        in response.data
+    )
+    assert b'points="40,30 59,30 59,49 40,49"' in response.data
+    assert response.data.count(b'class="corner-handle"') == 4
+    assert b'name="top_left_x" value="40"' in response.data
+    assert b'name="bottom_right_y" value="49"' in response.data
+    assert b'event.target.closest("[data-new-tag-url]")' in response.data
+    assert b"newTag?.dataset.newTagUrl" in response.data
+    assert b'form.hasAttribute("data-new-tag-form")' in response.data
+    assert b'history.replaceState(null, "", result.url)' in response.data
+    assert evaluation_manifest.read_bytes() == original
+
+
+def test_viewer_saves_a_new_tag_to_the_manifest(evaluation_manifest):
+    app = create_app(evaluation_manifest)
+    app.config.update(TESTING=True)
+    client = app.test_client()
+
+    response = client.post(
+        "/tag/0",
+        data={
+            "csrf_token": app.config["CSRF_TOKEN"],
+            "message": "123abc",
+            "conditions": "blur",
+            "top_left_x": "25",
+            "top_left_y": "20",
+            "top_right_x": "74",
+            "top_right_y": "20",
+            "bottom_right_x": "74",
+            "bottom_right_y": "59",
+            "bottom_left_x": "25",
+            "bottom_left_y": "59",
+        },
+    )
+
+    assert response.status_code == 303
+    assert response.headers["Location"] == "/?image=0&tag=2"
+    assert load_dataset(evaluation_manifest).case(0)["tags"][2] == {
+        "message": "123ABC",
+        "conditions": ["blur"],
+        "location": {
+            "top_left": [25, 20],
+            "top_right": [74, 20],
+            "bottom_right": [74, 59],
+            "bottom_left": [25, 59],
+        },
+    }
 
 
 def test_viewer_lists_tags_above_details_and_includes_resizable_panels(

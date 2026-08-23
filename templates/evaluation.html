@@ -70,6 +70,18 @@
       .tag-list a span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
       .tag-list a:focus-visible { outline: 2px solid #2878d0; outline-offset: -2px; }
       .tag-list .muted { padding: .4rem .55rem; }
+      .tag-list-heading { align-items: center; display: flex; gap: .75rem; justify-content: space-between; margin-bottom: .83em; }
+      .tag-list-heading h2 { margin: 0; }
+      .add-tag {
+        background: #2878d0;
+        border: 0;
+        border-radius: .3rem;
+        color: white;
+        cursor: pointer;
+        font: inherit;
+        padding: .35rem .6rem;
+        white-space: nowrap;
+      }
       .tag-details-heading { border-top: 1px solid #8888; margin-top: 1rem; padding-top: 1rem; }
       .tag-form { display: grid; gap: .75rem; }
       .tag-form > label { display: grid; font-weight: 700; gap: .25rem; }
@@ -102,7 +114,15 @@
       .tag-preview { border-top: 1px solid #8888; margin-top: 1rem; padding-top: 1rem; }
       .tag-preview h2 { margin-bottom: .75rem; }
       .tag-preview img { aspect-ratio: 1; background: #8881; border: 1px solid #8888; display: block; height: auto; width: 100%; }
+      .tag-preview img[hidden] { display: none; }
       .tag-preview-status { margin: .5rem 0 0; }
+      .unsaved-dialog { border: 1px solid #8888; border-radius: .5rem; max-width: 28rem; padding: 1.25rem; }
+      .unsaved-dialog::backdrop { background: #0009; }
+      .unsaved-dialog h2 { margin: 0 0 .5rem; }
+      .unsaved-dialog p { margin: 0 0 1rem; }
+      .unsaved-dialog-actions { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; }
+      .unsaved-dialog-actions button { cursor: pointer; font: inherit; padding: .4rem .65rem; }
+      .unsaved-dialog-actions [data-unsaved-action="save"] { background: #2878d0; border: 0; border-radius: .25rem; color: white; }
       [aria-current="page"] { background: #2878d0; color: white; }
       .image-toolbar { align-items: center; display: flex; gap: .4rem; justify-content: flex-start; }
       .image-toolbar button { cursor: pointer; font: inherit; min-width: 2.5rem; padding: .3rem .6rem; }
@@ -117,7 +137,7 @@
       .image-viewport.is-panning .stage img { cursor: grabbing; }
       .tag-overlay { inset: 0; pointer-events: none; position: absolute; }
       .tag-overlay svg { inset: 0; height: 100%; position: absolute; width: 100%; }
-      .tag-overlay polygon { fill: #34c75922; stroke: #1e9e45; stroke-width: 3; vector-effect: non-scaling-stroke; }
+      .tag-overlay polygon { cursor: pointer; fill: #34c75922; pointer-events: all; stroke: #1e9e45; stroke-width: 3; vector-effect: non-scaling-stroke; }
       .tag-overlay.is-selected { z-index: 1; }
       .tag-overlay.is-selected polygon { cursor: move; fill: #ff3b3033; pointer-events: all; stroke: #ff3b30; stroke-width: 4; }
       .tag-overlay polygon.is-dragging { cursor: grabbing; }
@@ -177,13 +197,13 @@
         <div class="image-viewport" data-image-viewport>
           <div class="image-canvas">
             <div class="stage" data-image-stage data-width="{{ image_width }}" data-height="{{ image_height }}" style="width: {{ image_width }}px; height: {{ image_height }}px">
-              <img src="{{ url_for('image', case_index=image_index) }}" width="{{ image_width }}" height="{{ image_height }}" alt="Dataset image {{ case.image }}" draggable="false">
-              {% for tag in case.tags or [] %}
+              <img src="{{ url_for('image', case_index=image_index) }}" width="{{ image_width }}" height="{{ image_height }}" alt="Dataset image {{ case.image }}" draggable="false" data-deselect-url="{{ url_for('index', image=image_index) }}">
+              {% for tag in display_tags %}
                 {% set is_selected = loop.index0 == selected_tag_index %}
                 {% if tag.location or is_selected %}
                 <div class="tag-overlay{% if is_selected %} is-selected{% endif %}" data-tag-overlay data-tag-index="{{ loop.index0 }}"{% if is_selected %} data-selected data-initial-location="{{ 'true' if tag.location else 'false' }}"{% endif %}{% if not tag.location %} hidden{% endif %}>
                   <svg viewBox="0 0 {{ image_width }} {{ image_height }}" aria-hidden="true">
-                    <polygon data-overlay-polygon{% if is_selected %} data-bounding-region{% endif %}{% if tag.location %} points="{{ tag.location.top_left | join(',') }} {{ tag.location.top_right | join(',') }} {{ tag.location.bottom_right | join(',') }} {{ tag.location.bottom_left | join(',') }}"{% endif %}></polygon>
+                    <polygon data-overlay-polygon data-tag-region data-tag-url="{{ url_for('index', image=image_index, tag='new' if is_new_tag and loop.last else loop.index0) }}"{% if is_selected %} data-bounding-region{% endif %}{% if tag.location %} points="{{ tag.location.top_left | join(',') }} {{ tag.location.top_right | join(',') }} {{ tag.location.bottom_right | join(',') }} {{ tag.location.bottom_left | join(',') }}"{% endif %}></polygon>
                   </svg>
                   {% if is_selected %}
                   {% for corner in ('top_left', 'top_right', 'bottom_right', 'bottom_left') %}
@@ -197,7 +217,7 @@
                       data-y="{{ point[1] }}"
                       aria-label="Drag {{ corner | replace('_', ' ') }} corner{% if tag.location %} at x {{ point[0] }}, y {{ point[1] }}{% endif %}"
                       aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
-                      title="Drag this corner, or use the arrow keys"
+                      title="Drag this corner; hold Shift to scale the box; or use the arrow keys"
                       {% if tag.location %}
                       style="left: {{ point[0] / image_width * 100 }}%; top: {{ point[1] / image_height * 100 }}%"
                       {% endif %}
@@ -215,22 +235,27 @@
       <div class="panel-resizer" data-resizer="right" role="separator" aria-label="Resize tag panel" aria-controls="tag-panel" aria-orientation="vertical" tabindex="0"></div>
 
       <aside class="panel panel-details" id="tag-panel" data-panel="right">
-        <h2>Tags</h2>
+        <div class="tag-list-heading">
+          <h2>Tags</h2>
+          <button class="add-tag" type="button" data-new-tag-url="{{ url_for('index', image=image_index, tag='new') }}">Add tag</button>
+        </div>
         <ul class="tag-list" aria-label="Tags for {{ case.image }}">
-          {% if case.tags is none %}
+          {% if case.tags is none and not is_new_tag %}
             <li class="muted">Not reviewed</li>
-          {% elif not case.tags %}
+          {% elif not display_tags %}
             <li class="muted">No tags</li>
           {% else %}
-            {% for tag in case.tags %}
-              <li><a href="{{ url_for('index', image=image_index, tag=loop.index0) }}" title="Tag {{ loop.index }}: {{ tag.message }}"{% if loop.index0 == selected_tag_index %} aria-current="page"{% endif %}><span>{{ tag.message }}</span></a></li>
+            {% for tag in display_tags %}
+              {% set is_draft = is_new_tag and loop.last %}
+              {% set tag_message = tag.message or 'Unknown message' %}
+              <li><a href="{{ url_for('index', image=image_index, tag='new' if is_draft else loop.index0) }}" title="{% if is_draft %}New tag{% else %}Tag {{ loop.index }}: {{ tag_message }}{% endif %}"{% if loop.index0 == selected_tag_index %} aria-current="page"{% endif %}><span>{{ 'New tag' if is_draft else tag_message }}</span></a></li>
             {% endfor %}
           {% endif %}
         </ul>
 
         <h2 class="tag-details-heading">Tag details</h2>
-        {% if selected_tag %}
-          <form class="tag-form" action="{{ url_for('edit_tag', case_index=image_index, tag_index=selected_tag_index) }}" method="post" data-tag-form>
+        {% if selected_tag is not none %}
+          <form class="tag-form" action="{{ url_for('edit_tag', case_index=image_index) if is_new_tag else url_for('edit_tag', case_index=image_index, tag_index=selected_tag_index) }}" method="post" data-tag-form{% if is_new_tag %} data-new-tag-form{% endif %}>
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <label>
               Index
@@ -238,7 +263,12 @@
             </label>
             <label>
               Message
-              <input type="text" name="message" value="{{ selected_tag.message }}" pattern="[0-9A-Fa-f]{6}" maxlength="6" autocomplete="off" spellcheck="false" required>
+              <input type="text" name="message" value="{{ selected_tag.message or '' }}" pattern="[0-9A-Fa-f]{6}" maxlength="6" autocomplete="off" spellcheck="false" placeholder="Unknown">
+              <span class="form-hint">Leave blank when the message cannot be determined.</span>
+            </label>
+            <label>
+              Message source image
+              <input type="text" name="message_source_image" value="{{ selected_tag.message_provenance.image if selected_tag.message_provenance else '' }}" autocomplete="off" spellcheck="false" placeholder="Optional related image path">
             </label>
             <label>
               Conditions
@@ -270,14 +300,23 @@
           </form>
           <section class="tag-preview" data-tag-preview data-url="{{ url_for('rectified_tag', case_index=image_index) }}">
             <h2>Rectified tag</h2>
-            <img data-tag-preview-image alt="Cropped and rectified view of tag {{ selected_tag.message }}" hidden>
-            <p class="muted tag-preview-status" data-tag-preview-status role="status" aria-live="polite">{% if selected_tag.location %}Rectifying…{% else %}Add a complete location to see the tag region.{% endif %}</p>
+            <img data-tag-preview-image alt="Cropped and rectified view of tag {{ selected_tag.message or 'with unknown message' }}" hidden>
+            <p class="muted tag-preview-status" data-tag-preview-status role="status" aria-live="polite">{% if selected_tag.location %}Rectifying…{% else %}No location{% endif %}</p>
           </section>
         {% else %}
           <p class="muted">Select a tag.</p>
         {% endif %}
       </aside>
     </div>
+    <dialog class="unsaved-dialog" data-unsaved-dialog aria-labelledby="unsaved-dialog-title">
+      <h2 id="unsaved-dialog-title">Unsaved changes</h2>
+      <p>Save this tag before changing the selection?</p>
+      <div class="unsaved-dialog-actions">
+        <button type="button" data-unsaved-action="cancel">Keep editing</button>
+        <button type="button" data-unsaved-action="discard">Discard changes</button>
+        <button type="button" data-unsaved-action="save">Save and continue</button>
+      </div>
+    </dialog>
     <script>
       (() => {
         let imageObserver;
@@ -469,9 +508,12 @@
         let navigationController;
         let saving = false;
         let dragging = false;
+        let ignoreNextImageClick = false;
+        let pendingNavigation;
         let statusTimer;
         let previewTimer;
         const cornerOrder = ["top_left", "top_right", "bottom_right", "bottom_left"];
+        const unsavedDialog = document.querySelector("[data-unsaved-dialog]");
 
         function refreshTagPreview(form) {
           if (!form?.isConnected) return;
@@ -489,7 +531,7 @@
                 image.onerror = null;
                 image.removeAttribute("src");
                 image.hidden = true;
-                status.textContent = "Add a complete location to see the tag region.";
+                status.textContent = "No location";
                 status.hidden = false;
                 return;
               }
@@ -534,11 +576,15 @@
           }
         }
 
-        function syncCancel(form) {
-          const dirty = [...form.elements].some(
+        function formIsDirty(form) {
+          return [...form.elements].some(
             (control) => control.matches('input:not([type="hidden"]), textarea')
               && control.value !== control.defaultValue,
           );
+        }
+
+        function syncCancel(form) {
+          const dirty = formIsDirty(form);
           form.querySelector('button[type="reset"]').disabled = !dirty;
           return dirty;
         }
@@ -556,6 +602,8 @@
           const nextX = Math.min(imageWidth - 1, Math.max(0, Math.round(x)));
           const nextY = Math.min(imageHeight - 1, Math.max(0, Math.round(y)));
           const corner = handle.dataset.corner;
+          const changed = handle.dataset.x !== String(nextX)
+            || handle.dataset.y !== String(nextY);
 
           handle.dataset.x = nextX;
           handle.dataset.y = nextY;
@@ -573,8 +621,8 @@
             return `${point.dataset.x},${point.dataset.y}`;
           });
           overlay.querySelector("[data-overlay-polygon]").setAttribute("points", points.join(" "));
-          scheduleTagPreview(form);
-          if (track) markUnsaved(form);
+          if (changed) scheduleTagPreview(form);
+          if (track && changed) markUnsaved(form);
         }
 
         function startPointerDrag(event, target, move, finish) {
@@ -609,12 +657,16 @@
           const form = button.closest("[data-tag-form]");
           const stage = document.querySelector("[data-image-stage]");
           const overlay = stage.querySelector("[data-tag-overlay][data-selected]");
-          const maximumX = Number(stage.dataset.width) - 1;
-          const maximumY = Number(stage.dataset.height) - 1;
-          const left = Math.round(maximumX * 0.25);
-          const right = Math.round(maximumX * 0.75);
-          const top = Math.round(maximumY * 0.25);
-          const bottom = Math.round(maximumY * 0.75);
+          const imageWidth = Number(stage.dataset.width);
+          const imageHeight = Number(stage.dataset.height);
+          const sideLength = Math.max(
+            1,
+            Math.round(Math.min(imageWidth, imageHeight) * 0.25),
+          );
+          const left = Math.floor((imageWidth - sideLength) / 2);
+          const top = Math.floor((imageHeight - sideLength) / 2);
+          const right = left + sideLength - 1;
+          const bottom = top + sideLength - 1;
           const points = {
             top_left: [left, top],
             top_right: [right, top],
@@ -646,16 +698,78 @@
           const startClientY = event.clientY;
           const startX = Number(handle.dataset.x);
           const startY = Number(handle.dataset.y);
+          const scaleBox = event.shiftKey;
+          const overlay = handle.closest("[data-tag-overlay]");
+          const points = Object.fromEntries(cornerOrder.map((corner) => {
+            const point = overlay.querySelector(`[data-corner="${corner}"]`);
+            return [corner, [Number(point.dataset.x), Number(point.dataset.y)]];
+          }));
+          const oppositeCorners = {
+            top_left: "bottom_right",
+            top_right: "bottom_left",
+            bottom_right: "top_left",
+            bottom_left: "top_right",
+          };
+          const anchorCorner = oppositeCorners[handle.dataset.corner];
+          const [anchorX, anchorY] = points[anchorCorner];
+          const baseX = startX - anchorX;
+          const baseY = startY - anchorY;
+          const baseLengthSquared = baseX ** 2 + baseY ** 2;
           handle.classList.add("is-dragging");
 
           startPointerDrag(
             event,
             handle,
-            (moveEvent) => updateCorner(
-              handle,
-              startX + (moveEvent.clientX - startClientX) * imageWidth / bounds.width,
-              startY + (moveEvent.clientY - startClientY) * imageHeight / bounds.height,
-            ),
+            (moveEvent) => {
+              const requestedX = startX
+                + (moveEvent.clientX - startClientX) * imageWidth / bounds.width;
+              const requestedY = startY
+                + (moveEvent.clientY - startClientY) * imageHeight / bounds.height;
+              if (!scaleBox || !baseLengthSquared) {
+                updateCorner(handle, requestedX, requestedY);
+                return;
+              }
+
+              const minimumDistance = Math.min(...cornerOrder
+                .filter((corner) => corner !== anchorCorner)
+                .map((corner) => Math.hypot(
+                  points[corner][0] - anchorX,
+                  points[corner][1] - anchorY,
+                ))
+                .filter(Boolean));
+              const maximumScale = Math.min(...cornerOrder.flatMap((corner) => {
+                const deltaX = points[corner][0] - anchorX;
+                const deltaY = points[corner][1] - anchorY;
+                return [
+                  deltaX > 0
+                    ? (imageWidth - 1 - anchorX) / deltaX
+                    : deltaX < 0 ? -anchorX / deltaX : Infinity,
+                  deltaY > 0
+                    ? (imageHeight - 1 - anchorY) / deltaY
+                    : deltaY < 0 ? -anchorY / deltaY : Infinity,
+                ];
+              }));
+              const requestedScale = (
+                (requestedX - anchorX) * baseX
+                + (requestedY - anchorY) * baseY
+              ) / baseLengthSquared;
+              const minimumScale = Math.min(1, 2 / minimumDistance);
+              const scale = Math.max(
+                minimumScale,
+                Math.min(maximumScale, requestedScale),
+              );
+              let changed = false;
+
+              for (const corner of cornerOrder) {
+                const nextX = anchorX + (points[corner][0] - anchorX) * scale;
+                const nextY = anchorY + (points[corner][1] - anchorY) * scale;
+                const point = overlay.querySelector(`[data-corner="${corner}"]`);
+                changed ||= point.dataset.x !== String(Math.round(nextX))
+                  || point.dataset.y !== String(Math.round(nextY));
+                updateCorner(point, nextX, nextY, false);
+              }
+              if (changed) markUnsaved(document.querySelector("[data-tag-form]"));
+            },
             () => handle.classList.remove("is-dragging"),
           );
         });
@@ -681,6 +795,8 @@
           const maximumX = Math.max(...xValues);
           const minimumY = Math.min(...yValues);
           const maximumY = Math.max(...yValues);
+          let lastDeltaX = 0;
+          let lastDeltaY = 0;
 
           region.classList.add("is-dragging");
           startPointerDrag(
@@ -701,6 +817,9 @@
                 imageHeight - 1 - maximumY,
                 Math.max(-minimumY, requestedY),
               );
+              if (deltaX === lastDeltaX && deltaY === lastDeltaY) return;
+              lastDeltaX = deltaX;
+              lastDeltaY = deltaY;
               for (const corner of cornerOrder) {
                 updateCorner(
                   overlay.querySelector(`[data-corner="${corner}"]`),
@@ -725,16 +844,26 @@
           const startClientY = event.clientY;
           const startScrollLeft = viewport.scrollLeft;
           const startScrollTop = viewport.scrollTop;
+          let moved = false;
 
           viewport.classList.add("is-panning");
           startPointerDrag(
             event,
             image,
             (moveEvent) => {
-              viewport.scrollLeft = startScrollLeft - (moveEvent.clientX - startClientX);
-              viewport.scrollTop = startScrollTop - (moveEvent.clientY - startClientY);
+              const deltaX = moveEvent.clientX - startClientX;
+              const deltaY = moveEvent.clientY - startClientY;
+              if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+                moved = true;
+                ignoreNextImageClick = true;
+              }
+              viewport.scrollLeft = startScrollLeft - deltaX;
+              viewport.scrollTop = startScrollTop - deltaY;
             },
-            () => viewport.classList.remove("is-panning"),
+            () => {
+              viewport.classList.remove("is-panning");
+              if (moved) setTimeout(() => { ignoreNextImageClick = false; });
+            },
           );
         });
 
@@ -882,10 +1011,47 @@
           }
         }
 
+        function selectionKey(url) {
+          const parameters = new URL(url, window.location.href).searchParams;
+          return `${parameters.get("image") ?? "0"}:${parameters.get("tag") ?? ""}`;
+        }
+
+        function requestNavigation(url) {
+          if (saving || dragging || selectionKey(url) === selectionKey(window.location.href)) return;
+          const form = document.querySelector("[data-tag-form]");
+          if (form && formIsDirty(form)) {
+            pendingNavigation = url;
+            if (!unsavedDialog.open) unsavedDialog.showModal();
+            return;
+          }
+          navigate(url);
+        }
+
+        unsavedDialog.addEventListener("cancel", () => {
+          pendingNavigation = undefined;
+        });
+
+        unsavedDialog.addEventListener("click", (event) => {
+          const action = event.target.closest("[data-unsaved-action]")?.dataset.unsavedAction;
+          if (!action) return;
+          const destination = pendingNavigation;
+          pendingNavigation = undefined;
+          unsavedDialog.close();
+          if (!destination || action === "cancel") return;
+          if (action === "discard") navigate(destination);
+          if (action === "save") {
+            const form = document.querySelector("[data-tag-form]");
+            if (form) saveTag(form, destination);
+          }
+        });
+
         document.addEventListener("click", (event) => {
           const link = event.target.closest(".image-list a, .tag-list a");
+          const newTag = event.target.closest("[data-new-tag-url]");
+          const region = event.target.closest("[data-tag-region]");
+          const image = event.target.closest("[data-image-stage] img");
           if (
-            !link ||
+            (!link && !newTag && !region && !image) ||
             event.defaultPrevented ||
             event.button !== 0 ||
             event.metaKey ||
@@ -893,17 +1059,20 @@
             event.shiftKey ||
             event.altKey
           ) return;
+          if (region?.closest("[data-tag-overlay]")?.hasAttribute("data-selected")) return;
+          if (image && ignoreNextImageClick) {
+            ignoreNextImageClick = false;
+            return;
+          }
           event.preventDefault();
-          if (saving || dragging) return;
-          navigate(link.href);
+          requestNavigation(
+            link?.href ?? newTag?.dataset.newTagUrl
+              ?? region?.dataset.tagUrl ?? image.dataset.deselectUrl,
+          );
         });
 
-        document.addEventListener("submit", async (event) => {
-          const form = event.target.closest("[data-tag-form]");
-          if (!form) return;
-          event.preventDefault();
-          if (saving) return;
-
+        async function saveTag(form, destination) {
+          if (saving) return false;
           saving = true;
           form.setAttribute("aria-busy", "true");
           const buttons = [...form.querySelectorAll("button")];
@@ -921,17 +1090,32 @@
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error ?? `HTTP ${response.status}`);
-            if (await navigate(result.url, false)) {
+            if (form.hasAttribute("data-new-tag-form")) {
+              history.replaceState(null, "", result.url);
+            }
+            if (await navigate(destination ?? result.url, Boolean(destination))) {
+              if (destination) return true;
               showStatus(document.querySelector("[data-tag-form]"), "Saved.", false, true);
+              return true;
             }
           } catch (error) {
             showStatus(form, error.message, true);
           } finally {
             saving = false;
-            form.removeAttribute("aria-busy");
-            for (const button of buttons) button.disabled = false;
-            syncCancel(form);
+            if (form.isConnected) {
+              form.removeAttribute("aria-busy");
+              for (const button of buttons) button.disabled = false;
+              syncCancel(form);
+            }
           }
+          return false;
+        }
+
+        document.addEventListener("submit", (event) => {
+          const form = event.target.closest("[data-tag-form]");
+          if (!form) return;
+          event.preventDefault();
+          saveTag(form);
         });
 
         window.addEventListener("popstate", () => navigate(window.location.href, false));

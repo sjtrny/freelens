@@ -22,6 +22,7 @@ from PIL import Image
 from scripts.evaluation_dataset import (
     DEFAULT_MANIFEST,
     LOCATION_CORNERS,
+    add_tag,
     load_dataset,
     update_tag,
 )
@@ -46,14 +47,21 @@ def _query_index(name, count, default=None):
 
 
 def _tag_from_form(form):
+    message = form.get("message", "").strip().upper() or None
     tag = {
-        "message": form.get("message", "").strip().upper(),
+        "message": message,
         "conditions": [
             condition.strip()
             for condition in form.get("conditions", "").splitlines()
             if condition.strip()
         ],
     }
+    message_source_image = form.get("message_source_image", "").strip()
+    if message_source_image:
+        tag["message_provenance"] = {
+            "type": "related_image",
+            "image": message_source_image,
+        }
     values = {
         corner: [
             form.get(f"{corner}_x", "").strip(),
@@ -75,6 +83,21 @@ def _tag_from_form(form):
         except ValueError as error:
             raise ValueError("location coordinates must be integers") from error
     return tag
+
+
+def _default_location(image_size):
+    width, height = image_size
+    side_length = max(1, (min(width, height) + 2) // 4)
+    left = (width - side_length) // 2
+    top = (height - side_length) // 2
+    right = left + side_length - 1
+    bottom = top + side_length - 1
+    return {
+        "top_left": [left, top],
+        "top_right": [right, top],
+        "bottom_right": [right, bottom],
+        "bottom_left": [left, bottom],
+    }
 
 
 def _location_from_query(arguments, image_size):
@@ -159,9 +182,21 @@ def create_app(manifest_path=DEFAULT_MANIFEST):
         image_index = _query_index("image", len(current_dataset.cases), default=0)
         case = current_dataset.case(image_index)
         tags = case["tags"]
-        tag_index = _query_index("tag", len(tags or []))
-        selected_tag = None if tag_index is None else tags[tag_index]
         width, height = current_dataset.image_size(case["image"])
+        is_new_tag = request.args.get("tag") == "new"
+        if is_new_tag:
+            tag_index = len(tags or [])
+            selected_tag = {
+                "message": None,
+                "conditions": [],
+                "location": _default_location((width, height)),
+            }
+        else:
+            tag_index = _query_index("tag", len(tags or []))
+            selected_tag = None if tag_index is None else tags[tag_index]
+        display_tags = list(tags or [])
+        if is_new_tag:
+            display_tags.append(selected_tag)
 
         return render_template(
             "evaluation.html",
@@ -172,6 +207,8 @@ def create_app(manifest_path=DEFAULT_MANIFEST):
             image_height=height,
             selected_tag=selected_tag,
             selected_tag_index=tag_index,
+            is_new_tag=is_new_tag,
+            display_tags=display_tags,
             csrf_token=app.config["CSRF_TOKEN"],
         )
 
@@ -220,6 +257,7 @@ def create_app(manifest_path=DEFAULT_MANIFEST):
         response.headers["Cache-Control"] = "no-store"
         return response
 
+    @app.post("/tag/<int:case_index>", defaults={"tag_index": None})
     @app.post("/tag/<int:case_index>/<int:tag_index>")
     def edit_tag(case_index, tag_index):
         nonlocal dataset
@@ -231,7 +269,11 @@ def create_app(manifest_path=DEFAULT_MANIFEST):
         try:
             tag = _tag_from_form(request.form)
             with dataset_lock:
-                dataset = update_tag(dataset, case_index, tag_index, tag)
+                if tag_index is None:
+                    dataset = add_tag(dataset, case_index, tag)
+                    tag_index = len(dataset.case(case_index)["tags"]) - 1
+                else:
+                    dataset = update_tag(dataset, case_index, tag_index, tag)
         except KeyError:
             return edit_error("Unknown image or tag.", 404)
         except ValueError as error:

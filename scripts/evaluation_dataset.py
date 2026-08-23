@@ -75,19 +75,41 @@ def _validate_location(location, owner):
     return normalized
 
 
+def _validate_message_provenance(provenance, owner):
+    if (
+        not isinstance(provenance, dict)
+        or set(provenance) != {"type", "image"}
+        or provenance.get("type") != "related_image"
+        or not isinstance(provenance.get("image"), str)
+        or not provenance["image"]
+    ):
+        raise ValueError(f"invalid message provenance for {owner}")
+    return dict(provenance)
+
+
 def _normalize_tag(tag, image_id, index):
     owner = f"tag {index} in {image_id}"
     if not isinstance(tag, dict):
         raise ValueError(f"{owner} must be an object")
 
-    message = tag.get("message")
-    if not isinstance(message, str) or not MESSAGE_PATTERN.fullmatch(message):
+    if "message" not in tag:
+        raise ValueError(f"invalid message for {owner}")
+    message = tag["message"]
+    if message is not None and (
+        not isinstance(message, str) or not MESSAGE_PATTERN.fullmatch(message)
+    ):
         raise ValueError(f"invalid message for {owner}")
 
     normalized = {
         "message": message,
         "conditions": _validate_conditions(tag.get("conditions", []), owner),
     }
+    if "message_provenance" in tag:
+        if message is None:
+            raise ValueError(f"message provenance requires a known message for {owner}")
+        normalized["message_provenance"] = _validate_message_provenance(
+            tag["message_provenance"], owner
+        )
     if "location" in tag:
         normalized["location"] = _validate_location(tag["location"], owner)
     return normalized
@@ -100,6 +122,8 @@ def _normalize_case(case, index):
     image_id = case.get("image")
     if not isinstance(image_id, str) or not image_id:
         raise ValueError(f"evaluation case {index} has an invalid image")
+    if "conditions" in case:
+        raise ValueError(f"conditions for {image_id} must be attached to tags")
     if "tags" not in case:
         raise ValueError(f"missing tags for {image_id}")
 
@@ -117,8 +141,25 @@ def _normalize_case(case, index):
                 for tag_index, tag in enumerate(tags)
             ]
         ),
-        "conditions": _validate_conditions(case.get("conditions", []), image_id),
     }
+
+
+def _validate_message_provenance_references(cases):
+    cases_by_image = {case["image"]: case for case in cases}
+    for case in cases:
+        for tag_index, tag in enumerate(case["tags"] or []):
+            provenance = tag.get("message_provenance")
+            if provenance is None:
+                continue
+            source = cases_by_image.get(provenance["image"])
+            source_messages = {
+                source_tag["message"] for source_tag in (source or {}).get("tags") or []
+            }
+            if tag["message"] not in source_messages:
+                raise ValueError(
+                    f"message provenance for tag {tag_index} in {case['image']} "
+                    f"does not reference the same message"
+                )
 
 
 def _find_dataset_images(dataset_root):
@@ -177,6 +218,7 @@ def load_dataset(manifest_path=DEFAULT_MANIFEST):
     normalized_cases = tuple(
         _normalize_case(case, index) for index, case in enumerate(cases)
     )
+    _validate_message_provenance_references(normalized_cases)
     listed_images = [case["image"] for case in normalized_cases]
     if len(listed_images) != len(set(listed_images)):
         raise ValueError("evaluation manifest contains duplicate images")
@@ -204,6 +246,58 @@ def load_cases(manifest_path=DEFAULT_MANIFEST):
     return list(load_dataset(manifest_path).cases)
 
 
+def _write_cases(dataset, cases):
+    manifest_path = dataset.manifest_path
+    descriptor, temporary_name = tempfile.mkstemp(
+        dir=manifest_path.parent,
+        prefix=f".{manifest_path.name}.",
+        suffix=".tmp",
+    )
+    temporary_path = Path(temporary_name)
+
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as file:
+            json.dump(cases, file, indent=2, ensure_ascii=False)
+            file.write("\n")
+            file.flush()
+            os.fsync(file.fileno())
+
+        updated = load_dataset(temporary_path)
+        os.replace(temporary_path, manifest_path)
+    except Exception:
+        temporary_path.unlink(missing_ok=True)
+        raise
+
+    return replace_dataclass(updated, manifest_path=manifest_path)
+
+
+def add_tag(dataset, case_index, tag):
+    """Validate and atomically append one tag, returning the updated dataset."""
+
+    manifest_path = dataset.manifest_path
+    with manifest_path.open(encoding="utf-8") as file:
+        cases = json.load(file)
+
+    if (
+        type(case_index) is not int
+        or not isinstance(cases, list)
+        or not 0 <= case_index < len(cases)
+    ):
+        raise KeyError(f"unknown evaluation case: {case_index!r}")
+
+    case = cases[case_index]
+    if not isinstance(case, dict):
+        raise KeyError(f"unknown evaluation case: {case_index!r}")
+    if case.get("tags") is None:
+        case["tags"] = []
+    if not isinstance(case["tags"], list):
+        raise KeyError(f"unknown evaluation case: {case_index!r}")
+
+    tag_index = len(case["tags"])
+    case["tags"].append(_normalize_tag(tag, case.get("image"), tag_index))
+    return _write_cases(dataset, cases)
+
+
 def update_tag(dataset, case_index, tag_index, tag):
     """Validate and atomically persist one tag, returning the updated dataset."""
 
@@ -228,24 +322,4 @@ def update_tag(dataset, case_index, tag_index, tag):
         raise KeyError(f"unknown tag: {tag_index!r}")
 
     tags[tag_index] = _normalize_tag(tag, case.get("image"), tag_index)
-    descriptor, temporary_name = tempfile.mkstemp(
-        dir=manifest_path.parent,
-        prefix=f".{manifest_path.name}.",
-        suffix=".tmp",
-    )
-    temporary_path = Path(temporary_name)
-
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as file:
-            json.dump(cases, file, indent=2, ensure_ascii=False)
-            file.write("\n")
-            file.flush()
-            os.fsync(file.fileno())
-
-        updated = load_dataset(temporary_path)
-        os.replace(temporary_path, manifest_path)
-    except Exception:
-        temporary_path.unlink(missing_ok=True)
-        raise
-
-    return replace_dataclass(updated, manifest_path=manifest_path)
+    return _write_cases(dataset, cases)

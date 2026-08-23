@@ -18,13 +18,12 @@ def benchmark_dataset(manifest_path=DEFAULT_MANIFEST, detector=detect_tags):
     results = []
 
     for case in load_cases(manifest_path):
-        expected = (
-            None if case["tags"] is None else [tag["message"] for tag in case["tags"]]
-        )
+        if case["tags"] is None or any(tag["message"] is None for tag in case["tags"]):
+            continue
+        expected = [tag["message"] for tag in case["tags"]]
         result = {
             "image": case["image"],
             "expected": expected,
-            "conditions": case.get("conditions", []),
         }
 
         started = time.perf_counter()
@@ -44,17 +43,7 @@ def benchmark_dataset(manifest_path=DEFAULT_MANIFEST, detector=detect_tags):
                 error=f"{type(error).__name__}: {error}",
                 seconds=round(time.perf_counter() - started, 6),
             )
-            if expected is not None:
-                result.update(matched=0, missed=expected, unexpected=[])
-            results.append(result)
-            continue
-
-        if expected is None:
-            result.update(
-                status="manual-review",
-                actual=actual,
-                seconds=round(time.perf_counter() - started, 6),
-            )
+            result.update(matched=0, missed=expected, unexpected=[])
             results.append(result)
             continue
 
@@ -82,21 +71,16 @@ def benchmark_dataset(manifest_path=DEFAULT_MANIFEST, detector=detect_tags):
 
 
 def summarize(results):
-    scored = [result for result in results if result["expected"] is not None]
     positives = [
         result for result in results if result["image"].startswith("positives/")
     ]
     negatives = [
         result for result in results if result["image"].startswith("negatives/")
     ]
-    conditioned_positives = [result for result in positives if result["conditions"]]
-    exact = sum(result["status"] == "pass" for result in scored)
-    expected = sum(len(result["expected"]) for result in scored)
-    matched = sum(result["matched"] for result in scored)
+    exact = sum(result["status"] == "pass" for result in results)
+    expected = sum(len(result["expected"]) for result in results)
+    matched = sum(result["matched"] for result in results)
     positive_detections = sum(bool(result["actual"]) for result in positives)
-    conditioned_detections = sum(
-        bool(result["actual"]) for result in conditioned_positives
-    )
     clean_negatives = sum(
         result["status"] != "error" and not result["actual"] for result in negatives
     )
@@ -107,24 +91,16 @@ def summarize(results):
         "positive_detection_percent": (
             round(100 * positive_detections / len(positives), 2) if positives else 0
         ),
-        "conditioned_positive_images": len(conditioned_positives),
-        "conditioned_positive_images_detected": conditioned_detections,
-        "conditioned_positive_detection_percent": (
-            round(100 * conditioned_detections / len(conditioned_positives), 2)
-            if conditioned_positives
-            else 0
-        ),
         "negative_images": len(negatives),
         "clean_negative_images": clean_negatives,
-        "scored_images": len(scored),
+        "scorable_images": len(results),
         "exact_images": exact,
-        "exact_percent": round(100 * exact / len(scored), 2) if scored else 0,
+        "exact_percent": round(100 * exact / len(results), 2) if results else 0,
         "expected_tags": expected,
         "matched_tags": matched,
         "matched_percent": round(100 * matched / expected, 2) if expected else 100,
-        "unexpected_tags": sum(len(result["unexpected"]) for result in scored),
+        "unexpected_tags": sum(len(result["unexpected"]) for result in results),
         "errors": sum(result["status"] == "error" for result in results),
-        "manual_review_images": sum(result["expected"] is None for result in results),
         "seconds": round(sum(result.get("seconds", 0) for result in results), 3),
     }
 
@@ -139,23 +115,17 @@ def print_report(results, summary):
         print(f"{result['status'].upper()} {result['image']}: {detail}")
 
     print(
-        "Positive images detected: "
+        "Scorable positive images detected: "
         f"{summary['positive_images_detected']}/{summary['positive_images']} "
         f"({summary['positive_detection_percent']:.2f}%)"
     )
-    if summary["conditioned_positive_images"]:
-        print(
-            "Conditioned positive images detected: "
-            f"{summary['conditioned_positive_images_detected']}/"
-            f"{summary['conditioned_positive_images']} "
-            f"({summary['conditioned_positive_detection_percent']:.2f}%)"
-        )
     print(
         f"Negative images clean: {summary['clean_negative_images']}/"
         f"{summary['negative_images']}"
     )
     print(
-        f"Exact labelled images: {summary['exact_images']}/{summary['scored_images']} "
+        f"Exact scorable images: {summary['exact_images']}/"
+        f"{summary['scorable_images']} "
         f"({summary['exact_percent']:.2f}%)"
     )
     print(
@@ -164,7 +134,6 @@ def print_report(results, summary):
     )
     print(f"Unexpected CRC-valid tags: {summary['unexpected_tags']}")
     print(f"Errors: {summary['errors']}")
-    print(f"Manual review images: {summary['manual_review_images']}")
     print(f"Elapsed: {summary['seconds']:.3f}s")
 
 

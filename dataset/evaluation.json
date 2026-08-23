@@ -903,9 +903,13 @@
   },
   {
     "image": "positives/0031.jpg",
-    "tags": null,
-    "conditions": [
-      "blur"
+    "tags": [
+      {
+        "message": null,
+        "conditions": [
+          "severe_blur"
+        ]
+      }
     ]
   },
   {
@@ -913,7 +917,31 @@
     "tags": [
       {
         "message": "4A00EB",
-        "conditions": []
+        "conditions": [
+          "severe_blur"
+        ],
+        "message_provenance": {
+          "type": "related_image",
+          "image": "positives/0033.jpg"
+        },
+        "location": {
+          "top_left": [
+            870,
+            1744
+          ],
+          "top_right": [
+            960,
+            1740
+          ],
+          "bottom_right": [
+            960,
+            1817
+          ],
+          "bottom_left": [
+            868,
+            1823
+          ]
+        }
       }
     ]
   },
