@@ -1,6 +1,5 @@
 import cv2 as cv
 import numpy as np
-import pytest
 from PIL import Image
 
 import freelens
@@ -67,7 +66,7 @@ def test_colour_correction_leaves_unusable_channels_on_rgb_scale():
     )
 
 
-def test_strict_decoding_uses_a_valid_calibrated_fallback(monkeypatch):
+def test_strict_decoding_uses_quiet_zone_colour_calibration(monkeypatch):
     image = Tag.from_message(MESSAGE).to_image(quiet_pad_size=0)
     corrected = np.asarray(image, dtype=np.float32) / 255
     monkeypatch.setattr(
@@ -85,27 +84,35 @@ def test_strict_decoding_uses_a_valid_calibrated_fallback(monkeypatch):
     assert [tag.message for tag in tags] == [MESSAGE]
 
 
-def test_valid_baseline_skips_calibrated_fallback(monkeypatch):
+def test_valid_frame_is_still_colour_calibrated(monkeypatch):
     image = Tag.from_message(MESSAGE).to_image(quiet_pad_size=0)
-    monkeypatch.setattr(
-        freelens,
-        "_correct_colours",
-        lambda image, black, white: pytest.fail("calibration should not run"),
-    )
+    calls = []
+    original = freelens._correct_colours
+
+    def record_call(image, black, white):
+        calls.append((black, white))
+        return original(image, black, white)
+
+    monkeypatch.setattr(freelens, "_correct_colours", record_call)
 
     tags = decode_frames(image, [POLYGON], require_valid_crc=True)
 
     assert [tag.message for tag in tags] == [MESSAGE]
+    assert len(calls) == 1
 
 
-def test_non_strict_decoding_skips_calibrated_fallback(monkeypatch):
+def test_non_strict_decoding_uses_colour_calibration(monkeypatch):
     image = Tag.from_message(MESSAGE).to_image(quiet_pad_size=0)
-    monkeypatch.setattr(
-        freelens,
-        "_correct_colours",
-        lambda image, black, white: pytest.fail("calibration should not run"),
-    )
+    calls = []
+    original = freelens._correct_colours
+
+    def record_call(image, black, white):
+        calls.append((black, white))
+        return original(image, black, white)
+
+    monkeypatch.setattr(freelens, "_correct_colours", record_call)
 
     tags = decode_frames(image, [POLYGON], require_valid_crc=False)
 
     assert [tag.message for tag in tags] == [MESSAGE]
+    assert len(calls) == 1

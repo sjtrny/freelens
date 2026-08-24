@@ -28,15 +28,14 @@ For each un-rectified frame polygon:
 
 1. Preserve the cyclic vertex order produced by contour approximation. The first vertex
    can be any corner because tag orientation is normalised after sampling.
-1. Convert image to CIELab colour space
-1. Un-warp frame image to square aspect ratio and resize to a fixed size
+1. Measure median black and white RGB references from the quiet-zone rings
+1. Un-warp the RGB frame image to square aspect ratio and resize it to a fixed size
+1. Map the measured black and white RGB references onto the full RGB range
+1. Convert the corrected frame image to CIELab colour space
 1. Get the cell colours from the center positions of each cell in the grid
 1. Rotate the sampled grid so its darkest corner is at the bottom left
 1. Obtain the palette colours from the four corners of the grid
 1. Assign each cell in the grid to the closest colour in the palette
-1. If strict validation fails, retry after mapping the RGB values represented by the
-   black and white quiet-zone rings onto the full RGB range. The original result remains
-   preferred whenever it is already valid.
 1. When strict validation is enabled, require the four reserved corner cells to have
    distinct palette values in canonical order
 1. Validate the deployed CRC when processing a 5×5 tag and validation is enabled

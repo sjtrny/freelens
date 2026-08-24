@@ -282,7 +282,6 @@ def decode_frames(
     _validate_crc_options(n, validate_crc, require_valid_crc)
 
     image_rgb = np.array(image)
-    image_lab = cv.cvtColor(image_rgb, cv.COLOR_RGB2Lab)
 
     cell_size = 32
     n_pixels = cell_size * (n + 2)
@@ -295,19 +294,13 @@ def decode_frames(
         # Its starting corner only rotates the warp, which is normalised below.
         polygon_points = np.asarray(polygon, dtype=np.float32)
         M = cv.getPerspectiveTransform(polygon_points, ref_pts)
-        frame_lab = cv.warpPerspective(image_lab, M, (n_pixels, n_pixels))
-        tag = _decode_rectified_frame(frame_lab, n, validate_crc)
-
-        if require_valid_crc and not _strictly_valid_tag(tag):
-            frame_rgb = cv.warpPerspective(image_rgb, M, (n_pixels, n_pixels))
-            black, white = _quiet_zone_references(image_rgb, polygon_points, n)
-            corrected_rgb = np.round(
-                _correct_colours(frame_rgb, black, white) * 255
-            ).astype(np.uint8)
-            corrected_lab = cv.cvtColor(corrected_rgb, cv.COLOR_RGB2Lab)
-            corrected_tag = _decode_rectified_frame(corrected_lab, n, validate_crc)
-            if _strictly_valid_tag(corrected_tag):
-                tag = corrected_tag
+        frame_rgb = cv.warpPerspective(image_rgb, M, (n_pixels, n_pixels))
+        black, white = _quiet_zone_references(image_rgb, polygon_points, n)
+        corrected_rgb = np.round(
+            _correct_colours(frame_rgb, black, white) * 255
+        ).astype(np.uint8)
+        corrected_lab = cv.cvtColor(corrected_rgb, cv.COLOR_RGB2Lab)
+        tag = _decode_rectified_frame(corrected_lab, n, validate_crc)
 
         if not require_valid_crc or _strictly_valid_tag(tag):
             tags.append(tag)

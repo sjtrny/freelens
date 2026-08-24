@@ -29,15 +29,7 @@ def test_decode_frames_passes_validate_crc_to_tag(monkeypatch):
 
 def test_decode_frames_can_require_a_valid_crc_and_corners(monkeypatch):
     image, polygon = _image_and_polygon()
-    results = iter(
-        (
-            (False, True),
-            (False, True),
-            (True, False),
-            (True, False),
-            (True, True),
-        )
-    )
+    results = iter(((False, True), (True, False), (True, True)))
 
     class FakeTag:
         def __init__(self, bit_string, n, *, validate_crc):
