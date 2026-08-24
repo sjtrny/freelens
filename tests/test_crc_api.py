@@ -27,24 +27,38 @@ def test_decode_frames_passes_validate_crc_to_tag(monkeypatch):
     assert calls == [("00" * 25, 5, False)]
 
 
-def test_decode_frames_can_require_a_valid_crc(monkeypatch):
+def test_decode_frames_can_require_a_valid_crc_and_corners(monkeypatch):
     image, polygon = _image_and_polygon()
-    results = iter((False, True))
+    results = iter(((False, True), (True, False), (True, True)))
 
     class FakeTag:
         def __init__(self, bit_string, n, *, validate_crc):
-            self.crc_valid = next(results)
+            self.crc_valid, self.corners_valid = next(results)
 
     monkeypatch.setattr(freelens, "Tag", FakeTag)
     tags = freelens.decode_frames(
         image,
-        [polygon, polygon],
+        [polygon, polygon, polygon],
         validate_crc=True,
         require_valid_crc=True,
     )
 
     assert len(tags) == 1
     assert tags[0].crc_valid is True
+    assert tags[0].corners_valid is True
+
+
+def test_decode_frames_strict_validation_rejects_a_uniform_frame():
+    image, polygon = _image_and_polygon()
+
+    tags = freelens.decode_frames(
+        image,
+        [polygon],
+        validate_crc=True,
+        require_valid_crc=True,
+    )
+
+    assert tags == []
 
 
 @pytest.mark.parametrize(

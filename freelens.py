@@ -15,6 +15,7 @@ ind_bit_map = {
 center_bit_map = {5: "00", 7: "01", 9: "10", 11: "11"}
 
 SUPPORTED_TAG_SIZES = (5, 7, 9, 11)
+MIN_FRAME_AREA = 1500
 
 CRC_TAG_SIZE = 5
 CRC_WIDTH = 16
@@ -71,35 +72,6 @@ def _validate_crc_options(n, validate_crc, require_valid_crc=False):
         raise ValueError("require_valid_crc=True requires validate_crc=True")
     if validate_crc and n != CRC_TAG_SIZE:
         raise ValueError("CRC validation is supported only for 5x5 tags")
-
-
-def order_points(points):
-    """
-    Sort a 2D array of points into tl, tr, br, bl order.
-    """
-
-    # Sort by horizontal position
-    x_sort_idx = np.argsort(points[:, 0])
-
-    # Find the left points and then sort by vertical positions
-    left_points = points[x_sort_idx[:2], :]
-    left_y_sort_idx = np.argsort(left_points[:, 1])
-    tl = left_points[left_y_sort_idx[0], :]
-    bl = left_points[left_y_sort_idx[1], :]
-
-    # Calculate the distance from tl to right points to find bottom right
-    right_points = points[x_sort_idx[2:], :]
-    dists = np.linalg.norm(right_points - tl, axis=1)
-    right_y_sort_idx = np.argsort(dists)
-
-    return np.array(
-        [
-            tl,
-            right_points[right_y_sort_idx[0], :],
-            right_points[right_y_sort_idx[1], :],
-            bl,
-        ]
-    ).astype(np.float32)
 
 
 def reduce_poly_vertices(contours, tolerance=0.1):
@@ -160,6 +132,67 @@ def expand_polygon(polygon, scale_factor=1 + 4 / 14):
     return np.round(expanded_polygon).astype(int)
 
 
+def _quiet_zone_references(image, valid_pixels, cell_size):
+    """Return black and white RGB references from a rectified quiet zone."""
+    white_mask = np.ones(image.shape[:2], dtype=bool)
+    white_mask[cell_size:-cell_size, cell_size:-cell_size] = False
+
+    black_mask = np.zeros(image.shape[:2], dtype=bool)
+    black_mask[cell_size:-cell_size, cell_size:-cell_size] = True
+    black_mask[2 * cell_size : -2 * cell_size, 2 * cell_size : -2 * cell_size] = False
+
+    black_pixels = image[black_mask & valid_pixels]
+    white_pixels = image[white_mask & valid_pixels]
+    if not len(black_pixels) or not len(white_pixels):
+        return np.zeros(3), np.full(3, 255)
+
+    return np.median(black_pixels, axis=0), np.median(white_pixels, axis=0)
+
+
+def _correct_colours(image, black, white):
+    """Map measured black and white RGB references onto the full RGB range."""
+    image = image.astype(np.float32)
+    black = np.asarray(black, dtype=np.float32)
+    white = np.asarray(white, dtype=np.float32)
+    difference = white - black
+
+    corrected = image / 255
+    usable_channels = difference > 0
+    corrected[..., usable_channels] = (
+        image[..., usable_channels] - black[usable_channels]
+    ) / difference[usable_channels]
+    return np.clip(corrected, 0, 1)
+
+
+def _rectify_frame(image_rgba, polygon, n, cell_size):
+    """Rectify a frame and its quiet zone, returning the frame and RGB references."""
+    quiet_zone_pixels = cell_size * (n + 4)
+    frame_start = cell_size
+    frame_stop = cell_size * (n + 3)
+    reference_points = np.float32(
+        [
+            [frame_start, frame_start],
+            [frame_stop, frame_start],
+            [frame_stop, frame_stop],
+            [frame_start, frame_stop],
+        ]
+    )
+    transform = cv.getPerspectiveTransform(polygon, reference_points)
+    rectified = cv.warpPerspective(
+        image_rgba,
+        transform,
+        (quiet_zone_pixels, quiet_zone_pixels),
+    )
+    valid_pixels = rectified[..., 3] == 255
+    black, white = _quiet_zone_references(rectified[..., :3], valid_pixels, cell_size)
+    frame = rectified[
+        frame_start:frame_stop,
+        frame_start:frame_stop,
+        :3,
+    ]
+    return frame, black, white
+
+
 def frame_filter_white_border(polygons, image_bw):
     filtered_polygons = []
 
@@ -207,10 +240,11 @@ def detect_frames(image):
     4. Fit polygon to contours (cv.approxPolyDP)
     5. Apply filters:
         1. 4-vertex polygons.
-        2. Area greater than threshold
+        2. Area of at least MIN_FRAME_AREA
         3. Convex polygon
         4. Shape is roughly square (perimeter/area test)
-        5. Check that border around frame is white
+
+    The quiet zone is not used to reject frame candidates.
 
     TODO: Retain only internal contours (opposite of paper which suggests external)
     """
@@ -236,10 +270,9 @@ def detect_frames(image):
     # 5. Apply filters
     filters = [
         frame_filter_polygons_4vertex,
-        lambda polygons: frame_filter_polygons_area(polygons, 2**11),
+        lambda polygons: frame_filter_polygons_area(polygons, MIN_FRAME_AREA),
         frame_filter_polygons_convex,
         frame_filter_polygons_squareish,
-        lambda polygons: frame_filter_white_border(polygons, image_bw_cv),
     ]
     for filter in filters:
         polygons = filter(polygons)
@@ -255,58 +288,65 @@ def decode_frames(
     validate_crc=True,
     require_valid_crc=False,
 ):
+    """Decode four-vertex frame polygons supplied in cyclic contour order."""
     _validate_crc_options(n, validate_crc, require_valid_crc)
 
-    image_cv = cv.cvtColor(np.array(image), cv.COLOR_RGB2Lab)
+    image_rgb = np.array(image)
+    image_rgba = np.dstack(
+        (image_rgb, np.full(image_rgb.shape[:2], 255, dtype=np.uint8))
+    )
 
     cell_size = 32
-    n_pixels = cell_size * (n + 2)
-    ref_pts = np.float32([[0, 0], [n_pixels, 0], [n_pixels, n_pixels], [0, n_pixels]])
 
     tags = []
 
     for i, polygon in enumerate(polygons):
-
-        polygon_ordered = order_points(polygon)
-
-        M = cv.getPerspectiveTransform(polygon_ordered, ref_pts)
-        dst = cv.warpPerspective(image_cv, M, (n_pixels, n_pixels))
-
-        values = np.zeros((n + 2, n + 2, 3))
-
-        for r in range(n + 2):  # Rows
-            for c in range(n + 2):  # Cols
-                center_x = r * cell_size + cell_size // 2
-                center_y = c * cell_size + cell_size // 2
-                values[r, c] = dst[center_x, center_y]
-
-        # Orient the tag so its darkest corner is at the bottom left.
-        corner_vals = np.array(
-            [values[1, 1], values[1, -2], values[-2, -2], values[-2, 1]]
+        # Contour approximation already returns adjacent vertices in cyclic order.
+        # Its starting corner only rotates the warp, which is normalised below.
+        polygon_points = np.asarray(polygon, dtype=np.float32)
+        frame_rgb, black, white = _rectify_frame(
+            image_rgba, polygon_points, n, cell_size
         )
-        darkest_corner = int(np.argmin(corner_vals[:, 0]))
-        values = np.rot90(values, k=(darkest_corner + 1) % 4)
+        corrected_rgb = np.round(
+            _correct_colours(frame_rgb, black, white) * 255
+        ).astype(np.uint8)
+        corrected_lab = cv.cvtColor(corrected_rgb, cv.COLOR_RGB2Lab)
+        tag = _decode_rectified_frame(corrected_lab, n, validate_crc)
 
-        # Get corner colours
-        corner_vals = np.array(
-            [values[1, 1], values[1, -2], values[-2, -2], values[-2, 1]]
-        )
-
-        # Find argmin of each cell to corner colours
-        code = []
-        for r in range(1, n + 1):  # Rows
-            for c in range(1, n + 1):  # Cols
-                ind = np.argmin(np.mean((corner_vals - values[r, c]) ** 2, axis=1))
-                code.append(int(ind))
-
-        bit_string = "".join([ind_bit_map[ind] for ind in code])
-
-        tag = Tag(bit_string, n=n, validate_crc=validate_crc)
-
-        if not require_valid_crc or tag.crc_valid is True:
+        if not require_valid_crc or _strictly_valid_tag(tag):
             tags.append(tag)
 
     return tags
+
+
+def _decode_rectified_frame(frame_lab, n, validate_crc):
+    """Sample and decode one perspective-corrected CIELab frame."""
+    cell_size = 32
+    values = np.zeros((n + 2, n + 2, 3))
+
+    for row in range(n + 2):
+        for column in range(n + 2):
+            y = row * cell_size + cell_size // 2
+            x = column * cell_size + cell_size // 2
+            values[row, column] = frame_lab[y, x]
+
+    corners = np.array([values[1, 1], values[1, -2], values[-2, -2], values[-2, 1]])
+    darkest_corner = int(np.argmin(corners[:, 0]))
+    values = np.rot90(values, k=(darkest_corner + 1) % 4)
+    corners = np.array([values[1, 1], values[1, -2], values[-2, -2], values[-2, 1]])
+
+    code = []
+    for row in range(1, n + 1):
+        for column in range(1, n + 1):
+            distances = np.mean((corners - values[row, column]) ** 2, axis=1)
+            code.append(int(np.argmin(distances)))
+
+    bit_string = "".join(ind_bit_map[index] for index in code)
+    return Tag(bit_string, n=n, validate_crc=validate_crc)
+
+
+def _strictly_valid_tag(tag):
+    return tag.crc_valid is True and tag.corners_valid is True
 
 
 def detect_tags(
