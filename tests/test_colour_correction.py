@@ -3,38 +3,100 @@ import numpy as np
 from PIL import Image
 
 import freelens
-from freelens import Tag, _correct_colours, _quiet_zone_references, decode_frames
+from freelens import (
+    Tag,
+    _correct_colours,
+    _quiet_zone_references,
+    _rectify_frame,
+    decode_frames,
+)
 
 POLYGON = np.array([[0, 0], [223, 0], [223, 223], [0, 223]], dtype=np.float32)
 MESSAGE = "010010100000000010001100"
 
 
-def test_quiet_zone_references_use_rings_around_frame():
+def test_quiet_zone_references_use_rectified_rings():
     white = np.array([170, 180, 190], dtype=np.uint8)
     black = np.array([20, 30, 40], dtype=np.uint8)
-    image = np.full((91, 91, 3), white, dtype=np.uint8)
-    polygon = np.array([[10, 10], [80, 10], [80, 80], [10, 80]])
-    cv.fillConvexPoly(image, polygon, color=black.tolist())
-    cv.fillConvexPoly(
-        image,
-        np.array([[20, 20], [70, 20], [70, 70], [20, 70]]),
-        color=(100, 110, 120),
-    )
+    image = np.full((90, 90, 3), white, dtype=np.uint8)
+    image[10:-10, 10:-10] = black
+    image[20:-20, 20:-20] = (100, 110, 120)
+    valid_pixels = np.ones(image.shape[:2], dtype=bool)
 
-    actual_black, actual_white = _quiet_zone_references(image, polygon, n=5)
+    actual_black, actual_white = _quiet_zone_references(
+        image, valid_pixels, cell_size=10
+    )
 
     np.testing.assert_array_equal(actual_black, black)
     np.testing.assert_array_equal(actual_white, white)
 
 
 def test_missing_quiet_zone_uses_identity_references():
-    image = np.full((10, 10, 3), 100, dtype=np.uint8)
-    polygon = np.array([[0, 0], [9, 0], [9, 9], [0, 9]])
+    image = np.full((90, 90, 3), 100, dtype=np.uint8)
+    valid_pixels = np.zeros(image.shape[:2], dtype=bool)
 
-    black, white = _quiet_zone_references(image, polygon, n=5)
+    black, white = _quiet_zone_references(image, valid_pixels, cell_size=10)
 
     np.testing.assert_array_equal(black, [0, 0, 0])
     np.testing.assert_array_equal(white, [255, 255, 255])
+
+
+def test_quiet_zone_references_ignore_pixels_outside_source_image():
+    image = np.full((90, 90, 3), (170, 180, 190), dtype=np.uint8)
+    image[10:-10, 10:-10] = (20, 30, 40)
+    image[20:-20, 20:-20] = (100, 110, 120)
+    image[:, :10] = (0, 0, 0)
+    valid_pixels = np.ones(image.shape[:2], dtype=bool)
+    valid_pixels[:, :10] = False
+
+    black, white = _quiet_zone_references(image, valid_pixels, cell_size=10)
+
+    np.testing.assert_array_equal(black, [20, 30, 40])
+    np.testing.assert_array_equal(white, [170, 180, 190])
+
+
+def test_rectification_samples_perspective_quiet_zone_rings():
+    n = 5
+    cell_size = 10
+    quiet_zone_pixels = cell_size * (n + 4)
+    white = np.array([170, 180, 190], dtype=np.uint8)
+    black = np.array([20, 30, 40], dtype=np.uint8)
+    source = np.full((quiet_zone_pixels, quiet_zone_pixels, 3), white, dtype=np.uint8)
+    source[cell_size:-cell_size, cell_size:-cell_size] = black
+    source[2 * cell_size : -2 * cell_size, 2 * cell_size : -2 * cell_size] = (
+        100,
+        110,
+        120,
+    )
+    source_corners = np.float32(
+        [
+            [0, 0],
+            [quiet_zone_pixels, 0],
+            [quiet_zone_pixels, quiet_zone_pixels],
+            [0, quiet_zone_pixels],
+        ]
+    )
+    destination_corners = np.float32([[20, 15], [135, 30], [120, 125], [10, 105]])
+    transform = cv.getPerspectiveTransform(source_corners, destination_corners)
+    scene = cv.warpPerspective(source, transform, (150, 140), borderValue=(1, 2, 3))
+    frame_corners = np.float32(
+        [
+            [cell_size, cell_size],
+            [quiet_zone_pixels - cell_size, cell_size],
+            [quiet_zone_pixels - cell_size, quiet_zone_pixels - cell_size],
+            [cell_size, quiet_zone_pixels - cell_size],
+        ]
+    )
+    polygon = cv.perspectiveTransform(frame_corners[None], transform)[0]
+    scene_rgba = np.dstack((scene, np.full(scene.shape[:2], 255, dtype=np.uint8)))
+
+    frame, actual_black, actual_white = _rectify_frame(
+        scene_rgba, polygon, n, cell_size
+    )
+
+    assert frame.shape == (70, 70, 3)
+    np.testing.assert_allclose(actual_black, black, atol=1)
+    np.testing.assert_allclose(actual_white, white, atol=1)
 
 
 def test_colour_correction_maps_quiet_zone_references_to_black_and_white():

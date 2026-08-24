@@ -132,37 +132,17 @@ def expand_polygon(polygon, scale_factor=1 + 4 / 14):
     return np.round(expanded_polygon).astype(int)
 
 
-def _quiet_zone_references(image, polygon, n):
-    """Return local black and white RGB references around a frame polygon."""
-    polygon = np.round(polygon).astype(int)
-    outer_polygon = expand_polygon(polygon, (n + 4) / (n + 2))
-    inner_polygon = expand_polygon(polygon, n / (n + 2))
+def _quiet_zone_references(image, valid_pixels, cell_size):
+    """Return black and white RGB references from a rectified quiet zone."""
+    white_mask = np.ones(image.shape[:2], dtype=bool)
+    white_mask[cell_size:-cell_size, cell_size:-cell_size] = False
 
-    height, width = image.shape[:2]
-    left = max(0, int(np.min(outer_polygon[:, 0])))
-    top = max(0, int(np.min(outer_polygon[:, 1])))
-    right = min(width, int(np.max(outer_polygon[:, 0])) + 1)
-    bottom = min(height, int(np.max(outer_polygon[:, 1])) + 1)
-    if left >= right or top >= bottom:
-        return np.zeros(3), np.full(3, 255)
+    black_mask = np.zeros(image.shape[:2], dtype=bool)
+    black_mask[cell_size:-cell_size, cell_size:-cell_size] = True
+    black_mask[2 * cell_size : -2 * cell_size, 2 * cell_size : -2 * cell_size] = False
 
-    origin = np.array([left, top])
-    local_polygon = polygon - origin
-    local_outer = outer_polygon - origin
-    local_inner = inner_polygon - origin
-    mask_shape = (bottom - top, right - left)
-
-    white_mask = np.zeros(mask_shape, dtype=np.uint8)
-    cv.fillConvexPoly(white_mask, local_outer, color=1)
-    cv.fillConvexPoly(white_mask, local_polygon, color=0)
-
-    black_mask = np.zeros(mask_shape, dtype=np.uint8)
-    cv.fillConvexPoly(black_mask, local_polygon, color=1)
-    cv.fillConvexPoly(black_mask, local_inner, color=0)
-
-    local_image = image[top:bottom, left:right]
-    black_pixels = local_image[black_mask > 0]
-    white_pixels = local_image[white_mask > 0]
+    black_pixels = image[black_mask & valid_pixels]
+    white_pixels = image[white_mask & valid_pixels]
     if not len(black_pixels) or not len(white_pixels):
         return np.zeros(3), np.full(3, 255)
 
@@ -182,6 +162,35 @@ def _correct_colours(image, black, white):
         image[..., usable_channels] - black[usable_channels]
     ) / difference[usable_channels]
     return np.clip(corrected, 0, 1)
+
+
+def _rectify_frame(image_rgba, polygon, n, cell_size):
+    """Rectify a frame and its quiet zone, returning the frame and RGB references."""
+    quiet_zone_pixels = cell_size * (n + 4)
+    frame_start = cell_size
+    frame_stop = cell_size * (n + 3)
+    reference_points = np.float32(
+        [
+            [frame_start, frame_start],
+            [frame_stop, frame_start],
+            [frame_stop, frame_stop],
+            [frame_start, frame_stop],
+        ]
+    )
+    transform = cv.getPerspectiveTransform(polygon, reference_points)
+    rectified = cv.warpPerspective(
+        image_rgba,
+        transform,
+        (quiet_zone_pixels, quiet_zone_pixels),
+    )
+    valid_pixels = rectified[..., 3] == 255
+    black, white = _quiet_zone_references(rectified[..., :3], valid_pixels, cell_size)
+    frame = rectified[
+        frame_start:frame_stop,
+        frame_start:frame_stop,
+        :3,
+    ]
+    return frame, black, white
 
 
 def frame_filter_white_border(polygons, image_bw):
@@ -283,10 +292,11 @@ def decode_frames(
     _validate_crc_options(n, validate_crc, require_valid_crc)
 
     image_rgb = np.array(image)
+    image_rgba = np.dstack(
+        (image_rgb, np.full(image_rgb.shape[:2], 255, dtype=np.uint8))
+    )
 
     cell_size = 32
-    n_pixels = cell_size * (n + 2)
-    ref_pts = np.float32([[0, 0], [n_pixels, 0], [n_pixels, n_pixels], [0, n_pixels]])
 
     tags = []
 
@@ -294,9 +304,9 @@ def decode_frames(
         # Contour approximation already returns adjacent vertices in cyclic order.
         # Its starting corner only rotates the warp, which is normalised below.
         polygon_points = np.asarray(polygon, dtype=np.float32)
-        M = cv.getPerspectiveTransform(polygon_points, ref_pts)
-        frame_rgb = cv.warpPerspective(image_rgb, M, (n_pixels, n_pixels))
-        black, white = _quiet_zone_references(image_rgb, polygon_points, n)
+        frame_rgb, black, white = _rectify_frame(
+            image_rgba, polygon_points, n, cell_size
+        )
         corrected_rgb = np.round(
             _correct_colours(frame_rgb, black, white) * 255
         ).astype(np.uint8)

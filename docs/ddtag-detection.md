@@ -29,8 +29,11 @@ For each un-rectified frame polygon:
 
 1. Preserve the cyclic vertex order produced by contour approximation. The first vertex
    can be any corner because tag orientation is normalised after sampling.
-1. Measure median black and white RGB references from the quiet-zone rings
-1. Un-warp the RGB frame image to square aspect ratio and resize it to a fixed size
+1. Un-warp the RGB frame and both quiet-zone rings to square aspect ratio and resize
+   them to a fixed size
+1. Measure median black and white RGB references from fixed positions in the rectified
+   quiet-zone rings, excluding pixels that fall outside the source image
+1. Crop the rectified image to the black-framed tag region
 1. Map the measured black and white RGB references onto the full RGB range
 1. Convert the corrected frame image to CIELab colour space
 1. Get the cell colours from the center positions of each cell in the grid
