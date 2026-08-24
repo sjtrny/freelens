@@ -17,8 +17,9 @@ In `detect_frames` we use a modified version of [1] as follows:
    1. Convex polygon
    1. Shape is roughly square (perimeter/area test)
 
-The quiet zone is not used to reject frame candidates. Its black and white rings are
-retained as optional colour references during strict decoding.
+The quiet zone is not used to reject frame candidates. Every candidate is colour
+calibrated using median RGB values from its black and white rings. When either ring
+cannot be sampled, identity references preserve the original RGB values.
 
 ## Decoding Possible Tags
 

@@ -231,10 +231,11 @@ def detect_frames(image):
     4. Fit polygon to contours (cv.approxPolyDP)
     5. Apply filters:
         1. 4-vertex polygons.
-        2. Area greater than threshold
+        2. Area of at least MIN_FRAME_AREA
         3. Convex polygon
         4. Shape is roughly square (perimeter/area test)
-        5. Quiet-zone filtering is disabled for this experiment.
+
+    The quiet zone is not used to reject frame candidates.
 
     TODO: Retain only internal contours (opposite of paper which suggests external)
     """
