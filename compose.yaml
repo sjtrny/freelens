@@ -1,14 +1,14 @@
 services:
-  evaluation-viewer:
-    image: freelens-evaluation-viewer:local
+  tag-editor:
+    image: freelens-tag-editor:local
     build:
       context: .
-      dockerfile: Dockerfile.viewer
+      dockerfile: Dockerfile.tag-editor
     init: true
     read_only: true
-    user: "${VIEWER_UID:-1000}:${VIEWER_GID:-1000}"
+    user: "${TAG_EDITOR_UID:-1000}:${TAG_EDITOR_GID:-1000}"
     volumes:
-      - ${VIEWER_DATASET_PATH:-./dataset}:/app/dataset
+      - ${TAG_EDITOR_DATASET_PATH:-./dataset}:/app/dataset
     tmpfs:
       - /tmp:size=16m,mode=1777
     ports:

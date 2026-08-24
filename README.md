@@ -16,6 +16,7 @@ may attempt to enforce their IP.
 - [ddTag detection](./docs/ddtag-detection.md)
 - [CRCs in ddTags](./docs/ddtag-crc.md)
 - [Testing NaviLens code PDFs](./docs/testing-navilens-codes.md)
+- [Tag editor](./dataset/DATASET.md#tag-editor)
 - [Development](./docs/development.md)
 
 ## Quickstart

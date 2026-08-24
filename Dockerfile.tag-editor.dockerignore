@@ -6,6 +6,6 @@
 !dataset/**
 !scripts/
 !scripts/evaluation_dataset.py
-!scripts/view_evaluation.py
+!scripts/tag_editor.py
 !templates/
-!templates/evaluation.html
+!templates/tag_editor.html
