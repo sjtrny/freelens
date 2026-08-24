@@ -8,7 +8,7 @@ from PIL import Image
 
 from scripts.benchmark_dataset import benchmark_dataset, summarize
 from scripts.evaluation_dataset import add_tag, load_dataset, update_tag
-from scripts.view_evaluation import create_app
+from scripts.tag_editor import create_app
 
 
 @pytest.fixture
@@ -255,7 +255,7 @@ def test_benchmark_reads_expected_messages_from_tags(evaluation_manifest):
     assert "manual_review_images" not in summary
 
 
-def test_viewer_selects_a_tag_and_draws_its_location(evaluation_manifest):
+def test_tag_editor_selects_a_tag_and_draws_its_location(evaluation_manifest):
     app = create_app(evaluation_manifest)
     app.config.update(TESTING=True)
     client = app.test_client()
@@ -284,7 +284,7 @@ def test_viewer_selects_a_tag_and_draws_its_location(evaluation_manifest):
     assert b'data-y="10"' in response.data
 
 
-def test_viewer_updates_a_tag_and_redirects_to_its_details(evaluation_manifest):
+def test_tag_editor_updates_a_tag_and_redirects_to_its_details(evaluation_manifest):
     app = create_app(evaluation_manifest)
     app.config.update(TESTING=True)
     client = app.test_client()
@@ -329,7 +329,7 @@ def test_viewer_updates_a_tag_and_redirects_to_its_details(evaluation_manifest):
     )
 
 
-def test_viewer_rejects_invalid_partial_edits_without_changing_manifest(
+def test_tag_editor_rejects_invalid_partial_edits_without_changing_manifest(
     evaluation_manifest,
 ):
     app = create_app(evaluation_manifest)
@@ -353,7 +353,7 @@ def test_viewer_rejects_invalid_partial_edits_without_changing_manifest(
     assert evaluation_manifest.read_bytes() == original
 
 
-def test_viewer_rejects_edits_without_its_csrf_token(evaluation_manifest):
+def test_tag_editor_rejects_edits_without_its_csrf_token(evaluation_manifest):
     app = create_app(evaluation_manifest)
     app.config.update(TESTING=True)
     response = app.test_client().post(
@@ -366,7 +366,7 @@ def test_viewer_rejects_edits_without_its_csrf_token(evaluation_manifest):
     assert "edit token is invalid" in response.json["error"]
 
 
-def test_viewer_renders_and_submits_an_editable_tag_form(evaluation_manifest):
+def test_tag_editor_renders_and_submits_an_editable_tag_form(evaluation_manifest):
     app = create_app(evaluation_manifest)
     app.config.update(TESTING=True)
     response = app.test_client().get("/?image=0&tag=1")
@@ -432,7 +432,7 @@ def test_viewer_renders_and_submits_an_editable_tag_form(evaluation_manifest):
     assert response.data.index(b"</form>") < response.data.index(b'class="tag-preview"')
 
 
-def test_viewer_handles_missing_locations_and_review_states(evaluation_manifest):
+def test_tag_editor_handles_missing_locations_and_review_states(evaluation_manifest):
     app = create_app(evaluation_manifest)
     app.config.update(TESTING=True)
     client = app.test_client()
@@ -471,7 +471,7 @@ def test_viewer_handles_missing_locations_and_review_states(evaluation_manifest)
     assert b"Not reviewed" in unreviewed_app.test_client().get("/?image=2").data
 
 
-def test_viewer_saves_a_tag_with_an_unknown_message(evaluation_manifest):
+def test_tag_editor_saves_a_tag_with_an_unknown_message(evaluation_manifest):
     app = create_app(evaluation_manifest)
     app.config.update(TESTING=True)
     client = app.test_client()
@@ -496,7 +496,7 @@ def test_viewer_saves_a_tag_with_an_unknown_message(evaluation_manifest):
     assert b"Unknown message" in client.get(response.headers["Location"]).data
 
 
-def test_viewer_includes_fit_and_zoom_controls(evaluation_manifest):
+def test_tag_editor_includes_fit_and_zoom_controls(evaluation_manifest):
     app = create_app(evaluation_manifest)
     app.config.update(TESTING=True)
     response = app.test_client().get("/?image=0")
@@ -514,7 +514,9 @@ def test_viewer_includes_fit_and_zoom_controls(evaluation_manifest):
     assert b"zoomIn.disabled" not in response.data
 
 
-def test_viewer_uses_partial_navigation_to_preserve_list_scroll(evaluation_manifest):
+def test_tag_editor_uses_partial_navigation_to_preserve_list_scroll(
+    evaluation_manifest,
+):
     app = create_app(evaluation_manifest)
     app.config.update(TESTING=True)
     response = app.test_client().get("/?image=0")
@@ -531,7 +533,7 @@ def test_viewer_uses_partial_navigation_to_preserve_list_scroll(evaluation_manif
     assert b'window.addEventListener("popstate"' in response.data
 
 
-def test_viewer_selects_overlays_and_guards_unsaved_navigation(
+def test_tag_editor_selects_overlays_and_guards_unsaved_navigation(
     evaluation_manifest,
 ):
     app = create_app(evaluation_manifest)
@@ -555,7 +557,7 @@ def test_viewer_selects_overlays_and_guards_unsaved_navigation(
     assert b"saveTag(form, destination)" in response.data
 
 
-def test_viewer_opens_a_new_tag_draft_with_a_default_location(evaluation_manifest):
+def test_tag_editor_opens_a_new_tag_draft_with_a_default_location(evaluation_manifest):
     app = create_app(evaluation_manifest)
     app.config.update(TESTING=True)
     client = app.test_client()
@@ -594,7 +596,7 @@ def test_viewer_opens_a_new_tag_draft_with_a_default_location(evaluation_manifes
     assert evaluation_manifest.read_bytes() == original
 
 
-def test_viewer_saves_a_new_tag_to_the_manifest(evaluation_manifest):
+def test_tag_editor_saves_a_new_tag_to_the_manifest(evaluation_manifest):
     app = create_app(evaluation_manifest)
     app.config.update(TESTING=True)
     client = app.test_client()
@@ -631,7 +633,7 @@ def test_viewer_saves_a_new_tag_to_the_manifest(evaluation_manifest):
     }
 
 
-def test_viewer_lists_tags_above_details_and_includes_resizable_panels(
+def test_tag_editor_lists_tags_above_details_and_includes_resizable_panels(
     evaluation_manifest,
 ):
     app = create_app(evaluation_manifest)
@@ -639,7 +641,7 @@ def test_viewer_lists_tags_above_details_and_includes_resizable_panels(
     response = app.test_client().get("/?image=0&tag=1")
 
     assert response.status_code == 200
-    assert b"<title>tagged.jpg \xc2\xb7 FreeLens evaluation</title>" in response.data
+    assert b"<title>tagged.jpg \xc2\xb7 FreeLens tag editor</title>" in response.data
     assert b"<h1>tagged.jpg</h1>" in response.data
     assert b"<details" not in response.data
     assert b'class="image-list"' in response.data
@@ -676,7 +678,7 @@ def test_viewer_lists_tags_above_details_and_includes_resizable_panels(
     assert b'.image-list a:not([aria-current="page"]):hover' in response.data
 
 
-def test_viewer_uses_ctrl_or_command_s_to_save(evaluation_manifest):
+def test_tag_editor_uses_ctrl_or_command_s_to_save(evaluation_manifest):
     app = create_app(evaluation_manifest)
     app.config.update(TESTING=True)
     response = app.test_client().get("/?image=0&tag=1")
@@ -694,7 +696,7 @@ def test_viewer_uses_ctrl_or_command_s_to_save(evaluation_manifest):
     )
 
 
-def test_viewer_serves_only_manifest_image_indexes(evaluation_manifest):
+def test_tag_editor_serves_only_manifest_image_indexes(evaluation_manifest):
     app = create_app(evaluation_manifest)
     app.config.update(TESTING=True)
     client = app.test_client()
@@ -711,7 +713,7 @@ def test_viewer_serves_only_manifest_image_indexes(evaluation_manifest):
     assert client.get("/?image=0&tag=99").status_code == 404
 
 
-def test_viewer_rectifies_current_coordinates_to_a_square(evaluation_manifest):
+def test_tag_editor_rectifies_current_coordinates_to_a_square(evaluation_manifest):
     app = create_app(evaluation_manifest)
     app.config.update(TESTING=True)
     client = app.test_client()
@@ -736,7 +738,7 @@ def test_viewer_rectifies_current_coordinates_to_a_square(evaluation_manifest):
         assert image.getpixel((160, 160)) == (255, 255, 255)
 
 
-def test_viewer_rejects_invalid_rectification_coordinates(evaluation_manifest):
+def test_tag_editor_rejects_invalid_rectification_coordinates(evaluation_manifest):
     app = create_app(evaluation_manifest)
     app.config.update(TESTING=True)
     client = app.test_client()
@@ -761,6 +763,6 @@ def test_viewer_rejects_invalid_rectification_coordinates(evaluation_manifest):
 def test_compose_bind_mounts_the_repository_dataset_for_edits():
     compose = (Path(__file__).parents[1] / "compose.yaml").read_text(encoding="utf-8")
 
-    assert "${VIEWER_DATASET_PATH:-./dataset}:/app/dataset" in compose
-    assert "${VIEWER_UID:-1000}:${VIEWER_GID:-1000}" in compose
+    assert "${TAG_EDITOR_DATASET_PATH:-./dataset}:/app/dataset" in compose
+    assert "${TAG_EDITOR_UID:-1000}:${TAG_EDITOR_GID:-1000}" in compose
     assert "evaluation-data" not in compose

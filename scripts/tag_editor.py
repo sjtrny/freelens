@@ -1,4 +1,4 @@
-"""Serve the field-photo evaluation viewer."""
+"""Serve the field-photo tag editor."""
 
 import argparse
 import secrets
@@ -198,7 +198,7 @@ def create_app(manifest_path=DEFAULT_MANIFEST):
             display_tags.append(selected_tag)
 
         return render_template(
-            "evaluation.html",
+            "tag_editor.html",
             cases=current_dataset.cases,
             case=case,
             image_index=image_index,

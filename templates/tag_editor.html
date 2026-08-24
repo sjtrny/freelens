@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ case.image.split('/')[-1] }} · FreeLens evaluation</title>
+    <title>{{ case.image.split('/')[-1] }} · FreeLens tag editor</title>
     <style>
       :root { color-scheme: light dark; font: 15px system-ui, sans-serif; }
       * { box-sizing: border-box; }
@@ -410,8 +410,8 @@
         const minimumImageWidth = 280;
         const resizeStep = 16;
         const storageKeys = {
-          left: "freelens.viewer.leftPanelWidth",
-          right: "freelens.viewer.rightPanelWidth",
+          left: "freelens.tagEditor.leftPanelWidth",
+          right: "freelens.tagEditor.rightPanelWidth",
         };
 
         function panel(side) {
@@ -1020,7 +1020,7 @@
             );
             const nextMain = nextDocument.querySelector("main");
             const nextPanel = nextDocument.querySelector('[data-panel="right"]');
-            if (!nextMain || !nextPanel) throw new Error("Invalid viewer response");
+            if (!nextMain || !nextPanel) throw new Error("Invalid tag editor response");
 
             const nextImageIndex = imageIndex(response.url);
             const sameImage = currentImageIndex === nextImageIndex;

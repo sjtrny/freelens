@@ -37,13 +37,13 @@ benchmark evaluates reviewed images whose scorable tags all have known messages.
 omits unreviewed images and images containing a scorable tag with a null message.
 Non-scorable tags are omitted from expected detector output.
 
-## Evaluation Viewer
+## Tag Editor
 
-Start the viewer locally with:
+Start the tag editor locally with:
 
 ```bash
-python -m pip install -e ".[viewer]"
-python -m scripts.view_evaluation
+python -m pip install -e ".[editor]"
+python -m scripts.tag_editor
 ```
 
 Or build and start the containerized service:
@@ -69,19 +69,19 @@ perspective-corrected preview below the details. Tag edits are validated and ato
 replace `dataset/evaluation.json` directly in the repository through Compose's writable
 `./dataset:/app/dataset` bind mount. Every other application path remains read-only.
 
-Compose runs as UID/GID 1000 by default. On Linux, override these values if the checkout
-has a different owner. If Docker runs outside a development container, also set
-`VIEWER_DATASET_PATH` to the checkout path visible to the Docker daemon. These values
-may be placed in the ignored `.env` file:
+Compose runs the tag editor as UID/GID 1000 by default. On Linux, override these values
+if the checkout has a different owner. If Docker runs outside a development container,
+also set `TAG_EDITOR_DATASET_PATH` to the checkout path visible to the Docker daemon.
+These values may be placed in the ignored `.env` file:
 
 ```bash
-VIEWER_DATASET_PATH=/daemon/path/to/freelens/dataset
-VIEWER_UID=1000
-VIEWER_GID=1000
+TAG_EDITOR_DATASET_PATH=/daemon/path/to/freelens/dataset
+TAG_EDITOR_UID=1000
+TAG_EDITOR_GID=1000
 ```
 
-The viewer has no user authentication, so expose it only on a trusted network. Stop the
-service with `docker compose down`.
+The tag editor has no user authentication, so expose it only on a trusted network. Stop
+the service with `docker compose down`.
 
 ## PyCon AU 2024 Contributors
 
