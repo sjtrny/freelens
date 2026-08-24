@@ -16,7 +16,9 @@ In `detect_frames` we use a modified version of [1] as follows:
    1. Area of at least 1,500 px²
    1. Convex polygon
    1. Shape is roughly square (perimeter/area test)
-   1. Check that border around frame is white
+
+The quiet zone is not used to reject frame candidates. Its black and white rings are
+retained as optional colour references during strict decoding.
 
 ## Decoding Possible Tags
 
@@ -32,6 +34,9 @@ For each un-rectified frame polygon:
 1. Rotate the sampled grid so its darkest corner is at the bottom left
 1. Obtain the palette colours from the four corners of the grid
 1. Assign each cell in the grid to the closest colour in the palette
+1. If strict validation fails, retry after mapping the RGB values represented by the
+   black and white quiet-zone rings onto the full RGB range. The original result remains
+   preferred whenever it is already valid.
 1. When strict validation is enabled, require the four reserved corner cells to have
    distinct palette values in canonical order
 1. Validate the deployed CRC when processing a 5×5 tag and validation is enabled

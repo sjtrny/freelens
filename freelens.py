@@ -132,6 +132,58 @@ def expand_polygon(polygon, scale_factor=1 + 4 / 14):
     return np.round(expanded_polygon).astype(int)
 
 
+def _quiet_zone_references(image, polygon, n):
+    """Return local black and white RGB references around a frame polygon."""
+    polygon = np.round(polygon).astype(int)
+    outer_polygon = expand_polygon(polygon, (n + 4) / (n + 2))
+    inner_polygon = expand_polygon(polygon, n / (n + 2))
+
+    height, width = image.shape[:2]
+    left = max(0, int(np.min(outer_polygon[:, 0])))
+    top = max(0, int(np.min(outer_polygon[:, 1])))
+    right = min(width, int(np.max(outer_polygon[:, 0])) + 1)
+    bottom = min(height, int(np.max(outer_polygon[:, 1])) + 1)
+    if left >= right or top >= bottom:
+        return np.zeros(3), np.full(3, 255)
+
+    origin = np.array([left, top])
+    local_polygon = polygon - origin
+    local_outer = outer_polygon - origin
+    local_inner = inner_polygon - origin
+    mask_shape = (bottom - top, right - left)
+
+    white_mask = np.zeros(mask_shape, dtype=np.uint8)
+    cv.fillConvexPoly(white_mask, local_outer, color=1)
+    cv.fillConvexPoly(white_mask, local_polygon, color=0)
+
+    black_mask = np.zeros(mask_shape, dtype=np.uint8)
+    cv.fillConvexPoly(black_mask, local_polygon, color=1)
+    cv.fillConvexPoly(black_mask, local_inner, color=0)
+
+    local_image = image[top:bottom, left:right]
+    black_pixels = local_image[black_mask > 0]
+    white_pixels = local_image[white_mask > 0]
+    if not len(black_pixels) or not len(white_pixels):
+        return np.zeros(3), np.full(3, 255)
+
+    return np.median(black_pixels, axis=0), np.median(white_pixels, axis=0)
+
+
+def _correct_colours(image, black, white):
+    """Map measured black and white RGB references onto the full RGB range."""
+    image = image.astype(np.float32)
+    black = np.asarray(black, dtype=np.float32)
+    white = np.asarray(white, dtype=np.float32)
+    difference = white - black
+
+    corrected = image / 255
+    usable_channels = difference > 0
+    corrected[..., usable_channels] = (
+        image[..., usable_channels] - black[usable_channels]
+    ) / difference[usable_channels]
+    return np.clip(corrected, 0, 1)
+
+
 def frame_filter_white_border(polygons, image_bw):
     filtered_polygons = []
 
@@ -229,7 +281,8 @@ def decode_frames(
     """Decode four-vertex frame polygons supplied in cyclic contour order."""
     _validate_crc_options(n, validate_crc, require_valid_crc)
 
-    image_cv = cv.cvtColor(np.array(image), cv.COLOR_RGB2Lab)
+    image_rgb = np.array(image)
+    image_lab = cv.cvtColor(image_rgb, cv.COLOR_RGB2Lab)
 
     cell_size = 32
     n_pixels = cell_size * (n + 2)
@@ -242,45 +295,54 @@ def decode_frames(
         # Its starting corner only rotates the warp, which is normalised below.
         polygon_points = np.asarray(polygon, dtype=np.float32)
         M = cv.getPerspectiveTransform(polygon_points, ref_pts)
-        dst = cv.warpPerspective(image_cv, M, (n_pixels, n_pixels))
+        frame_lab = cv.warpPerspective(image_lab, M, (n_pixels, n_pixels))
+        tag = _decode_rectified_frame(frame_lab, n, validate_crc)
 
-        values = np.zeros((n + 2, n + 2, 3))
+        if require_valid_crc and not _strictly_valid_tag(tag):
+            frame_rgb = cv.warpPerspective(image_rgb, M, (n_pixels, n_pixels))
+            black, white = _quiet_zone_references(image_rgb, polygon_points, n)
+            corrected_rgb = np.round(
+                _correct_colours(frame_rgb, black, white) * 255
+            ).astype(np.uint8)
+            corrected_lab = cv.cvtColor(corrected_rgb, cv.COLOR_RGB2Lab)
+            corrected_tag = _decode_rectified_frame(corrected_lab, n, validate_crc)
+            if _strictly_valid_tag(corrected_tag):
+                tag = corrected_tag
 
-        for r in range(n + 2):  # Rows
-            for c in range(n + 2):  # Cols
-                center_x = r * cell_size + cell_size // 2
-                center_y = c * cell_size + cell_size // 2
-                values[r, c] = dst[center_x, center_y]
-
-        # Orient the tag so its darkest corner is at the bottom left.
-        corner_vals = np.array(
-            [values[1, 1], values[1, -2], values[-2, -2], values[-2, 1]]
-        )
-        darkest_corner = int(np.argmin(corner_vals[:, 0]))
-        values = np.rot90(values, k=(darkest_corner + 1) % 4)
-
-        # Get corner colours
-        corner_vals = np.array(
-            [values[1, 1], values[1, -2], values[-2, -2], values[-2, 1]]
-        )
-
-        # Find argmin of each cell to corner colours
-        code = []
-        for r in range(1, n + 1):  # Rows
-            for c in range(1, n + 1):  # Cols
-                ind = np.argmin(np.mean((corner_vals - values[r, c]) ** 2, axis=1))
-                code.append(int(ind))
-
-        bit_string = "".join([ind_bit_map[ind] for ind in code])
-
-        tag = Tag(bit_string, n=n, validate_crc=validate_crc)
-
-        if not require_valid_crc or (
-            tag.crc_valid is True and tag.corners_valid is True
-        ):
+        if not require_valid_crc or _strictly_valid_tag(tag):
             tags.append(tag)
 
     return tags
+
+
+def _decode_rectified_frame(frame_lab, n, validate_crc):
+    """Sample and decode one perspective-corrected CIELab frame."""
+    cell_size = 32
+    values = np.zeros((n + 2, n + 2, 3))
+
+    for row in range(n + 2):
+        for column in range(n + 2):
+            y = row * cell_size + cell_size // 2
+            x = column * cell_size + cell_size // 2
+            values[row, column] = frame_lab[y, x]
+
+    corners = np.array([values[1, 1], values[1, -2], values[-2, -2], values[-2, 1]])
+    darkest_corner = int(np.argmin(corners[:, 0]))
+    values = np.rot90(values, k=(darkest_corner + 1) % 4)
+    corners = np.array([values[1, 1], values[1, -2], values[-2, -2], values[-2, 1]])
+
+    code = []
+    for row in range(1, n + 1):
+        for column in range(1, n + 1):
+            distances = np.mean((corners - values[row, column]) ** 2, axis=1)
+            code.append(int(np.argmin(distances)))
+
+    bit_string = "".join(ind_bit_map[index] for index in code)
+    return Tag(bit_string, n=n, validate_crc=validate_crc)
+
+
+def _strictly_valid_tag(tag):
+    return tag.crc_valid is True and tag.corners_valid is True
 
 
 def detect_tags(
