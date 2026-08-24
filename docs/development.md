@@ -83,7 +83,7 @@ Use the `pypi` GitHub environment with required approval.
 
 1. Update the version in `pyproject.toml` and merge it to `main`.
 1. Open [GitHub Releases](https://github.com/sjtrny/freelens/releases/new).
-1. Create a tag named `v<version>`, such as `v0.0.4`, targeting `main`.
+1. Create a tag named `v<version>`, such as `v0.0.5`, targeting `main`.
 1. Publish the release.
 1. Open the workflow run and approve the `pypi` deployment.
 
@@ -93,7 +93,7 @@ mismatch.
 The GitHub CLI is an optional alternative to steps 2–4:
 
 ```bash
-gh release create v0.0.4 --target main --title "FreeLens 0.0.4" --generate-notes
+gh release create v0.0.5 --target main --title "FreeLens 0.0.5" --generate-notes
 ```
 
 ## Contributing
