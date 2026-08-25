@@ -362,11 +362,10 @@ def _decode_sampled_cells(cells_lab, n, validate_crc):
     values = np.rot90(values, k=(darkest_corner + 1) % 4)
     corners = np.array([values[1, 1], values[1, -2], values[-2, -2], values[-2, 1]])
 
-    code = []
-    for row in range(1, n + 1):
-        for column in range(1, n + 1):
-            distances = np.mean((corners - values[row, column]) ** 2, axis=1)
-            code.append(int(np.argmin(distances)))
+    # Squared distance from every cell to every palette corner, in row-major order.
+    grid = values[1 : n + 1, 1 : n + 1]
+    distances = np.mean((grid[:, :, None, :] - corners) ** 2, axis=-1)
+    code = np.argmin(distances, axis=-1).ravel().tolist()
 
     bit_string = "".join(ind_bit_map[index] for index in code)
     return Tag(bit_string, n=n, validate_crc=validate_crc)
