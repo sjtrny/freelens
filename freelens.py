@@ -249,10 +249,8 @@ def detect_frames(image):
     TODO: Retain only internal contours (opposite of paper which suggests external)
     """
 
-    image_cv = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-
     # 1. Convert image to grayscale
-    image_bw_cv = cv.cvtColor(image_cv, cv.COLOR_BGR2GRAY)
+    image_bw_cv = cv.cvtColor(np.asarray(image), cv.COLOR_RGB2GRAY)
 
     # 2. Detect edges by local adaptive thresholding (cv.adaptiveThreshold)
     threshold_image = cv.adaptiveThreshold(
