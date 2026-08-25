@@ -74,6 +74,30 @@ def _validate_crc_options(n, validate_crc, require_valid_crc=False):
         raise ValueError("CRC validation is supported only for 5x5 tags")
 
 
+def contour_filter_candidates(contours, area_threshold=4000):
+    """Drop contours that cannot survive the frame filters, before polygon fitting.
+
+    Adaptive thresholding of a photograph yields tens of thousands of contours,
+    almost all of them specks. Fitting a polygon to each one is the single most
+    expensive step in detection, so reject the hopeless ones with a bounding box
+    first.
+
+    This cannot discard a frame that would otherwise be found. cv.approxPolyDP
+    returns a subset of the points it is given, so the fitted polygon lies inside
+    the contour's bounding box and cannot have a larger area, nor more vertices
+    than the contour it came from.
+    """
+    filtered_contours = []
+    for c in contours:
+        if len(c) < 4:
+            continue
+        _, _, width, height = cv.boundingRect(c)
+        if width * height >= area_threshold:
+            filtered_contours.append(c)
+
+    return filtered_contours
+
+
 def reduce_poly_vertices(contours, tolerance=0.1):
     polygons = []
     for c in contours:
@@ -237,8 +261,9 @@ def detect_frames(image):
     1. Convert image to grayscale
     2. Detect edges by local adaptive thresholding (cv.adaptiveThreshold)
     3. Detect contours by Suzuki's method (cv.findContours)
-    4. Fit polygon to contours (cv.approxPolyDP)
-    5. Apply filters:
+    4. Discard contours too small or too sparse to become a frame
+    5. Fit polygon to contours (cv.approxPolyDP)
+    6. Apply filters:
         1. 4-vertex polygons.
         2. Area of at least MIN_FRAME_AREA
         3. Convex polygon
@@ -262,10 +287,13 @@ def detect_frames(image):
         threshold_image, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE
     )
 
-    # 4. Fit polygon to contours (cv.approxPolyDP)
-    polygons = reduce_poly_vertices(contours)
+    # 4. Discard contours too small or too sparse to become a frame
+    candidates = contour_filter_candidates(contours, MIN_FRAME_AREA)
 
-    # 5. Apply filters
+    # 5. Fit polygon to contours (cv.approxPolyDP)
+    polygons = reduce_poly_vertices(candidates)
+
+    # 6. Apply filters
     filters = [
         frame_filter_polygons_4vertex,
         lambda polygons: frame_filter_polygons_area(polygons, MIN_FRAME_AREA),
