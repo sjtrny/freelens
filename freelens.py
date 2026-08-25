@@ -1,3 +1,4 @@
+import functools
 import math
 
 import cv2 as cv
@@ -424,11 +425,16 @@ def get_center_ind(n):
     return int(math.floor((n**2) / 2))
 
 
-def get_crc_inds(n):
-    _validate_n(n)
+# Detection builds a Tag for every candidate frame, and each one needs these
+# tables several times over. They only ever depend on n, so cache them as
+# tuples and let the public helpers hand out lists.
+
+
+@functools.lru_cache(maxsize=None)
+def _crc_inds(n):
     center = n // 2
 
-    return (
+    return tuple(
         [center * n + column for column in range(center)]
         + [row * n + center for row in range(center)]
         + [row * n + center for row in range(center + 1, n)]
@@ -436,30 +442,48 @@ def get_crc_inds(n):
     )
 
 
-def get_crc_input_inds(n):
-    """Return non-cross cells in the order used as CRC input."""
-    _validate_n(n)
+@functools.lru_cache(maxsize=None)
+def _crc_input_inds(n):
     center = n // 2
 
-    return [
+    return tuple(
         row * n + column
         for column in range(n)
         for row in range(n)
         if row != center and column != center
-    ]
+    )
 
 
-def get_message_inds(n):
-    _validate_n(n)
+@functools.lru_cache(maxsize=None)
+def _message_inds(n):
     center = n // 2
     corners = set(get_corner_indices_1d(n))
 
-    return [
+    return tuple(
         row * n + column
         for column in range(n)
         for row in range(n)
         if row != center and column != center and row * n + column not in corners
-    ]
+    )
+
+
+def get_crc_inds(n):
+    _validate_n(n)
+
+    return list(_crc_inds(n))
+
+
+def get_crc_input_inds(n):
+    """Return non-cross cells in the order used as CRC input."""
+    _validate_n(n)
+
+    return list(_crc_input_inds(n))
+
+
+def get_message_inds(n):
+    _validate_n(n)
+
+    return list(_message_inds(n))
 
 
 def _validate_tag_bits(bit_string, n):
@@ -508,7 +532,7 @@ def _crc_input_bytes(cells, n):
             f"{n}x{n} tags must contain exactly {expected_cell_count} cells"
         )
 
-    selected = [cells[index] for index in get_crc_input_inds(n)]
+    selected = [cells[index] for index in _crc_input_inds(n)]
     if any(cell not in {"00", "01", "10", "11"} for cell in selected):
         raise ValueError("Every CRC input cell must be a two-bit binary string")
 
@@ -528,9 +552,9 @@ def _crc_input_bytes_5x5(cells):
     return _crc_input_bytes(cells, CRC_TAG_SIZE)
 
 
-def _compute_crc(cells, n):
-    """Calculate a CRC using the generation rules extrapolated from 5x5 tags."""
-    _validate_n(n)
+@functools.lru_cache(maxsize=None)
+def _crc_calculator(n):
+    """Build the calculator for a tag size once; construction is not free."""
     configuration = Configuration(
         width=4 * n - 4,
         polynomial=_CRC_POLYNOMIALS[n],
@@ -539,7 +563,13 @@ def _compute_crc(cells, n):
         reverse_input=CRC_REVERSE_INPUT,
         reverse_output=CRC_REVERSE_OUTPUT,
     )
-    return Calculator(configuration).checksum(_crc_input_bytes(cells, n))
+    return Calculator(configuration)
+
+
+def _compute_crc(cells, n):
+    """Calculate a CRC using the generation rules extrapolated from 5x5 tags."""
+    _validate_n(n)
+    return _crc_calculator(n).checksum(_crc_input_bytes(cells, n))
 
 
 def compute_crc_5x5(cells):
@@ -557,7 +587,7 @@ def valid_crc(bit_string, n=5):
     cells = tuple(
         bit_string[offset : offset + 2] for offset in range(0, len(bit_string), 2)
     )
-    expected_crc = int("".join(cells[index] for index in get_crc_inds(n)), 2)
+    expected_crc = int("".join(cells[index] for index in _crc_inds(n)), 2)
     return compute_crc_5x5(cells) == expected_crc
 
 
@@ -574,8 +604,8 @@ class Tag:
             self.bit_string[offset : offset + 2]
             for offset in range(0, len(self.bit_string), 2)
         )
-        self.message = "".join(self.cells[index] for index in get_message_inds(n))
-        self.crc = "".join(self.cells[index] for index in get_crc_inds(n))
+        self.message = "".join(self.cells[index] for index in _message_inds(n))
+        self.crc = "".join(self.cells[index] for index in _crc_inds(n))
         self.center_valid = self.cells[get_center_ind(n)] == center_bit_map[n]
         self.corners_valid = tuple(
             self.cells[index] for index in get_corner_indices_1d(n)
