@@ -292,9 +292,7 @@ def decode_frames(
     _validate_crc_options(n, validate_crc, require_valid_crc)
 
     image_rgb = np.array(image)
-    image_rgba = np.dstack(
-        (image_rgb, np.full(image_rgb.shape[:2], 255, dtype=np.uint8))
-    )
+    image_rgba = cv.cvtColor(np.asarray(image), cv.COLOR_RGB2RGBA)
 
     cell_size = 32
 
