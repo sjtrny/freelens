@@ -323,18 +323,21 @@ def decode_frames(
 
     tags = []
 
-    for i, polygon in enumerate(polygons):
+    for polygon in polygons:
         # Contour approximation already returns adjacent vertices in cyclic order.
         # Its starting corner only rotates the warp, which is normalised below.
         polygon_points = np.asarray(polygon, dtype=np.float32)
         frame_rgb, black, white = _rectify_frame(
             image_rgba, polygon_points, n, cell_size
         )
+        # Only the cell centres are ever read, and every step below is per-pixel,
+        # so sample first and correct 49 pixels instead of the whole frame.
+        cells_rgb = _sample_cells(frame_rgb, cell_size)
         corrected_rgb = np.round(
-            _correct_colours(frame_rgb, black, white) * 255
+            _correct_colours(cells_rgb, black, white) * 255
         ).astype(np.uint8)
-        corrected_lab = cv.cvtColor(corrected_rgb, cv.COLOR_RGB2Lab)
-        tag = _decode_rectified_frame(corrected_lab, n, validate_crc)
+        cells_lab = cv.cvtColor(corrected_rgb, cv.COLOR_RGB2Lab)
+        tag = _decode_sampled_cells(cells_lab, n, validate_crc)
 
         if not require_valid_crc or _strictly_valid_tag(tag):
             tags.append(tag)
@@ -342,16 +345,17 @@ def decode_frames(
     return tags
 
 
-def _decode_rectified_frame(frame_lab, n, validate_crc):
-    """Sample and decode one perspective-corrected CIELab frame."""
-    cell_size = 32
-    values = np.zeros((n + 2, n + 2, 3))
+def _sample_cells(frame, cell_size):
+    """Sample the centre pixel of every cell, including the black quiet-zone ring."""
+    half = cell_size // 2
+    # The frame is exactly (n + 2) * cell_size square, so this strided slice picks
+    # the same pixels a row/column loop over cell centres would.
+    return np.ascontiguousarray(frame[half::cell_size, half::cell_size])
 
-    for row in range(n + 2):
-        for column in range(n + 2):
-            y = row * cell_size + cell_size // 2
-            x = column * cell_size + cell_size // 2
-            values[row, column] = frame_lab[y, x]
+
+def _decode_sampled_cells(cells_lab, n, validate_crc):
+    """Decode one grid of perspective-corrected CIELab cell samples."""
+    values = cells_lab.astype(np.float64)
 
     corners = np.array([values[1, 1], values[1, -2], values[-2, -2], values[-2, 1]])
     darkest_corner = int(np.argmin(corners[:, 0]))

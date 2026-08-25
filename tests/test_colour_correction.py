@@ -8,6 +8,7 @@ from freelens import (
     _correct_colours,
     _quiet_zone_references,
     _rectify_frame,
+    _sample_cells,
     decode_frames,
 )
 
@@ -130,7 +131,8 @@ def test_colour_correction_leaves_unusable_channels_on_rgb_scale():
 
 def test_strict_decoding_uses_quiet_zone_colour_calibration(monkeypatch):
     image = Tag.from_message(MESSAGE).to_image(quiet_pad_size=0)
-    corrected = np.asarray(image, dtype=np.float32) / 255
+    # Calibration now runs on the sampled cell grid rather than the whole frame.
+    corrected = _sample_cells(np.asarray(image), 32).astype(np.float32) / 255
     monkeypatch.setattr(
         freelens,
         "_correct_colours",
