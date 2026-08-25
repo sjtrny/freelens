@@ -261,7 +261,7 @@ def detect_frames(image):
 
     # 3. Detect contours by Suzuki's method (cv.findContours)
     contours, hierarchy = cv.findContours(
-        threshold_image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE
+        threshold_image, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE
     )
 
     # 4. Fit polygon to contours (cv.approxPolyDP)
