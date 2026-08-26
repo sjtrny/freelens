@@ -1,6 +1,6 @@
 # NaviLens
 
-[NaviLens](https://www.navilens.com/) is an accessible wayfinding system built around
+[NaviLens](https://www.navilens.com/) is an accessible wayfinding system that uses
 [ddTags](./ddtag.md), or "distant dense tags." These small grids of coloured cells are
 designed to be detected at greater distances, with less precise camera aim, and while
 the tag or user is in relative motion. That makes them useful on signs, stops, vehicles,
