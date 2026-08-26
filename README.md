@@ -9,6 +9,8 @@ This project provides a reference implementation of
 educational or personal use. Commercial use is at your own risk as NaviLens and ddTag
 may attempt to enforce their IP.
 
+[![FreeLens pipeline from a field photograph to a rectified tag, generated tag, and decoded data](./docs/assets/freelens-pipeline.svg)](./docs/assets/freelens-pipeline.svg)
+
 ## Documentation
 
 - [NaviLens](./docs/navilens.md)
