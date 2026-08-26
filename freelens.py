@@ -1,3 +1,4 @@
+import functools
 import math
 
 import cv2 as cv
@@ -72,6 +73,30 @@ def _validate_crc_options(n, validate_crc, require_valid_crc=False):
         raise ValueError("require_valid_crc=True requires validate_crc=True")
     if validate_crc and n != CRC_TAG_SIZE:
         raise ValueError("CRC validation is supported only for 5x5 tags")
+
+
+def contour_filter_candidates(contours, area_threshold=4000):
+    """Drop contours that cannot survive the frame filters, before polygon fitting.
+
+    Adaptive thresholding of a photograph yields tens of thousands of contours,
+    almost all of them specks. Fitting a polygon to each one is the single most
+    expensive step in detection, so reject the hopeless ones with a bounding box
+    first.
+
+    This cannot discard a frame that would otherwise be found. cv.approxPolyDP
+    returns a subset of the points it is given, so the fitted polygon lies inside
+    the contour's bounding box and cannot have a larger area, nor more vertices
+    than the contour it came from.
+    """
+    filtered_contours = []
+    for c in contours:
+        if len(c) < 4:
+            continue
+        _, _, width, height = cv.boundingRect(c)
+        if width * height >= area_threshold:
+            filtered_contours.append(c)
+
+    return filtered_contours
 
 
 def reduce_poly_vertices(contours, tolerance=0.1):
@@ -237,8 +262,9 @@ def detect_frames(image):
     1. Convert image to grayscale
     2. Detect edges by local adaptive thresholding (cv.adaptiveThreshold)
     3. Detect contours by Suzuki's method (cv.findContours)
-    4. Fit polygon to contours (cv.approxPolyDP)
-    5. Apply filters:
+    4. Discard contours too small or too sparse to become a frame
+    5. Fit polygon to contours (cv.approxPolyDP)
+    6. Apply filters:
         1. 4-vertex polygons.
         2. Area of at least MIN_FRAME_AREA
         3. Convex polygon
@@ -249,10 +275,8 @@ def detect_frames(image):
     TODO: Retain only internal contours (opposite of paper which suggests external)
     """
 
-    image_cv = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
-
     # 1. Convert image to grayscale
-    image_bw_cv = cv.cvtColor(image_cv, cv.COLOR_BGR2GRAY)
+    image_bw_cv = cv.cvtColor(np.asarray(image), cv.COLOR_RGB2GRAY)
 
     # 2. Detect edges by local adaptive thresholding (cv.adaptiveThreshold)
     threshold_image = cv.adaptiveThreshold(
@@ -261,13 +285,16 @@ def detect_frames(image):
 
     # 3. Detect contours by Suzuki's method (cv.findContours)
     contours, hierarchy = cv.findContours(
-        threshold_image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE
+        threshold_image, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE
     )
 
-    # 4. Fit polygon to contours (cv.approxPolyDP)
-    polygons = reduce_poly_vertices(contours)
+    # 4. Discard contours too small or too sparse to become a frame
+    candidates = contour_filter_candidates(contours, MIN_FRAME_AREA)
 
-    # 5. Apply filters
+    # 5. Fit polygon to contours (cv.approxPolyDP)
+    polygons = reduce_poly_vertices(candidates)
+
+    # 6. Apply filters
     filters = [
         frame_filter_polygons_4vertex,
         lambda polygons: frame_filter_polygons_area(polygons, MIN_FRAME_AREA),
@@ -291,27 +318,27 @@ def decode_frames(
     """Decode four-vertex frame polygons supplied in cyclic contour order."""
     _validate_crc_options(n, validate_crc, require_valid_crc)
 
-    image_rgb = np.array(image)
-    image_rgba = np.dstack(
-        (image_rgb, np.full(image_rgb.shape[:2], 255, dtype=np.uint8))
-    )
+    image_rgba = cv.cvtColor(np.asarray(image), cv.COLOR_RGB2RGBA)
 
     cell_size = 32
 
     tags = []
 
-    for i, polygon in enumerate(polygons):
+    for polygon in polygons:
         # Contour approximation already returns adjacent vertices in cyclic order.
         # Its starting corner only rotates the warp, which is normalised below.
         polygon_points = np.asarray(polygon, dtype=np.float32)
         frame_rgb, black, white = _rectify_frame(
             image_rgba, polygon_points, n, cell_size
         )
+        # Only the cell centres are ever read, and every step below is per-pixel,
+        # so sample first and correct 49 pixels instead of the whole frame.
+        cells_rgb = _sample_cells(frame_rgb, cell_size)
         corrected_rgb = np.round(
-            _correct_colours(frame_rgb, black, white) * 255
+            _correct_colours(cells_rgb, black, white) * 255
         ).astype(np.uint8)
-        corrected_lab = cv.cvtColor(corrected_rgb, cv.COLOR_RGB2Lab)
-        tag = _decode_rectified_frame(corrected_lab, n, validate_crc)
+        cells_lab = cv.cvtColor(corrected_rgb, cv.COLOR_RGB2Lab)
+        tag = _decode_sampled_cells(cells_lab, n, validate_crc)
 
         if not require_valid_crc or _strictly_valid_tag(tag):
             tags.append(tag)
@@ -319,27 +346,27 @@ def decode_frames(
     return tags
 
 
-def _decode_rectified_frame(frame_lab, n, validate_crc):
-    """Sample and decode one perspective-corrected CIELab frame."""
-    cell_size = 32
-    values = np.zeros((n + 2, n + 2, 3))
+def _sample_cells(frame, cell_size):
+    """Sample the centre pixel of every cell, including the black quiet-zone ring."""
+    half = cell_size // 2
+    # The frame is exactly (n + 2) * cell_size square, so this strided slice picks
+    # the same pixels a row/column loop over cell centres would.
+    return np.ascontiguousarray(frame[half::cell_size, half::cell_size])
 
-    for row in range(n + 2):
-        for column in range(n + 2):
-            y = row * cell_size + cell_size // 2
-            x = column * cell_size + cell_size // 2
-            values[row, column] = frame_lab[y, x]
+
+def _decode_sampled_cells(cells_lab, n, validate_crc):
+    """Decode one grid of perspective-corrected CIELab cell samples."""
+    values = cells_lab.astype(np.float64)
 
     corners = np.array([values[1, 1], values[1, -2], values[-2, -2], values[-2, 1]])
     darkest_corner = int(np.argmin(corners[:, 0]))
     values = np.rot90(values, k=(darkest_corner + 1) % 4)
     corners = np.array([values[1, 1], values[1, -2], values[-2, -2], values[-2, 1]])
 
-    code = []
-    for row in range(1, n + 1):
-        for column in range(1, n + 1):
-            distances = np.mean((corners - values[row, column]) ** 2, axis=1)
-            code.append(int(np.argmin(distances)))
+    # Squared distance from every cell to every palette corner, in row-major order.
+    grid = values[1 : n + 1, 1 : n + 1]
+    distances = np.mean((grid[:, :, None, :] - corners) ** 2, axis=-1)
+    code = np.argmin(distances, axis=-1).ravel().tolist()
 
     bit_string = "".join(ind_bit_map[index] for index in code)
     return Tag(bit_string, n=n, validate_crc=validate_crc)
@@ -398,11 +425,16 @@ def get_center_ind(n):
     return int(math.floor((n**2) / 2))
 
 
-def get_crc_inds(n):
-    _validate_n(n)
+# Detection builds a Tag for every candidate frame, and each one needs these
+# tables several times over. They only ever depend on n, so cache them as
+# tuples and let the public helpers hand out lists.
+
+
+@functools.lru_cache(maxsize=None)
+def _crc_inds(n):
     center = n // 2
 
-    return (
+    return tuple(
         [center * n + column for column in range(center)]
         + [row * n + center for row in range(center)]
         + [row * n + center for row in range(center + 1, n)]
@@ -410,30 +442,48 @@ def get_crc_inds(n):
     )
 
 
-def get_crc_input_inds(n):
-    """Return non-cross cells in the order used as CRC input."""
-    _validate_n(n)
+@functools.lru_cache(maxsize=None)
+def _crc_input_inds(n):
     center = n // 2
 
-    return [
+    return tuple(
         row * n + column
         for column in range(n)
         for row in range(n)
         if row != center and column != center
-    ]
+    )
 
 
-def get_message_inds(n):
-    _validate_n(n)
+@functools.lru_cache(maxsize=None)
+def _message_inds(n):
     center = n // 2
     corners = set(get_corner_indices_1d(n))
 
-    return [
+    return tuple(
         row * n + column
         for column in range(n)
         for row in range(n)
         if row != center and column != center and row * n + column not in corners
-    ]
+    )
+
+
+def get_crc_inds(n):
+    _validate_n(n)
+
+    return list(_crc_inds(n))
+
+
+def get_crc_input_inds(n):
+    """Return non-cross cells in the order used as CRC input."""
+    _validate_n(n)
+
+    return list(_crc_input_inds(n))
+
+
+def get_message_inds(n):
+    _validate_n(n)
+
+    return list(_message_inds(n))
 
 
 def _validate_tag_bits(bit_string, n):
@@ -482,7 +532,7 @@ def _crc_input_bytes(cells, n):
             f"{n}x{n} tags must contain exactly {expected_cell_count} cells"
         )
 
-    selected = [cells[index] for index in get_crc_input_inds(n)]
+    selected = [cells[index] for index in _crc_input_inds(n)]
     if any(cell not in {"00", "01", "10", "11"} for cell in selected):
         raise ValueError("Every CRC input cell must be a two-bit binary string")
 
@@ -502,9 +552,9 @@ def _crc_input_bytes_5x5(cells):
     return _crc_input_bytes(cells, CRC_TAG_SIZE)
 
 
-def _compute_crc(cells, n):
-    """Calculate a CRC using the generation rules extrapolated from 5x5 tags."""
-    _validate_n(n)
+@functools.lru_cache(maxsize=None)
+def _crc_calculator(n):
+    """Build the calculator for a tag size once; construction is not free."""
     configuration = Configuration(
         width=4 * n - 4,
         polynomial=_CRC_POLYNOMIALS[n],
@@ -513,7 +563,13 @@ def _compute_crc(cells, n):
         reverse_input=CRC_REVERSE_INPUT,
         reverse_output=CRC_REVERSE_OUTPUT,
     )
-    return Calculator(configuration).checksum(_crc_input_bytes(cells, n))
+    return Calculator(configuration)
+
+
+def _compute_crc(cells, n):
+    """Calculate a CRC using the generation rules extrapolated from 5x5 tags."""
+    _validate_n(n)
+    return _crc_calculator(n).checksum(_crc_input_bytes(cells, n))
 
 
 def compute_crc_5x5(cells):
@@ -531,7 +587,7 @@ def valid_crc(bit_string, n=5):
     cells = tuple(
         bit_string[offset : offset + 2] for offset in range(0, len(bit_string), 2)
     )
-    expected_crc = int("".join(cells[index] for index in get_crc_inds(n)), 2)
+    expected_crc = int("".join(cells[index] for index in _crc_inds(n)), 2)
     return compute_crc_5x5(cells) == expected_crc
 
 
@@ -548,8 +604,8 @@ class Tag:
             self.bit_string[offset : offset + 2]
             for offset in range(0, len(self.bit_string), 2)
         )
-        self.message = "".join(self.cells[index] for index in get_message_inds(n))
-        self.crc = "".join(self.cells[index] for index in get_crc_inds(n))
+        self.message = "".join(self.cells[index] for index in _message_inds(n))
+        self.crc = "".join(self.cells[index] for index in _crc_inds(n))
         self.center_valid = self.cells[get_center_ind(n)] == center_bit_map[n]
         self.corners_valid = tuple(
             self.cells[index] for index in get_corner_indices_1d(n)
