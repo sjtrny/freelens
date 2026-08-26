@@ -60,8 +60,8 @@ def rgb(value):
 
 PAPER = rgb("F4F7FB")
 WHITE = rgb("FFFFFF")
+BLACK = rgb("000000")
 INK = rgb("101828")
-PANEL = rgb("111A2C")
 RED = rgb("E5484D")
 
 
@@ -257,16 +257,13 @@ def draw_arrow(ctx, start, end, y):
 
 
 def draw_data_panel(ctx, sample):
-    fill_round_rect(ctx, DATA_X, DATA_Y + 9, DATA_W, DATA_H, 22, INK, 0.13)
-    fill_round_rect(ctx, DATA_X, DATA_Y, DATA_W, DATA_H, 22, PANEL)
-
     show_text(
         ctx,
         sample["message_hex"],
         DATA_X + 30,
         DATA_Y + 61,
         34,
-        WHITE,
+        BLACK,
         mono=True,
         bold=True,
     )
@@ -274,7 +271,7 @@ def draw_data_panel(ctx, sample):
     divider_y = DATA_Y + 86
     ctx.move_to(DATA_X + 28, divider_y)
     ctx.line_to(DATA_X + DATA_W - 28, divider_y)
-    set_source(ctx, RED)
+    set_source(ctx, BLACK)
     ctx.set_line_width(3)
     ctx.stroke()
 
@@ -285,7 +282,7 @@ def draw_data_panel(ctx, sample):
         "in 1 minute.",
     )
     for index, line in enumerate(service_lines):
-        show_text(ctx, line, DATA_X + 30, DATA_Y + 132 + index * 43, 23, WHITE)
+        show_text(ctx, line, DATA_X + 30, DATA_Y + 132 + index * 43, 23, BLACK)
 
 
 def draw(surface_factory, width, height):
