@@ -76,9 +76,9 @@ def rounded_rect(ctx, x, y, width, height, radius):
     ctx.close_path()
 
 
-def fill_round_rect(ctx, x, y, width, height, radius, colour, alpha=1.0):
-    rounded_rect(ctx, x, y, width, height, radius)
+def fill_rect(ctx, x, y, width, height, colour, alpha=1.0):
     set_source(ctx, colour, alpha)
+    ctx.rectangle(x, y, width, height)
     ctx.fill()
 
 
@@ -88,6 +88,13 @@ def stroke_round_rect(
     rounded_rect(ctx, x, y, width, height, radius)
     set_source(ctx, colour, alpha)
     ctx.set_line_width(line_width)
+    ctx.stroke()
+
+
+def stroke_rect(ctx, x, y, width, height, colour, line_width=1.0, alpha=1.0):
+    set_source(ctx, colour, alpha)
+    ctx.set_line_width(line_width)
+    ctx.rectangle(x, y, width, height)
     ctx.stroke()
 
 
@@ -190,9 +197,9 @@ def draw_full_tag(ctx, tag, x, y, cell, outer):
     inner = cell
     grid_size = tag.n * cell
     total = grid_size + 2 * inner + 2 * outer
-    fill_round_rect(ctx, x + 5, y + 7, total, total, 12, INK, 0.12)
-    fill_round_rect(ctx, x, y, total, total, 12, WHITE)
-    stroke_round_rect(ctx, x, y, total, total, 12, LINE, 2)
+    fill_rect(ctx, x + 5, y + 7, total, total, INK, 0.12)
+    fill_rect(ctx, x, y, total, total, WHITE)
+    stroke_rect(ctx, x, y, total, total, LINE, 2)
     inner_x = x + outer
     inner_y = y + outer
     set_source(ctx, CELL_COLOURS["11"])
@@ -234,8 +241,8 @@ def callout(ctx, start, elbow_x, target_y, title, detail, swatch=None):
 
     text_x = 720
     if swatch is not None:
-        fill_round_rect(ctx, text_x, target_y - 23, 42, 42, 7, swatch)
-        stroke_round_rect(ctx, text_x, target_y - 23, 42, 42, 7, LINE, 1.5)
+        fill_rect(ctx, text_x, target_y - 23, 42, 42, swatch)
+        stroke_rect(ctx, text_x, target_y - 23, 42, 42, LINE, 1.5)
         text_x += 60
     show_text(ctx, title, text_x, target_y - 2, 25, INK)
     show_text(ctx, detail, text_x, target_y + 26, 17, MUTED)
@@ -246,13 +253,12 @@ def draw_quiet_zones(ctx, width, height):
     geometry = draw_full_tag(ctx, EXAMPLE_TAG, 70, 35, 40, 55)
 
     # Three nested borders make the two rings and the grid boundary explicit.
-    stroke_round_rect(
+    stroke_rect(
         ctx,
         70,
         35,
         geometry["total"],
         geometry["total"],
-        12,
         RED,
         3,
     )
@@ -314,11 +320,11 @@ def draw_grid(ctx, width, height):
     grid_y = 78
     cell = 70
     draw_actual_grid(ctx, EXAMPLE_TAG, grid_x, grid_y, cell, show_bits=True, gap=2)
-    stroke_round_rect(ctx, grid_x - 3, grid_y - 3, 356, 356, 5, INK, 3)
+    stroke_rect(ctx, grid_x - 3, grid_y - 3, 356, 356, INK, 3)
 
     for offset, bits in enumerate(("00", "01", "10", "11")):
         swatch_x = 560 + offset * 147
-        fill_round_rect(ctx, swatch_x, 185, 112, 112, 13, CELL_COLOURS[bits])
+        fill_rect(ctx, swatch_x, 185, 112, 112, CELL_COLOURS[bits])
         text_colour = WHITE if bits == "11" else INK
         show_centered(ctx, bits, swatch_x, 185, 112, 112, 27, text_colour, mono=True)
         show_centered(ctx, CELL_NAMES[bits], swatch_x, 310, 112, 32, 17, MUTED)
@@ -326,8 +332,8 @@ def draw_grid(ctx, width, height):
 
 def draw_corner_label(ctx, x, y, bits, line_1, line_2, target, from_right=False):
     swatch_x = x if from_right else x + 212
-    fill_round_rect(ctx, swatch_x, y, 54, 54, 9, CELL_COLOURS[bits])
-    stroke_round_rect(ctx, swatch_x, y, 54, 54, 9, LINE, 1.5)
+    fill_rect(ctx, swatch_x, y, 54, 54, CELL_COLOURS[bits])
+    stroke_rect(ctx, swatch_x, y, 54, 54, LINE, 1.5)
     text_x = x + 68 if from_right else x
     show_text(ctx, line_1, text_x, y + 23, 19, INK, mono=True)
     show_text(ctx, line_2, text_x, y + 49, 16, MUTED)
@@ -357,7 +363,7 @@ def draw_corners(ctx, width, height):
         set_source(ctx, colour)
         ctx.rectangle(grid_x + column * cell, grid_y + row * cell, cell - 2, cell - 2)
         ctx.fill()
-    stroke_round_rect(ctx, grid_x - 3, grid_y - 3, 366, 366, 5, INK, 3)
+    stroke_rect(ctx, grid_x - 3, grid_y - 3, 366, 366, INK, 3)
 
     centres = {
         0: (grid_x + cell / 2, grid_y + cell / 2),
@@ -378,9 +384,9 @@ def draw_corners(ctx, width, height):
 
 
 def legend_item(ctx, x, y, colour, title, detail, *, outline=None):
-    fill_round_rect(ctx, x, y, 48, 48, 8, colour)
+    fill_rect(ctx, x, y, 48, 48, colour)
     if outline is not None:
-        stroke_round_rect(ctx, x, y, 48, 48, 8, outline, 4)
+        stroke_rect(ctx, x, y, 48, 48, outline, 4)
     show_text(ctx, title, x + 68, y + 21, 21, INK)
     show_text(ctx, detail, x + 68, y + 46, 16, MUTED)
 
@@ -416,7 +422,7 @@ def draw_crc(ctx, width, height):
             ctx.rectangle(cell_x + 3, cell_y + 3, cell - 8, cell - 8)
             ctx.stroke()
 
-    stroke_round_rect(ctx, grid_x - 3, grid_y - 3, 356, 356, 5, INK, 3)
+    stroke_rect(ctx, grid_x - 3, grid_y - 3, 356, 356, INK, 3)
     legend_item(ctx, 570, 75, BLUE, "CRC input", "32 bits outside the central cross")
     legend_item(
         ctx,
@@ -459,7 +465,7 @@ def draw_message_order(ctx, width, height):
                 WHITE,
                 mono=True,
             )
-    stroke_round_rect(ctx, grid_x - 3, grid_y - 3, 356, 356, 5, INK, 3)
+    stroke_rect(ctx, grid_x - 3, grid_y - 3, 356, 356, INK, 3)
 
     # Small arrows above the four message-bearing columns reinforce column traversal.
     for column in (0, 1, 3, 4):
@@ -477,7 +483,7 @@ def draw_message_order(ctx, width, height):
     gap = 7
     for index, bits in enumerate(chunks):
         x = chip_x + index * (chip + gap)
-        fill_round_rect(ctx, x, chip_y, chip, chip, 7, CELL_COLOURS[bits])
+        fill_rect(ctx, x, chip_y, chip, chip, CELL_COLOURS[bits])
         text_colour = WHITE if bits == "11" else INK
         show_centered(ctx, bits, x, chip_y, chip, chip, 14, text_colour, mono=True)
         show_centered(

@@ -180,8 +180,8 @@
 <path style=" stroke:none;fill-rule:nonzero;fill:rgb(18.431373%,50.196078%,92.941176%);fill-opacity:1;" d="M 302 350 L 370 350 L 370 418 L 302 418 Z M 302 350 "/>
 <path style=" stroke:none;fill-rule:nonzero;fill:rgb(18.431373%,50.196078%,92.941176%);fill-opacity:1;" d="M 372 350 L 440 350 L 440 418 L 372 418 Z M 372 350 "/>
 <path style="fill:none;stroke-width:5;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(89.803922%,28.235294%,30.196078%);stroke-opacity:1;stroke-miterlimit:10;" d="M 375 353 L 437 353 L 437 415 L 375 415 Z M 375 353 "/>
-<path style="fill:none;stroke-width:3;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(6.27451%,9.411765%,15.686275%);stroke-opacity:1;stroke-miterlimit:10;" d="M 440 67 C 442.761719 67 445 69.238281 445 72 L 445 418 C 445 420.761719 442.761719 423 440 423 L 94 423 C 91.238281 423 89 420.761719 89 418 L 89 72 C 89 69.238281 91.238281 67 94 67 Z M 440 67 "/>
-<path style=" stroke:none;fill-rule:nonzero;fill:rgb(18.431373%,50.196078%,92.941176%);fill-opacity:1;" d="M 610 75 C 614.417969 75 618 78.582031 618 83 L 618 115 C 618 119.417969 614.417969 123 610 123 L 578 123 C 573.582031 123 570 119.417969 570 115 L 570 83 C 570 78.582031 573.582031 75 578 75 Z M 610 75 "/>
+<path style="fill:none;stroke-width:3;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(6.27451%,9.411765%,15.686275%);stroke-opacity:1;stroke-miterlimit:10;" d="M 89 67 L 445 67 L 445 423 L 89 423 Z M 89 67 "/>
+<path style=" stroke:none;fill-rule:nonzero;fill:rgb(18.431373%,50.196078%,92.941176%);fill-opacity:1;" d="M 570 75 L 618 75 L 618 123 L 570 123 Z M 570 75 "/>
 <g style="fill:rgb(6.27451%,9.411765%,15.686275%);fill-opacity:1;">
   <use xlink:href="#glyph0-1" x="638" y="96"/>
   <use xlink:href="#glyph0-2" x="651.776" y="96"/>
@@ -228,7 +228,7 @@
   <use xlink:href="#glyph1-7" x="849.856" y="121"/>
   <use xlink:href="#glyph1-7" x="857.392" y="121"/>
 </g>
-<path style="fill-rule:nonzero;fill:rgb(18.431373%,50.196078%,92.941176%);fill-opacity:1;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(89.803922%,28.235294%,30.196078%);stroke-opacity:1;stroke-miterlimit:10;" d="M 610 165 C 614.417969 165 618 168.582031 618 173 L 618 205 C 618 209.417969 614.417969 213 610 213 L 578 213 C 573.582031 213 570 209.417969 570 205 L 570 173 C 570 168.582031 573.582031 165 578 165 Z M 610 165 "/>
+<path style="fill-rule:nonzero;fill:rgb(18.431373%,50.196078%,92.941176%);fill-opacity:1;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(89.803922%,28.235294%,30.196078%);stroke-opacity:1;stroke-miterlimit:10;" d="M 570 165 L 618 165 L 618 213 L 570 213 Z M 570 165 "/>
 <g style="fill:rgb(6.27451%,9.411765%,15.686275%);fill-opacity:1;">
   <use xlink:href="#glyph0-6" x="638" y="186"/>
   <use xlink:href="#glyph0-9" x="649.886" y="186"/>
@@ -283,7 +283,7 @@
   <use xlink:href="#glyph1-8" x="804.512" y="211"/>
   <use xlink:href="#glyph1-14" x="813.344" y="211"/>
 </g>
-<path style=" stroke:none;fill-rule:nonzero;fill:rgb(96.862745%,56.470588%,3.529412%);fill-opacity:1;" d="M 610 255 C 614.417969 255 618 258.582031 618 263 L 618 295 C 618 299.417969 614.417969 303 610 303 L 578 303 C 573.582031 303 570 299.417969 570 295 L 570 263 C 570 258.582031 573.582031 255 578 255 Z M 610 255 "/>
+<path style=" stroke:none;fill-rule:nonzero;fill:rgb(96.862745%,56.470588%,3.529412%);fill-opacity:1;" d="M 570 255 L 618 255 L 618 303 L 570 303 Z M 570 255 "/>
 <g style="fill:rgb(6.27451%,9.411765%,15.686275%);fill-opacity:1;">
   <use xlink:href="#glyph0-15" x="638" y="276"/>
   <use xlink:href="#glyph0-8" x="647.891" y="276"/>
@@ -319,7 +319,7 @@
   <use xlink:href="#glyph1-6" x="762.816" y="301"/>
   <use xlink:href="#glyph1-7" x="768" y="301"/>
 </g>
-<path style=" stroke:none;fill-rule:nonzero;fill:rgb(89.803922%,91.764706%,94.117647%);fill-opacity:1;" d="M 610 345 C 614.417969 345 618 348.582031 618 353 L 618 385 C 618 389.417969 614.417969 393 610 393 L 578 393 C 573.582031 393 570 389.417969 570 385 L 570 353 C 570 348.582031 573.582031 345 578 345 Z M 610 345 "/>
+<path style=" stroke:none;fill-rule:nonzero;fill:rgb(89.803922%,91.764706%,94.117647%);fill-opacity:1;" d="M 570 345 L 618 345 L 618 393 L 570 393 Z M 570 345 "/>
 <g style="fill:rgb(6.27451%,9.411765%,15.686275%);fill-opacity:1;">
   <use xlink:href="#glyph0-15" x="638" y="366"/>
   <use xlink:href="#glyph0-4" x="647.891" y="366"/>

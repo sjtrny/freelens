@@ -71,6 +71,9 @@ def set_source(ctx, colour, alpha=1.0):
 
 def rounded_rect(ctx, x, y, width, height, radius):
     radius = min(radius, width / 2, height / 2)
+    if radius <= 0:
+        ctx.rectangle(x, y, width, height)
+        return
     ctx.new_sub_path()
     ctx.arc(x + width - radius, y + radius, radius, -math.pi / 2, 0)
     ctx.arc(x + width - radius, y + height - radius, radius, 0, math.pi / 2)
@@ -306,13 +309,13 @@ def draw(surface_factory, width, height):
         RECTIFIED_X,
         RECTIFIED_Y,
         TAG_SIZE,
-        14,
+        0,
         RED,
         5,
     )
     draw_target_corners(ctx)
 
-    draw_image_card(ctx, sample["generated"], GENERATED_X, GENERATED_Y, TAG_SIZE, 14)
+    draw_image_card(ctx, sample["generated"], GENERATED_X, GENERATED_Y, TAG_SIZE, 0)
     center_y = RECTIFIED_Y + TAG_SIZE / 2
     draw_arrow(
         ctx,
