@@ -328,13 +328,12 @@ def draw_grid(ctx, width, height):
         show_centered(ctx, CELL_NAMES[bits], swatch_x, 310, 112, 32, 17, MUTED)
 
 
-def draw_corner_label(ctx, x, y, bits, line_1, line_2, target, from_right=False):
+def draw_corner_label(ctx, x, y, bits, label, target, from_right=False):
     swatch_x = x if from_right else x + 212
     fill_rect(ctx, swatch_x, y, 54, 54, CELL_COLOURS[bits])
     stroke_rect(ctx, swatch_x, y, 54, 54, LINE, 1.5)
     text_x = x + 68 if from_right else x
-    show_text(ctx, line_1, text_x, y + 23, 19, INK, mono=True)
-    show_text(ctx, line_2, text_x, y + 49, 16, MUTED)
+    show_text(ctx, label, text_x, y + 23, 19, INK, mono=True)
     start_x = swatch_x + (0 if from_right else 54)
     start_y = y + 27
     ctx.move_to(start_x, start_y)
@@ -368,16 +367,10 @@ def draw_corners(ctx, width, height):
         24: (grid_x + 4.5 * cell, grid_y + 4.5 * cell),
         20: (grid_x + cell / 2, grid_y + 4.5 * cell),
     }
-    draw_corner_label(ctx, 78, 76, "00", "00 / cyan", "palette value", centres[0])
-    draw_corner_label(
-        ctx, 868, 76, "01", "01 / magenta", "palette value", centres[4], True
-    )
-    draw_corner_label(
-        ctx, 868, 338, "10", "10 / yellow", "palette value", centres[24], True
-    )
-    draw_corner_label(
-        ctx, 78, 338, "11", "11 / black", "darkest: orientation", centres[20]
-    )
+    draw_corner_label(ctx, 78, 76, "00", "00 / cyan", centres[0])
+    draw_corner_label(ctx, 868, 76, "01", "01 / magenta", centres[4], True)
+    draw_corner_label(ctx, 868, 338, "10", "10 / yellow", centres[24], True)
+    draw_corner_label(ctx, 78, 338, "11", "11 / black", centres[20])
 
 
 def legend_item(ctx, x, y, colour, title, detail):
