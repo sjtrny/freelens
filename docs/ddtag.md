@@ -76,8 +76,6 @@ for encoding the size of the grid. The patent uses the following encoding scheme
 | 9x9     | yellow      |
 | 11 X 11 | black       |
 
-![Center-cell colours encode 5x5, 7x7, 9x9, and 11x11 grid sizes](./assets/ddtag/center-cell.svg)
-
 #### CRC
 
 To ensure data integrity, each ddTag reserves certain cells for a CRC. The patent

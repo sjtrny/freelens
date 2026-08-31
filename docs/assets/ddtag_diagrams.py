@@ -23,7 +23,6 @@ from freelens import (  # noqa: E402
     get_crc_inds,
     get_crc_input_inds,
     get_message_inds,
-    message_length_for_N,
 )
 
 try:
@@ -61,7 +60,6 @@ CELL_COLOURS = {
     "11": rgb("000000"),
 }
 CELL_NAMES = {"00": "cyan", "01": "magenta", "10": "yellow", "11": "black"}
-CENTER_BITS = {5: "00", 7: "01", 9: "10", 11: "11"}
 
 
 def set_source(ctx, colour, alpha=1.0):
@@ -216,20 +214,9 @@ def draw_full_tag(ctx, tag, x, y, cell, outer):
 
 
 def draw_example(ctx, width, height):
-    draw_background(ctx, width, height)
-    draw_full_tag(ctx, EXAMPLE_TAG, 62, 42, 42, 56)
-
-    show_text(ctx, MESSAGE_HEX, 565, 190, 46, INK, mono=True, bold=True)
-    show_text(ctx, "5 x 5 ddTag", 567, 231, 24, MUTED)
-    show_text(ctx, "24-bit message", 567, 284, 19, MUTED)
-    show_text(ctx, "01001010 00000000 01011100", 567, 316, 17, INK, mono=True)
-
-    swatch_y = 354
-    for offset, bits in enumerate(("00", "01", "10", "11")):
-        swatch_x = 567 + offset * 69
-        fill_round_rect(ctx, swatch_x, swatch_y, 54, 54, 8, CELL_COLOURS[bits])
-        text_colour = WHITE if bits == "11" else INK
-        show_centered(ctx, bits, swatch_x, swatch_y, 54, 54, 15, text_colour, mono=True)
+    set_source(ctx, PAPER)
+    ctx.paint()
+    draw_full_tag(ctx, EXAMPLE_TAG, 47, 47, 42, 56)
 
 
 def callout(ctx, start, elbow_x, target_y, title, detail, swatch=None):
@@ -258,9 +245,37 @@ def draw_quiet_zones(ctx, width, height):
     draw_background(ctx, width, height)
     geometry = draw_full_tag(ctx, EXAMPLE_TAG, 70, 35, 40, 55)
 
+    # Three nested borders make the two rings and the grid boundary explicit.
+    stroke_round_rect(
+        ctx,
+        70,
+        35,
+        geometry["total"],
+        geometry["total"],
+        12,
+        RED,
+        3,
+    )
+    set_source(ctx, RED)
+    ctx.set_line_width(3)
+    ctx.rectangle(
+        geometry["inner_x"],
+        geometry["inner_y"],
+        geometry["grid_size"] + 2 * geometry["inner"],
+        geometry["grid_size"] + 2 * geometry["inner"],
+    )
+    ctx.stroke()
+    ctx.rectangle(
+        geometry["grid_x"],
+        geometry["grid_y"],
+        geometry["grid_size"],
+        geometry["grid_size"],
+    )
+    ctx.stroke()
+
     callout(
         ctx,
-        (88, 76),
+        (70 + geometry["total"] - geometry["outer"] / 2, 76),
         570,
         104,
         "outer quiet zone",
@@ -269,7 +284,10 @@ def draw_quiet_zones(ctx, width, height):
     )
     callout(
         ctx,
-        (geometry["inner_x"] + 19, geometry["inner_y"] + 19),
+        (
+            geometry["grid_x"] + geometry["grid_size"] + geometry["inner"] / 2,
+            226,
+        ),
         600,
         226,
         "inner quiet zone",
@@ -278,7 +296,10 @@ def draw_quiet_zones(ctx, width, height):
     )
     callout(
         ctx,
-        (geometry["grid_x"] + 80, geometry["grid_y"] + 80),
+        (
+            geometry["grid_x"] + geometry["grid_size"] - 10,
+            geometry["grid_y"] + geometry["grid_size"] - 20,
+        ),
         630,
         348,
         "tag grid",
@@ -295,23 +316,6 @@ def draw_grid(ctx, width, height):
     draw_actual_grid(ctx, EXAMPLE_TAG, grid_x, grid_y, cell, show_bits=True, gap=2)
     stroke_round_rect(ctx, grid_x - 3, grid_y - 3, 356, 356, 5, INK, 3)
 
-    # Five ticks make the square dimensions explicit without repeating the prose.
-    dimension_y = 48
-    ctx.move_to(grid_x, dimension_y)
-    ctx.line_to(grid_x + 5 * cell, dimension_y)
-    set_source(ctx, INK)
-    ctx.set_line_width(2)
-    ctx.stroke()
-    for index in range(6):
-        tick_x = grid_x + index * cell
-        ctx.move_to(tick_x, dimension_y - 7)
-        ctx.line_to(tick_x, dimension_y + 7)
-    ctx.set_line_width(2)
-    ctx.stroke()
-    show_centered(ctx, "5 cells", grid_x, 18, 5 * cell, 24, 18, MUTED)
-
-    show_text(ctx, "four colours", 560, 105, 29, INK)
-    show_text(ctx, "one of four states = two bits per cell", 560, 139, 18, MUTED)
     for offset, bits in enumerate(("00", "01", "10", "11")):
         swatch_x = 560 + offset * 147
         fill_round_rect(ctx, swatch_x, 185, 112, 112, 13, CELL_COLOURS[bits])
@@ -371,50 +375,6 @@ def draw_corners(ctx, width, height):
     draw_corner_label(
         ctx, 78, 338, "11", "11 / black", "darkest: orientation", centres[20]
     )
-    show_centered(ctx, "clockwise palette", grid_x, 20, 360, 28, 19, MUTED)
-
-
-def draw_mini_grid(ctx, n, x, y, size, center_bits):
-    cell = size / n
-    center = n // 2
-    for row in range(n):
-        for column in range(n):
-            cell_x = x + column * cell
-            cell_y = y + row * cell
-            colour = (
-                CELL_COLOURS[center_bits] if (row, column) == (center, center) else PALE
-            )
-            set_source(ctx, colour)
-            ctx.rectangle(cell_x, cell_y, max(1, cell - 1.3), max(1, cell - 1.3))
-            ctx.fill()
-    stroke_round_rect(ctx, x - 2, y - 2, size + 4, size + 4, 4, INK, 2)
-    center_x = x + center * cell
-    center_y = y + center * cell
-    set_source(ctx, RED)
-    ctx.set_line_width(3)
-    ctx.rectangle(center_x - 2, center_y - 2, cell + 3, cell + 3)
-    ctx.stroke()
-
-
-def draw_center_cell(ctx, width, height):
-    draw_background(ctx, width, height)
-    sizes = (5, 7, 9, 11)
-    x_positions = (75, 355, 635, 915)
-    for n, x in zip(sizes, x_positions, strict=True):
-        bits = CENTER_BITS[n]
-        draw_mini_grid(ctx, n, x, 55, 210, bits)
-        show_centered(ctx, f"{n} x {n}", x, 285, 210, 34, 23, INK, mono=True)
-        show_centered(
-            ctx,
-            f"{CELL_NAMES[bits]} / {bits}",
-            x,
-            326,
-            210,
-            32,
-            17,
-            MUTED,
-            mono=True,
-        )
 
 
 def legend_item(ctx, x, y, colour, title, detail, *, outline=None):
@@ -540,11 +500,10 @@ def draw_message_order(ctx, width, height):
 
 
 DIAGRAMS = {
-    "example": (900, 500, draw_example),
+    "example": (500, 500, draw_example),
     "quiet-zones": (1200, 480, draw_quiet_zones),
     "grid": (1200, 500, draw_grid),
     "corners": (1200, 480, draw_corners),
-    "center-cell": (1200, 400, draw_center_cell),
     "crc": (1200, 500, draw_crc),
     "message-order": (1200, 500, draw_message_order),
 }

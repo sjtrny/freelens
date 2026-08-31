@@ -199,7 +199,7 @@
 </symbol>
 </g>
 </defs>
-<g id="surface32">
+<g id="surface27">
 <rect x="0" y="0" width="1200" height="500" style="fill:rgb(95.686275%,96.862745%,98.431373%);fill-opacity:1;stroke:none;"/>
 <path style="fill:none;stroke-width:1.5;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(79.607843%,83.529412%,88.235294%);stroke-opacity:1;stroke-miterlimit:10;" d="M 1180.5 1.5 C 1190.441406 1.5 1198.5 9.558594 1198.5 19.5 L 1198.5 480.5 C 1198.5 490.441406 1190.441406 498.5 1180.5 498.5 L 19.5 498.5 C 9.558594 498.5 1.5 490.441406 1.5 480.5 L 1.5 19.5 C 1.5 9.558594 9.558594 1.5 19.5 1.5 Z M 1180.5 1.5 "/>
 <path style=" stroke:none;fill-rule:nonzero;fill:rgb(89.803922%,91.764706%,94.117647%);fill-opacity:1;" d="M 70 70 L 138 70 L 138 138 L 70 138 Z M 70 70 "/>
