@@ -4,6 +4,8 @@ A ddTag consists of a small grid of coloured squares, which represents a "messag
 binary data. The typical implementation uses a 5x5 grid, which represents a 24 bit
 message, with cyan, magenta, yellow and black coloured cells.
 
+![Example 5x5 ddTag encoding message 4A005C](./assets/ddtag/example.svg)
+
 The data encoded in the tag consists of two parts:
 
 1. the "message", which is a binary sequence, and
@@ -32,6 +34,8 @@ zone is a border region of a solid colour which must be:
 - one on of the four colours used by the ddTag code grid, typically black,
 - the same width as the cells in the tag grid.
 
+![Nested outer quiet zone, inner quiet zone, and tag grid](./assets/ddtag/quiet-zones.svg)
+
 ### Grid
 
 The grid consists of a square grid, with each cell coloured by one of four colours. Each
@@ -56,6 +60,8 @@ The corners do not contain any message data. Instead, they are used as follows:
   the top left and moving clockwise around the grid are `00`, `01`, `10`, `11`. For
   example if the top left corner is cyan then all cyan cells have the value `00`.
 
+![Corner cells establish orientation and map palette colours to bit values](./assets/ddtag/corners.svg)
+
 #### Center Cell
 
 The central cell does not contain any message data. In the patent, this cell is reserved
@@ -77,6 +83,8 @@ they also include the corner cells.
 
 For more information about CRC refer to [CRCs in ddTags](./ddtag-crc.md).
 
+![5x5 CRC input cells, stored CRC cross, included palette corners, and size cell](./assets/ddtag/crc.svg)
+
 #### Message
 
 The message is formed by concatenating the binary values of the remaining cells in
@@ -90,6 +98,8 @@ below it. However, this interpretation is incorrect for tags distributed by Navi
 which are read column by column.
 
 To maximise compatibility, we have adopted this psychotic interpretation.
+
+![Message cells numbered in column-major reading order and concatenated into 24 bits](./assets/ddtag/message-order.svg)
 
 ## References
 
