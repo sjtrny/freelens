@@ -209,7 +209,7 @@ def draw_full_tag(ctx, tag, x, y, cell, outer):
 
 
 def draw_example(ctx, width, height):
-    draw_full_tag(ctx, EXAMPLE_TAG, 47, 47, 42, 56)
+    draw_full_tag(ctx, EXAMPLE_TAG, 32, 32, 24, 32)
 
 
 def callout(ctx, start, elbow_x, target_y, title, detail, swatch=None):
