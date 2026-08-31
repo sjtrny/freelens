@@ -453,8 +453,6 @@ def draw_message_order(ctx, width, height):
     stroke_rect(ctx, grid_x - 3, grid_y - 3, 356, 356, INK, 3)
 
     draw_arrow(ctx, 455, 245, 520, 245, INK, 3)
-    show_text(ctx, "read columns, then concatenate", 535, 95, 27, INK)
-    show_text(ctx, "twelve cells form the 24-bit message", 535, 127, 17, MUTED)
 
     chunks = [EXAMPLE_TAG.cells[index] for index in message_indices]
     chip_x = 535
