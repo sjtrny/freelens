@@ -383,10 +383,8 @@ def draw_corners(ctx, width, height):
     )
 
 
-def legend_item(ctx, x, y, colour, title, detail, *, outline=None):
+def legend_item(ctx, x, y, colour, title, detail):
     fill_rect(ctx, x, y, 48, 48, colour)
-    if outline is not None:
-        stroke_rect(ctx, x, y, 48, 48, outline, 4)
     show_text(ctx, title, x + 68, y + 21, 21, INK)
     show_text(ctx, detail, x + 68, y + 46, 16, MUTED)
 
@@ -398,7 +396,6 @@ def draw_crc(ctx, width, height):
     cell = 70
     crc_indices = set(get_crc_inds(5))
     input_indices = set(get_crc_input_inds(5))
-    corner_indices = set(get_corner_indices_1d(5))
     center_index = get_center_ind(5)
 
     for index in range(25):
@@ -416,24 +413,10 @@ def draw_crc(ctx, width, height):
         set_source(ctx, colour)
         ctx.rectangle(cell_x, cell_y, cell - 2, cell - 2)
         ctx.fill()
-        if index in corner_indices:
-            set_source(ctx, RED)
-            ctx.set_line_width(5)
-            ctx.rectangle(cell_x + 3, cell_y + 3, cell - 8, cell - 8)
-            ctx.stroke()
 
     stroke_rect(ctx, grid_x - 3, grid_y - 3, 356, 356, INK, 3)
-    legend_item(ctx, 570, 75, BLUE, "CRC input", "32 bits outside the central cross")
-    legend_item(
-        ctx,
-        570,
-        165,
-        BLUE,
-        "palette corners included",
-        "deployed 5 x 5 calculation",
-        outline=RED,
-    )
-    legend_item(ctx, 570, 255, ORANGE, "stored CRC", "eight cells = 16 bits")
+    legend_item(ctx, 570, 105, BLUE, "CRC input", "32 bits outside the central cross")
+    legend_item(ctx, 570, 225, ORANGE, "stored CRC", "eight cells = 16 bits")
     legend_item(ctx, 570, 345, PALE, "size cell", "excluded from the CRC")
 
 
