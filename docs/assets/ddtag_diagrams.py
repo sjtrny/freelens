@@ -60,7 +60,6 @@ CELL_COLOURS = {
     "10": rgb("FFFF00"),
     "11": rgb("000000"),
 }
-CELL_NAMES = {"00": "cyan", "01": "magenta", "10": "yellow", "11": "black"}
 
 
 def set_source(ctx, colour, alpha=1.0):
@@ -172,7 +171,7 @@ def draw_polyline_arrow(ctx, points, colour=RED, line_width=3):
     draw_arrow(ctx, *points[-2], *points[-1], colour, line_width)
 
 
-def draw_actual_grid(ctx, tag, x, y, cell, *, show_bits=False, gap=1):
+def draw_actual_grid(ctx, tag, x, y, cell, *, gap=1):
     for index, bits in enumerate(tag.cells):
         row, column = divmod(index, tag.n)
         cell_x = x + column * cell
@@ -180,19 +179,6 @@ def draw_actual_grid(ctx, tag, x, y, cell, *, show_bits=False, gap=1):
         set_source(ctx, CELL_COLOURS[bits])
         ctx.rectangle(cell_x, cell_y, cell - gap, cell - gap)
         ctx.fill()
-        if show_bits:
-            text_colour = WHITE if bits == "11" else INK
-            show_centered(
-                ctx,
-                bits,
-                cell_x,
-                cell_y,
-                cell - gap,
-                cell - gap,
-                max(14, cell * 0.27),
-                text_colour,
-                mono=True,
-            )
 
 
 def draw_full_tag(ctx, tag, x, y, cell, outer):
@@ -311,21 +297,6 @@ def draw_quiet_zones(ctx, width, height):
         "the coloured data cells",
         CELL_COLOURS["00"],
     )
-
-
-def draw_grid(ctx, width, height):
-    grid_x = 82
-    grid_y = 78
-    cell = 70
-    draw_actual_grid(ctx, EXAMPLE_TAG, grid_x, grid_y, cell, show_bits=True, gap=2)
-    stroke_rect(ctx, grid_x - 3, grid_y - 3, 356, 356, INK, 3)
-
-    for offset, bits in enumerate(("00", "01", "10", "11")):
-        swatch_x = 560 + offset * 147
-        fill_rect(ctx, swatch_x, 185, 112, 112, CELL_COLOURS[bits])
-        text_colour = WHITE if bits == "11" else INK
-        show_centered(ctx, bits, swatch_x, 185, 112, 112, 27, text_colour, mono=True)
-        show_centered(ctx, CELL_NAMES[bits], swatch_x, 310, 112, 32, 17, MUTED)
 
 
 def draw_corner_label(ctx, x, y, bits, label, target, from_right=False):
@@ -474,7 +445,6 @@ def draw_message_order(ctx, width, height):
 DIAGRAMS = {
     "example": (500, 500, draw_example),
     "quiet-zones": (1200, 480, draw_quiet_zones),
-    "grid": (1200, 500, draw_grid),
     "corners": (1200, 480, draw_corners),
     "crc": (1200, 500, draw_crc),
     "message-order": (1200, 500, draw_message_order),

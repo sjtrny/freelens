@@ -48,8 +48,6 @@ for two features:
 - central cell is used to encode the grid size
 - central row and column are used to hold a CRC checksum
 
-![Five-by-five grid with the two-bit value of every coloured cell](./assets/ddtag/grid.svg)
-
 #### Corners and Colours
 
 The corners do not contain any message data. Instead, they are used as follows:
