@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="500pt" height="500pt" viewBox="0 0 500 500" version="1.1">
-<g id="surface1">
-<rect x="0" y="0" width="500" height="500" style="fill:rgb(95.686275%,96.862745%,98.431373%);fill-opacity:1;stroke:none;"/>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="478pt" height="478pt" viewBox="0 0 478 478" version="1.1">
+<defs>
+<g id="surface7" clip-path="url(#clip1)">
 <path style=" stroke:none;fill-rule:nonzero;fill:rgb(6.27451%,9.411765%,15.686275%);fill-opacity:0.12;" d="M 52 54 L 458 54 L 458 460 L 52 460 Z M 52 54 "/>
-<path style="fill-rule:nonzero;fill:rgb(100%,100%,100%);fill-opacity:1;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(79.607843%,83.529412%,88.235294%);stroke-opacity:1;stroke-miterlimit:10;" d="M 47 47 L 453 47 L 453 453 L 47 453 Z M 47 47 "/>
+<path style="fill-rule:nonzero;fill:rgb(100%,100%,100%);fill-opacity:1;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(79.607843%,83.529412%,88.235294%);stroke-opacity:1;stroke-miterlimit:10;" d="M 47 47 L 453 47 L 453 453 L 47 453 Z M 47 47 " transform="matrix(1,0,0,1,-0,-0)"/>
 <path style=" stroke:none;fill-rule:nonzero;fill:rgb(0%,0%,0%);fill-opacity:1;" d="M 103 103 L 397 103 L 397 397 L 103 397 Z M 103 103 "/>
 <path style=" stroke:none;fill-rule:nonzero;fill:rgb(0%,100%,100%);fill-opacity:1;" d="M 145 145 L 187 145 L 187 187 L 145 187 Z M 145 145 "/>
 <path style=" stroke:none;fill-rule:nonzero;fill:rgb(100%,100%,0%);fill-opacity:1;" d="M 187 145 L 229 145 L 229 187 L 187 187 Z M 187 145 "/>
@@ -30,5 +30,10 @@
 <path style=" stroke:none;fill-rule:nonzero;fill:rgb(100%,100%,0%);fill-opacity:1;" d="M 229 313 L 271 313 L 271 355 L 229 355 Z M 229 313 "/>
 <path style=" stroke:none;fill-rule:nonzero;fill:rgb(100%,0%,100%);fill-opacity:1;" d="M 271 313 L 313 313 L 313 355 L 271 355 Z M 271 313 "/>
 <path style=" stroke:none;fill-rule:nonzero;fill:rgb(100%,100%,0%);fill-opacity:1;" d="M 313 313 L 355 313 L 355 355 L 313 355 Z M 313 313 "/>
+</g>
+</defs>
+<g id="surface4">
+<rect x="0" y="0" width="478" height="478" style="fill:rgb(95.686275%,96.862745%,98.431373%);fill-opacity:1;stroke:none;"/>
+<use xlink:href="#surface7" transform="matrix(1,0,0,1,-13,-14)"/>
 </g>
 </svg>

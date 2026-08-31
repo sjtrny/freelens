@@ -35,6 +35,7 @@ except ImportError as error:  # pragma: no cover - supplied by Cairo Visuals
 MESSAGE_HEX = "4A005C"
 MESSAGE_BITS = f"{int(MESSAGE_HEX, 16):024b}"
 EXAMPLE_TAG = Tag.from_message(MESSAGE_BITS, n=5)
+CONTENT_PADDING = 32
 
 
 def rgb(value):
@@ -131,10 +132,11 @@ def show_centered(ctx, value, x, y, width, height, size, colour=INK, *, mono=Fal
     ctx.show_text(value)
 
 
-def draw_background(ctx, width, height):
+def draw_background(ctx, width, height, *, border=True):
     set_source(ctx, PAPER)
     ctx.paint()
-    stroke_round_rect(ctx, 1.5, 1.5, width - 3, height - 3, 18, LINE, 1.5)
+    if border:
+        stroke_round_rect(ctx, 1.5, 1.5, width - 3, height - 3, 18, LINE, 1.5)
 
 
 def draw_arrow(ctx, start_x, start_y, end_x, end_y, colour=INK, line_width=3):
@@ -221,8 +223,6 @@ def draw_full_tag(ctx, tag, x, y, cell, outer):
 
 
 def draw_example(ctx, width, height):
-    set_source(ctx, PAPER)
-    ctx.paint()
     draw_full_tag(ctx, EXAMPLE_TAG, 47, 47, 42, 56)
 
 
@@ -249,7 +249,6 @@ def callout(ctx, start, elbow_x, target_y, title, detail, swatch=None):
 
 
 def draw_quiet_zones(ctx, width, height):
-    draw_background(ctx, width, height)
     geometry = draw_full_tag(ctx, EXAMPLE_TAG, 70, 35, 40, 55)
 
     # Three nested borders make the two rings and the grid boundary explicit.
@@ -315,7 +314,6 @@ def draw_quiet_zones(ctx, width, height):
 
 
 def draw_grid(ctx, width, height):
-    draw_background(ctx, width, height)
     grid_x = 82
     grid_y = 78
     cell = 70
@@ -347,7 +345,6 @@ def draw_corner_label(ctx, x, y, bits, line_1, line_2, target, from_right=False)
 
 
 def draw_corners(ctx, width, height):
-    draw_background(ctx, width, height)
     grid_x = 420
     grid_y = 60
     cell = 72
@@ -390,7 +387,6 @@ def legend_item(ctx, x, y, colour, title, detail):
 
 
 def draw_crc(ctx, width, height):
-    draw_background(ctx, width, height)
     grid_x = 92
     grid_y = 70
     cell = 70
@@ -421,7 +417,6 @@ def draw_crc(ctx, width, height):
 
 
 def draw_message_order(ctx, width, height):
-    draw_background(ctx, width, height)
     grid_x = 70
     grid_y = 70
     cell = 70
@@ -492,27 +487,63 @@ DIAGRAMS = {
     "message-order": (1200, 500, draw_message_order),
 }
 PREVIEW_DIAGRAM = "example"
+SQUARE_DIAGRAMS = {"example"}
+BORDERLESS_DIAGRAMS = {"example"}
+
+
+def layout_diagram(name):
+    layout_width, layout_height, drawer = DIAGRAMS[name]
+    recording = cairo.RecordingSurface(cairo.CONTENT_COLOR_ALPHA, None)
+    drawer(cairo.Context(recording), layout_width, layout_height)
+    content_x, content_y, content_width, content_height = recording.ink_extents()
+
+    if name in SQUARE_DIAGRAMS:
+        canvas_width = canvas_height = math.ceil(
+            max(content_width, content_height) + 2 * CONTENT_PADDING
+        )
+        offset_x = (canvas_width - content_width) / 2 - content_x
+        offset_y = (canvas_height - content_height) / 2 - content_y
+    else:
+        canvas_width = math.ceil(content_width + 2 * CONTENT_PADDING)
+        canvas_height = math.ceil(content_height + 2 * CONTENT_PADDING)
+        offset_x = CONTENT_PADDING - content_x
+        offset_y = CONTENT_PADDING - content_y
+
+    return recording, canvas_width, canvas_height, offset_x, offset_y
+
+
+def render_diagram(surface_factory, name, layout=None):
+    if layout is None:
+        layout = layout_diagram(name)
+    recording, width, height, offset_x, offset_y = layout
+    surface = surface_factory(width, height)
+    ctx = cairo.Context(surface)
+    draw_background(ctx, width, height, border=name not in BORDERLESS_DIAGRAMS)
+    ctx.set_source_surface(recording, offset_x, offset_y)
+    ctx.paint()
+    return surface, width, height
 
 
 def draw(surface_factory, width, height):
-    expected_width, expected_height, drawer = DIAGRAMS[PREVIEW_DIAGRAM]
+    layout = layout_diagram(PREVIEW_DIAGRAM)
+    expected_width, expected_height = layout[1:3]
     if (width, height) != (expected_width, expected_height):
         raise ValueError(
             f"Render {PREVIEW_DIAGRAM!r} at {expected_width} x {expected_height} pixels"
         )
-    surface = surface_factory(width, height)
-    drawer(cairo.Context(surface), width, height)
-    return surface, width, height
+    return render_diagram(surface_factory, PREVIEW_DIAGRAM, layout)
 
 
 def render_all():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    for name, (width, height, drawer) in DIAGRAMS.items():
+    for name in DIAGRAMS:
         output_path = OUTPUT_DIR / f"{name}.svg"
-        surface = cairo.SVGSurface(str(output_path), width, height)
-        drawer(cairo.Context(surface), width, height)
+        surface, width, height = render_diagram(
+            lambda width, height: cairo.SVGSurface(str(output_path), width, height),
+            name,
+        )
         surface.finish()
-        print(output_path.relative_to(PROJECT_ROOT))
+        print(f"{output_path.relative_to(PROJECT_ROOT)} ({width} x {height})")
 
 
 if __name__ == "__main__":
