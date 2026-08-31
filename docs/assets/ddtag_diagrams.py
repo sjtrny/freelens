@@ -432,11 +432,13 @@ def draw_message_order(ctx, width, height):
         row, column = divmod(index, 5)
         cell_x = grid_x + column * cell
         cell_y = grid_y + row * cell
-        colour = BLUE if index in order else PALE
+        bits = EXAMPLE_TAG.cells[index]
+        colour = CELL_COLOURS[bits] if index in order else PALE
         set_source(ctx, colour)
         ctx.rectangle(cell_x, cell_y, cell - 2, cell - 2)
         ctx.fill()
         if index in order:
+            text_colour = WHITE if bits == "11" else INK
             show_centered(
                 ctx,
                 str(order[index]),
@@ -445,15 +447,10 @@ def draw_message_order(ctx, width, height):
                 cell - 2,
                 cell - 2,
                 22,
-                WHITE,
+                text_colour,
                 mono=True,
             )
     stroke_rect(ctx, grid_x - 3, grid_y - 3, 356, 356, INK, 3)
-
-    # Small arrows above the four message-bearing columns reinforce column traversal.
-    for column in (0, 1, 3, 4):
-        arrow_x = grid_x + (column + 0.5) * cell
-        draw_arrow(ctx, arrow_x, 35, arrow_x, 59, RED, 2.5)
 
     draw_arrow(ctx, 455, 245, 520, 245, INK, 3)
     show_text(ctx, "read columns, then concatenate", 535, 95, 27, INK)
