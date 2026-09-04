@@ -631,14 +631,14 @@ def draw_validation_card(ctx, x, y, width, height, step, title):
     fill_round_rect(ctx, x, y, width, height, 14, WHITE)
     stroke_round_rect(ctx, x, y, width, height, 14, LINE, 1.5)
     regular_font(ctx, 17)
-    title_width = ctx.text_extents(title).width
+    title_width = ctx.text_extents(title).x_advance
     group_width = 28 + 10 + title_width
     draw_step_title(
         ctx,
         step,
         title,
         x + (width - group_width) / 2,
-        y + 24,
+        y + 14,
         group_width,
         size=17,
     )
@@ -651,10 +651,10 @@ def draw_validation(ctx, width, height):
     grid_y = (height - grid_size) / 2
     card_x = 388
     card_width = width - CONTENT_PADDING - card_x
-    card_height = 98
-    card_gap = 14
+    card_height = 102
+    card_gap = 12
     card_ys = tuple(
-        20 + index * (card_height + card_gap)
+        15 + index * (card_height + card_gap)
         for index in range(4)
     )
 
@@ -682,7 +682,7 @@ def draw_validation(ctx, width, height):
     swatch_gap = 14
     swatch_group = 4 * swatch + 3 * swatch_gap
     swatch_x = card_x + (card_width - swatch_group) / 2
-    swatch_y = card_ys[0] + 54
+    swatch_y = card_ys[0] + 58
     for index, colour in enumerate(CELL_COLOURS):
         x = swatch_x + index * (swatch + swatch_gap)
         fill_rect(ctx, x, swatch_y, swatch, swatch, colour)
@@ -696,7 +696,7 @@ def draw_validation(ctx, width, height):
         12,
         "i. convert cells to binary",
     )
-    swatch_y = card_ys[1] + 54
+    swatch_y = card_ys[1] + 58
     for index, (bits, colour) in enumerate(zip(BIT_VALUES, CELL_COLOURS, strict=True)):
         x = swatch_x + index * (swatch + swatch_gap)
         fill_rect(ctx, x, swatch_y, swatch, swatch, colour)
@@ -730,18 +730,16 @@ def draw_validation(ctx, width, height):
         decoding.tag.crc[index : index + 8]
         for index in range(0, len(decoding.tag.crc), 8)
     )
-    message_text = (
-        f"message  {grouped_message}  = {int(decoding.tag.message, 2):06X}"
-    )
-    crc_text = f"CRC      {grouped_crc}  = {int(decoding.tag.crc, 2):04X}"
+    message_text = f"message: {grouped_message} → {int(decoding.tag.message, 2):06X}"
+    crc_text = f"CRC: {grouped_crc} → {int(decoding.tag.crc, 2):04X}"
     show_centered(
         ctx,
         message_text,
         card_x,
-        card_ys[2] + 48,
+        card_ys[2] + 53,
         card_width,
-        20,
-        14,
+        18,
+        13,
         INK,
         mono=True,
     )
@@ -749,10 +747,10 @@ def draw_validation(ctx, width, height):
         ctx,
         crc_text,
         card_x,
-        card_ys[2] + 72,
+        card_ys[2] + 76,
         card_width,
-        20,
-        14,
+        18,
+        13,
         INK,
         mono=True,
     )
@@ -769,9 +767,9 @@ def draw_validation(ctx, width, height):
     stored_crc = int(decoding.tag.crc, 2)
     show_centered(
         ctx,
-        f"calculated  {decoding.computed_crc:04X}   =   stored  {stored_crc:04X}",
+        f"calculated {decoding.computed_crc:04X} = stored {stored_crc:04X}",
         card_x,
-        card_ys[3] + 59,
+        card_ys[3] + 61,
         card_width,
         24,
         17,
