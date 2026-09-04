@@ -29,14 +29,20 @@ except ImportError as error:  # pragma: no cover - supplied by Cairo Visuals
 TAG_ID = 894_562
 EXAMPLE_TAG = Tag.from_message(f"{TAG_ID:024b}", n=5)
 REGISTRY_ROWS = (
+    ("2131230", "Yarra Trams", "1 East Coburg to South Melbourne Beech"),
     (
         "894562",
         "Yarra Trams",
         "86 (Night route) Bundoora RMIT to Waterfront City Docklands",
     ),
-    ("2131230", "Yarra Trams", "1 East Coburg to South Melbourne Beech"),
     ("4592349", "Yarra Trams", "35 City Circle"),
     ("1231230", "Yarra Trams", "16 Melbourne University to Kew"),
+)
+PHONE_DATA_LINES = (
+    "86 (Night route)",
+    "Bundoora RMIT to",
+    "Waterfront City",
+    "Docklands",
 )
 
 
@@ -245,29 +251,18 @@ def draw_phone(ctx, x, y, width, height):
     screen_x = x + 16
     screen_y = y + 43
     screen_width = width - 32
-    fill_round_rect(ctx, screen_x, screen_y, screen_width, 76, 7, BLUE_PALE)
-    show_centered(
-        ctx,
-        "detected ID",
-        screen_x,
-        screen_y + 10,
-        screen_width,
-        22,
-        14,
-        MUTED,
-    )
-    show_centered(
-        ctx,
-        str(TAG_ID),
-        screen_x,
-        screen_y + 35,
-        screen_width,
-        31,
-        18,
-        INK,
-        mono=True,
-        bold=True,
-    )
+    fill_round_rect(ctx, screen_x, screen_y, screen_width, 112, 7, BLUE_PALE)
+    for line_index, line in enumerate(PHONE_DATA_LINES):
+        show_centered(
+            ctx,
+            line,
+            screen_x,
+            screen_y + 11 + line_index * 23,
+            screen_width,
+            20,
+            12,
+            INK,
+        )
 
     center_x = x + width / 2
     fill_round_rect(ctx, center_x - 22, y + height - 16, 44, 4, 2, MUTED)
@@ -423,7 +418,10 @@ def draw_registry_record(ctx, x, y, width, height):
             INK,
         )
 
-    highlight_y = y + header_height
+    highlighted_row = next(
+        index for index, row in enumerate(REGISTRY_ROWS) if int(row[0]) == TAG_ID
+    )
+    highlight_y = y + header_height + highlighted_row * row_height
     stroke_rect(ctx, x + 2, highlight_y + 2, width - 4, row_height - 4, RED, 3)
 
 
@@ -433,10 +431,10 @@ def draw_system_overview(ctx, width, height):
     tag_x = 36
     tag_y = 145
     tag_size = 109
-    phone_x = 190
-    phone_y = 110
-    phone_width = 110
-    phone_height = 220
+    phone_x = 180
+    phone_y = 95
+    phone_width = 135
+    phone_height = 245
 
     ctx.move_to(phone_x + 8, phone_y + 24)
     ctx.line_to(tag_x + tag_size - 4, tag_y + 10)
@@ -449,23 +447,23 @@ def draw_system_overview(ctx, width, height):
     draw_tag(ctx, tag_x, tag_y)
     show_centered(ctx, "ddTag", tag_x, tag_y + tag_size + 8, tag_size, 28, 17, INK)
     draw_phone(ctx, phone_x, phone_y, phone_width, phone_height)
-    show_centered(ctx, "NaviLens app", 165, 338, 160, 34, 18, INK)
+    show_centered(ctx, "NaviLens app", 167, 348, 160, 34, 18, INK)
 
-    draw_cloud(ctx, 355, 166, 140, 80)
-    fill_round_rect(ctx, 550, 155, 195, 130, 12, SERVER)
-    show_centered(ctx, "NaviLens", 550, 177, 195, 44, 23, WHITE)
-    show_centered(ctx, "service", 550, 219, 195, 44, 23, WHITE)
-    draw_database(ctx, 840, 145, 245, 145)
+    draw_cloud(ctx, 390, 166, 140, 80)
+    fill_round_rect(ctx, 610, 155, 195, 130, 12, SERVER)
+    show_centered(ctx, "NaviLens", 610, 177, 195, 44, 23, WHITE)
+    show_centered(ctx, "service", 610, 219, 195, 44, 23, WHITE)
+    draw_database(ctx, 885, 155, 200, 125)
 
-    draw_arrow(ctx, (315, 215), (341, 215), MUTED, both=True, line_width=3)
-    draw_arrow(ctx, (509, 215), (536, 215), MUTED, both=True, line_width=3)
-    draw_arrow(ctx, (759, 215), (826, 215), MUTED, both=True, line_width=3)
+    draw_arrow(ctx, (330, 215), (376, 215), MUTED, both=True, line_width=3)
+    draw_arrow(ctx, (544, 215), (596, 215), MUTED, both=True, line_width=3)
+    draw_arrow(ctx, (819, 215), (871, 215), MUTED, both=True, line_width=3)
 
     record_x = 530
     record_y = 365
     record_width = 615
     record_height = 190
-    draw_arrow(ctx, (962, 300), (962, 351), INK, line_width=3)
+    draw_arrow(ctx, (985, 290), (985, 351), INK, line_width=3)
     draw_registry_record(ctx, record_x, record_y, record_width, record_height)
 
 
