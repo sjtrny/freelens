@@ -592,9 +592,9 @@
   <use xlink:href="#glyph3-10" x="719.2745" y="249.085938"/>
   <use xlink:href="#glyph3-6" x="730.7745" y="249.085938"/>
 </g>
-<path style=" stroke:none;fill-rule:nonzero;fill:rgb(27.843137%,32.941176%,40.392157%);fill-opacity:1;" d="M 885 172 L 1085 172 L 1085 263 L 885 263 Z M 885 172 "/>
-<path style=" stroke:none;fill-rule:nonzero;fill:rgb(27.843137%,32.941176%,40.392157%);fill-opacity:1;" d="M 1085 263 C 1085 272.390625 1040.226562 280 985 280 C 929.773438 280 885 272.390625 885 263 C 885 253.609375 929.773438 246 985 246 C 1040.226562 246 1085 253.609375 1085 263 "/>
-<path style="fill-rule:nonzero;fill:rgb(40%,43.921569%,52.156863%);fill-opacity:1;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(6.27451%,9.411765%,15.686275%);stroke-opacity:1;stroke-miterlimit:10;" d="M 1085 172 C 1085 181.390625 1040.226562 189 985 189 C 929.773438 189 885 181.390625 885 172 C 885 162.609375 929.773438 155 985 155 C 1040.226562 155 1085 162.609375 1085 172 "/>
+<path style=" stroke:none;fill-rule:nonzero;fill:rgb(20.392157%,25.098039%,32.941176%);fill-opacity:1;" d="M 885 172 L 1085 172 L 1085 263 L 885 263 Z M 885 172 "/>
+<path style=" stroke:none;fill-rule:nonzero;fill:rgb(20.392157%,25.098039%,32.941176%);fill-opacity:1;" d="M 1085 263 C 1085 272.390625 1040.226562 280 985 280 C 929.773438 280 885 272.390625 885 263 C 885 253.609375 929.773438 246 985 246 C 1040.226562 246 1085 253.609375 1085 263 "/>
+<path style="fill-rule:nonzero;fill:rgb(20.392157%,25.098039%,32.941176%);fill-opacity:1;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(6.27451%,9.411765%,15.686275%);stroke-opacity:1;stroke-miterlimit:10;" d="M 1085 172 C 1085 181.390625 1040.226562 189 985 189 C 929.773438 189 885 181.390625 885 172 C 885 162.609375 929.773438 155 985 155 C 1040.226562 155 1085 162.609375 1085 172 "/>
 <path style="fill:none;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(6.27451%,9.411765%,15.686275%);stroke-opacity:1;stroke-miterlimit:10;" d="M 885 172 L 885 263 M 1085 172 L 1085 263 C 1085 272.390625 1040.226562 280 985 280 C 929.773438 280 885 272.390625 885 263 C 885 253.609375 929.773438 246 985 246 C 1040.226562 246 1085 253.609375 1085 263 "/>
 <g style="fill:rgb(100%,100%,100%);fill-opacity:1;">
   <use xlink:href="#glyph4-1" x="922.421875" y="235.277344"/>

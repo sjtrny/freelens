@@ -68,8 +68,7 @@ LEASE_LIGHT = rgb("F6A6D3")
 LEASE_MID = rgb("CF5995")
 LEASE_DARK = rgb("9B1F58")
 SERVER = rgb("344054")
-DATABASE = rgb("475467")
-DATABASE_TOP = rgb("667085")
+DATABASE = SERVER
 CELL_COLOURS = {
     "00": rgb("00FFFF"),
     "01": rgb("FF00FF"),
@@ -330,7 +329,7 @@ def draw_database(ctx, x, y, width, height):
     set_source(ctx, DATABASE)
     ctx.fill()
     ellipse_path(ctx, x, y, width, ellipse_height)
-    set_source(ctx, DATABASE_TOP)
+    set_source(ctx, DATABASE)
     ctx.fill_preserve()
     set_source(ctx, INK)
     ctx.set_line_width(2)
