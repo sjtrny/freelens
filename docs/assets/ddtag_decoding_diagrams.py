@@ -646,27 +646,57 @@ def draw_validation_card(ctx, x, y, width, height, step, title):
 
 def draw_validation(ctx, width, height):
     decoding = load_decoding_stages()
-    card_width = 500
-    card_height = 216
-    left_x = 32
-    right_x = 568
-    top_y = 32
-    bottom_y = 272
+    grid_size = 300
+    grid_x = CONTENT_PADDING
+    grid_y = (height - grid_size) / 2
+    card_x = 388
+    card_width = width - CONTENT_PADDING - card_x
+    card_height = 98
+    card_gap = 14
+    card_ys = tuple(
+        20 + index * (card_height + card_gap)
+        for index in range(4)
+    )
+
+    show_centered(ctx, "palette values", grid_x, grid_y - 46, grid_size, 27, 20)
+    draw_class_grid(
+        ctx,
+        decoding.classes,
+        grid_x,
+        grid_y,
+        grid_size,
+        labels=True,
+    )
+    draw_arrow(ctx, grid_x + grid_size + 14, card_x - 14, height / 2)
 
     draw_validation_card(
         ctx,
-        left_x,
-        top_y,
+        card_x,
+        card_ys[0],
         card_width,
         card_height,
         11,
         "check corner order",
     )
-    swatch = 50
-    swatch_gap = 18
+    swatch = 30
+    swatch_gap = 14
     swatch_group = 4 * swatch + 3 * swatch_gap
-    swatch_x = left_x + (card_width - swatch_group) / 2
-    swatch_y = top_y + 118
+    swatch_x = card_x + (card_width - swatch_group) / 2
+    swatch_y = card_ys[0] + 54
+    for index, colour in enumerate(CELL_COLOURS):
+        x = swatch_x + index * (swatch + swatch_gap)
+        fill_rect(ctx, x, swatch_y, swatch, swatch, colour)
+
+    draw_validation_card(
+        ctx,
+        card_x,
+        card_ys[1],
+        card_width,
+        card_height,
+        12,
+        "i. convert cells to binary",
+    )
+    swatch_y = card_ys[1] + 54
     for index, (bits, colour) in enumerate(zip(BIT_VALUES, CELL_COLOURS, strict=True)):
         x = swatch_x + index * (swatch + swatch_gap)
         fill_rect(ctx, x, swatch_y, swatch, swatch, colour)
@@ -678,34 +708,15 @@ def draw_validation(ctx, width, height):
             swatch_y,
             swatch,
             swatch,
-            14,
+            11,
             text_colour,
             mono=True,
         )
 
     draw_validation_card(
         ctx,
-        right_x,
-        top_y,
-        card_width,
-        card_height,
-        12,
-        "i. convert cells to binary",
-    )
-    binary_grid_size = 140
-    draw_class_grid(
-        ctx,
-        decoding.classes,
-        right_x + (card_width - binary_grid_size) / 2,
-        top_y + 68,
-        binary_grid_size,
-        labels=True,
-    )
-
-    draw_validation_card(
-        ctx,
-        left_x,
-        bottom_y,
+        card_x,
+        card_ys[2],
         card_width,
         card_height,
         12,
@@ -719,57 +730,37 @@ def draw_validation(ctx, width, height):
         decoding.tag.crc[index : index + 8]
         for index in range(0, len(decoding.tag.crc), 8)
     )
-    show_centered(
-        ctx,
-        grouped_message,
-        left_x,
-        bottom_y + 79,
-        card_width,
-        22,
-        15,
-        MUTED,
-        mono=True,
+    message_text = (
+        f"message  {grouped_message}  = {int(decoding.tag.message, 2):06X}"
     )
+    crc_text = f"CRC      {grouped_crc}  = {int(decoding.tag.crc, 2):04X}"
     show_centered(
         ctx,
-        f"message  {int(decoding.tag.message, 2):06X}",
-        left_x,
-        bottom_y + 107,
+        message_text,
+        card_x,
+        card_ys[2] + 48,
         card_width,
-        27,
         20,
+        14,
         INK,
         mono=True,
-        bold=True,
     )
     show_centered(
         ctx,
-        grouped_crc,
-        left_x,
-        bottom_y + 143,
+        crc_text,
+        card_x,
+        card_ys[2] + 72,
         card_width,
-        22,
-        15,
-        MUTED,
-        mono=True,
-    )
-    show_centered(
-        ctx,
-        f"CRC      {int(decoding.tag.crc, 2):04X}",
-        left_x,
-        bottom_y + 171,
-        card_width,
-        27,
         20,
+        14,
         INK,
         mono=True,
-        bold=True,
     )
 
     draw_validation_card(
         ctx,
-        right_x,
-        bottom_y,
+        card_x,
+        card_ys[3],
         card_width,
         card_height,
         12,
@@ -778,23 +769,11 @@ def draw_validation(ctx, width, height):
     stored_crc = int(decoding.tag.crc, 2)
     show_centered(
         ctx,
-        f"calculated  {decoding.computed_crc:04X}",
-        right_x,
-        bottom_y + 91,
+        f"calculated  {decoding.computed_crc:04X}   =   stored  {stored_crc:04X}",
+        card_x,
+        card_ys[3] + 59,
         card_width,
-        26,
-        17,
-        MUTED,
-        mono=True,
-    )
-    show_centered(ctx, "=", right_x, bottom_y + 122, card_width, 20, 18, MUTED)
-    show_centered(
-        ctx,
-        f"stored      {stored_crc:04X}",
-        right_x,
-        bottom_y + 149,
-        card_width,
-        26,
+        24,
         17,
         INK,
         mono=True,
@@ -806,7 +785,7 @@ DIAGRAMS = {
     "quiet-zone-references": (1104, 445, draw_quiet_zone_references),
     "colour-sampling": (1190, 414, draw_colour_sampling),
     "orientation-palette": (1194, 322, draw_orientation_palette),
-    "validation": (1100, 520, draw_validation),
+    "validation": (1040, 474, draw_validation),
 }
 PREVIEW_DIAGRAM = "decoding-rectification"
 
