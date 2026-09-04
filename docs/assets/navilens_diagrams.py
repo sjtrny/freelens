@@ -512,7 +512,7 @@ def draw_namespace(ctx, width, height):
     show_text(ctx, end_label, end_x - end_extents.width, 271, 20, INK, mono=True)
     show_centered(
         ctx,
-        "16,777,216 possible IDs",
+        "Tag ID",
         start_x,
         250,
         end_x - start_x,
