@@ -132,10 +132,17 @@ def show_centered(ctx, value, x, y, width, height, size, colour=INK, *, mono=Fal
 
 
 def draw_background(ctx, width, height, *, border=True):
+    if not border:
+        set_source(ctx, PAPER)
+        ctx.paint()
+        return
+
+    rounded_rect(ctx, 1.5, 1.5, width - 3, height - 3, 18)
     set_source(ctx, PAPER)
-    ctx.paint()
-    if border:
-        stroke_round_rect(ctx, 1.5, 1.5, width - 3, height - 3, 18, LINE, 1.5)
+    ctx.fill_preserve()
+    set_source(ctx, LINE)
+    ctx.set_line_width(1.5)
+    ctx.stroke()
 
 
 def draw_arrow(ctx, start_x, start_y, end_x, end_y, colour=INK, line_width=3):

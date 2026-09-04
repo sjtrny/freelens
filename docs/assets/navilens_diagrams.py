@@ -163,9 +163,12 @@ def show_centered(
 
 
 def draw_background(ctx, width, height):
+    rounded_rect(ctx, 1.5, 1.5, width - 3, height - 3, 18)
     set_source(ctx, PAPER)
-    ctx.paint()
-    stroke_round_rect(ctx, 1.5, 1.5, width - 3, height - 3, 18, LINE, 1.5)
+    ctx.fill_preserve()
+    set_source(ctx, LINE)
+    ctx.set_line_width(1.5)
+    ctx.stroke()
 
 
 def draw_arrow_head(ctx, x, y, angle, colour, size=10, line_width=3):

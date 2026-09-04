@@ -146,8 +146,7 @@
 </g>
 </defs>
 <g id="surface7">
-<rect x="0" y="0" width="1050" height="305" style="fill:rgb(95.686275%,96.862745%,98.431373%);fill-opacity:1;stroke:none;"/>
-<path style="fill:none;stroke-width:1.5;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(79.607843%,83.529412%,88.235294%);stroke-opacity:1;stroke-miterlimit:10;" d="M 1030.5 1.5 C 1040.441406 1.5 1048.5 9.558594 1048.5 19.5 L 1048.5 285.5 C 1048.5 295.441406 1040.441406 303.5 1030.5 303.5 L 19.5 303.5 C 9.558594 303.5 1.5 295.441406 1.5 285.5 L 1.5 19.5 C 1.5 9.558594 9.558594 1.5 19.5 1.5 Z M 1030.5 1.5 "/>
+<path style="fill-rule:nonzero;fill:rgb(95.686275%,96.862745%,98.431373%);fill-opacity:1;stroke-width:1.5;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(79.607843%,83.529412%,88.235294%);stroke-opacity:1;stroke-miterlimit:10;" d="M 1030.5 1.5 C 1040.441406 1.5 1048.5 9.558594 1048.5 19.5 L 1048.5 285.5 C 1048.5 295.441406 1040.441406 303.5 1030.5 303.5 L 19.5 303.5 C 9.558594 303.5 1.5 295.441406 1.5 285.5 L 1.5 19.5 C 1.5 9.558594 9.558594 1.5 19.5 1.5 Z M 1030.5 1.5 "/>
 <path style=" stroke:none;fill-rule:nonzero;fill:rgb(90.980392%,100%,10.196078%);fill-opacity:1;" d="M 48 120 L 238 120 L 238 198 L 48 198 Z M 48 120 "/>
 <path style=" stroke:none;fill-rule:nonzero;fill:rgb(20.392157%,28.235294%,94.117647%);fill-opacity:1;" d="M 250 120 L 430 120 L 430 198 L 250 198 Z M 250 120 "/>
 <path style=" stroke:none;fill-rule:nonzero;fill:rgb(93.72549%,17.254902%,56.862745%);fill-opacity:1;" d="M 442 120 L 1002 120 L 1002 198 L 442 198 Z M 442 120 "/>
