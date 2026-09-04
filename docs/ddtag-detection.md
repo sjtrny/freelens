@@ -71,6 +71,26 @@ For each un-rectified frame polygon:
    1. Extract message code and CRC code.
    1. Validate message code with CRC code.
 
+### Steps 1-2
+
+![Cyclic frame vertices mapped to a square without assuming tag orientation](./assets/ddtag-detection/decoding-rectification.svg)
+
+### Steps 2-4
+
+![Rectified quiet zones sampled for black and white references before cropping](./assets/ddtag-detection/quiet-zone-references.svg)
+
+### Steps 5-7
+
+![Cell centres sampled, corrected with the measured RGB range, and converted to CIELab](./assets/ddtag-detection/colour-sampling.svg)
+
+### Steps 8-10
+
+![Grid rotated by its darkest corner and cells assigned to the nearest palette colour](./assets/ddtag-detection/orientation-palette.svg)
+
+### Steps 11-12
+
+![Decoded cells checked for canonical corner order and a matching CRC](./assets/ddtag-detection/validation.svg)
+
 ## References
 
 Garrido-Jurado, S., et al. (2014).
