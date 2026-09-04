@@ -28,6 +28,16 @@ except ImportError as error:  # pragma: no cover - supplied by Cairo Visuals
 
 TAG_ID = 894_562
 EXAMPLE_TAG = Tag.from_message(f"{TAG_ID:024b}", n=5)
+REGISTRY_ROWS = (
+    (
+        "894562",
+        "Yarra Trams",
+        "86 (Night route) Bundoora RMIT to Waterfront City Docklands",
+    ),
+    ("2131230", "Yarra Trams", "1 East Coburg to South Melbourne Beech"),
+    ("4592349", "Yarra Trams", "35 City Circle"),
+    ("1231230", "Yarra Trams", "16 Melbourne University to Kew"),
+)
 
 
 def rgb(value):
@@ -180,6 +190,23 @@ def draw_arrow(ctx, start, end, colour=INK, *, both=False, line_width=3):
     ctx.restore()
 
 
+def draw_flash(ctx, center_x, center_y, inner_radius=34, outer_radius=78, points=14):
+    for index in range(points * 2):
+        angle = -math.pi / 2 + index * math.pi / points
+        radius = outer_radius if index % 2 == 0 else inner_radius
+        point = (
+            center_x + radius * math.cos(angle),
+            center_y + radius * math.sin(angle),
+        )
+        if index == 0:
+            ctx.move_to(*point)
+        else:
+            ctx.line_to(*point)
+    ctx.close_path()
+    set_source(ctx, YELLOW)
+    ctx.fill()
+
+
 def draw_tag(ctx, x, y, cell=11, inner=11, outer=16):
     grid_size = EXAMPLE_TAG.n * cell
     total = grid_size + 2 * inner + 2 * outer
@@ -243,15 +270,6 @@ def draw_phone(ctx, x, y, width, height):
     )
 
     center_x = x + width / 2
-    wave_y = y + height - 76
-    set_source(ctx, BLUE)
-    ctx.set_line_width(3)
-    for radius in (9, 17, 25):
-        ctx.arc(center_x, wave_y, radius, math.pi * 1.15, math.pi * 1.85)
-        ctx.stroke()
-    ctx.arc(center_x, wave_y, 3.5, 0, math.tau)
-    ctx.fill()
-
     fill_round_rect(ctx, center_x - 22, y + height - 16, 44, 4, 2, MUTED)
 
 
@@ -299,7 +317,7 @@ def draw_cloud(ctx, x, y, width, height):
     set_source(ctx, BLUE)
     ctx.set_line_width(2)
     ctx.stroke()
-    show_centered(ctx, "Internet", x, y + 35, width, 42, 18, INK)
+    show_centered(ctx, "Internet", x, y + height + 7, width, 28, 18, INK)
 
 
 def ellipse_path(ctx, x, y, width, height):
@@ -330,15 +348,15 @@ def draw_database(ctx, x, y, width, height):
     set_source(ctx, INK)
     ctx.set_line_width(2)
     ctx.stroke()
-    show_centered(ctx, "Tag registry", x, y + 47, width, 48, 24, WHITE)
-    show_centered(ctx, "ID to information", x, y + 84, width, 30, 15, WHITE)
+    show_centered(ctx, "Tag registry", x, y + 45, width, 58, 24, WHITE)
 
 
 def draw_registry_record(ctx, x, y, width, height):
     radius = 9
     header_height = 38
-    id_width = 95
-    owner_width = 120
+    row_height = 38
+    id_width = 92
+    owner_width = 110
     fill_round_rect(ctx, x, y, width, height, radius, WHITE)
     stroke_round_rect(ctx, x, y, width, height, radius, LINE, 1.5)
 
@@ -351,8 +369,10 @@ def draw_registry_record(ctx, x, y, width, height):
     for column_x in (x + id_width, x + id_width + owner_width):
         ctx.move_to(column_x, y)
         ctx.line_to(column_x, y + height)
-    ctx.move_to(x, y + header_height)
-    ctx.line_to(x + width, y + header_height)
+    for row_index in range(len(REGISTRY_ROWS) + 1):
+        line_y = y + header_height + row_index * row_height
+        ctx.move_to(x, line_y)
+        ctx.line_to(x + width, line_y)
     set_source(ctx, LINE)
     ctx.set_line_width(1.5)
     ctx.stroke()
@@ -371,7 +391,7 @@ def draw_registry_record(ctx, x, y, width, height):
     )
     show_centered(
         ctx,
-        "Information",
+        "Data",
         x + id_width + owner_width,
         y,
         width - id_width - owner_width,
@@ -381,56 +401,71 @@ def draw_registry_record(ctx, x, y, width, height):
         bold=True,
     )
 
-    row_y = y + header_height
-    row_height = height - header_height
-    show_centered(ctx, str(TAG_ID), x, row_y, id_width, row_height, 15, INK, mono=True)
-    show_centered(
-        ctx, "Yarra Trams", x + id_width, row_y, owner_width, row_height, 15, INK
-    )
-    data_x = x + id_width + owner_width + 16
-    show_text(ctx, "Route 86", data_x, row_y + 27, 15, INK)
-    show_text(ctx, "Bundoora RMIT to Docklands", data_x, row_y + 53, 14, MUTED)
+    for row_index, (tag_id, owner, data) in enumerate(REGISTRY_ROWS):
+        row_y = y + header_height + row_index * row_height
+        show_centered(ctx, tag_id, x, row_y, id_width, row_height, 13, INK, mono=True)
+        show_centered(
+            ctx,
+            owner,
+            x + id_width,
+            row_y,
+            owner_width,
+            row_height,
+            13,
+            INK,
+        )
+        show_text(
+            ctx,
+            data,
+            x + id_width + owner_width + 12,
+            row_y + 24,
+            12.5,
+            INK,
+        )
+
+    highlight_y = y + header_height
+    stroke_rect(ctx, x + 2, highlight_y + 2, width - 4, row_height - 4, RED, 3)
 
 
 def draw_system_overview(ctx, width, height):
     draw_background(ctx, width, height)
 
-    tag_x = 68
-    tag_y = 36
+    tag_x = 36
+    tag_y = 145
     tag_size = 109
-    phone_x = 65
-    phone_y = 190
-    phone_width = 120
+    phone_x = 190
+    phone_y = 110
+    phone_width = 110
     phone_height = 220
 
-    ctx.move_to(phone_x + phone_width / 2, phone_y + 5)
-    ctx.line_to(tag_x - 7, tag_y + tag_size + 8)
-    ctx.line_to(tag_x + tag_size + 7, tag_y + tag_size + 8)
+    ctx.move_to(phone_x + 8, phone_y + 24)
+    ctx.line_to(tag_x + tag_size - 4, tag_y + 10)
+    ctx.line_to(tag_x + tag_size - 4, tag_y + tag_size - 10)
     ctx.close_path()
     set_source(ctx, YELLOW_PALE, 0.78)
     ctx.fill()
 
+    draw_flash(ctx, phone_x + 15, phone_y + 70)
     draw_tag(ctx, tag_x, tag_y)
     show_centered(ctx, "ddTag", tag_x, tag_y + tag_size + 8, tag_size, 28, 17, INK)
     draw_phone(ctx, phone_x, phone_y, phone_width, phone_height)
-    show_centered(ctx, "NaviLens app", 45, 420, 160, 34, 18, INK)
+    show_centered(ctx, "NaviLens app", 165, 338, 160, 34, 18, INK)
 
-    draw_cloud(ctx, 260, 242, 150, 90)
-    fill_round_rect(ctx, 485, 220, 215, 135, 12, SERVER)
-    show_centered(ctx, "NaviLens", 485, 246, 215, 42, 24, WHITE)
-    show_centered(ctx, "service", 485, 282, 215, 42, 24, WHITE)
-    show_centered(ctx, "lookup API", 485, 320, 215, 22, 15, PALE)
-    draw_database(ctx, 805, 210, 250, 150)
+    draw_cloud(ctx, 355, 166, 140, 80)
+    fill_round_rect(ctx, 550, 155, 195, 130, 12, SERVER)
+    show_centered(ctx, "NaviLens", 550, 177, 195, 44, 23, WHITE)
+    show_centered(ctx, "service", 550, 219, 195, 44, 23, WHITE)
+    draw_database(ctx, 840, 145, 245, 145)
 
-    draw_arrow(ctx, (198, 287), (246, 287), MUTED, both=True, line_width=3)
-    draw_arrow(ctx, (424, 287), (471, 287), MUTED, both=True, line_width=3)
-    draw_arrow(ctx, (714, 287), (791, 287), MUTED, both=True, line_width=3)
+    draw_arrow(ctx, (315, 215), (341, 215), MUTED, both=True, line_width=3)
+    draw_arrow(ctx, (509, 215), (536, 215), MUTED, both=True, line_width=3)
+    draw_arrow(ctx, (759, 215), (826, 215), MUTED, both=True, line_width=3)
 
-    record_x = 650
-    record_y = 390
-    record_width = 495
-    record_height = 120
-    draw_arrow(ctx, (930, 369), (930, 380), INK, line_width=3)
+    record_x = 530
+    record_y = 365
+    record_width = 615
+    record_height = 190
+    draw_arrow(ctx, (962, 300), (962, 351), INK, line_width=3)
     draw_registry_record(ctx, record_x, record_y, record_width, record_height)
 
 
@@ -523,7 +558,7 @@ def draw_namespace(ctx, width, height):
 
 
 DIAGRAMS = {
-    "system-overview": (1180, 545, draw_system_overview),
+    "system-overview": (1180, 590, draw_system_overview),
     "namespace": (1050, 305, draw_namespace),
 }
 PREVIEW_DIAGRAM = "system-overview"
