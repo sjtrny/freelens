@@ -10,16 +10,45 @@ In `detect_frames` we use a modified version of [1] as follows:
 1. Convert image to grayscale
 1. Detect edges by local adaptive thresholding
 1. Detect contours by Suzuki's method
+1. Remove contours that cannot possibly become a frame:
+   1. Raw contours with fewer than four sampled boundary points
+   1. Contours whose bounding box covers less than 1,500 px²
 1. Fit polygon to contours
 1. Apply filters:
-   1. 4-vertex polygons.
+   1. 4-vertex polygons
    1. Area of at least 1,500 px²
    1. Convex polygon
    1. Shape is roughly square (perimeter/area test)
 
-The quiet zone is not used to reject frame candidates. Every candidate is colour
-calibrated using median RGB values from its black and white rings. When either ring
-cannot be sampled, identity references preserve the original RGB values.
+### Steps 1-3
+
+![A photograph converted to grayscale and then locally thresholded](./assets/ddtag-detection/image-processing.svg)
+
+### Steps 3-4
+
+![Raw contours reduced by point count and bounding-box area](./assets/ddtag-detection/contour-candidates.svg)
+
+Adaptive thresholding can produce many small contours, and calculating the perimeter and
+fitting a polygon to each one is comparatively expensive. Therefore they are prefiltered
+with `contour_filter_candidates`, which checks that the countour has more than four
+points and a sufficiently large bounding box. This works because a four-vertex polygon
+cannot be fitted from fewer than four contour points, and a fitted polygon cannot have a
+larger area than the contour's bounding box.
+
+### Step 5
+
+![A sampled contour simplified to a four-vertex polygon](./assets/ddtag-detection/polygon-fitting.svg)
+
+The full polygon filters are therefore still required to check the fitted polygon's
+vertex count, exact area, convexity, and shape.
+
+### Step 6
+
+![Fitted polygons reduced to one possible frame by the four polygon filters](./assets/ddtag-detection/frame-filters.svg)
+
+Every candidate is colour calibrated using median RGB values from its black and white
+rings. When either ring cannot be sampled, identity references preserve the original RGB
+values.
 
 ## Decoding Possible Tags
 
@@ -43,10 +72,31 @@ For each un-rectified frame polygon:
 1. When strict validation is enabled, require the four reserved corner cells to have
    distinct palette values in canonical order
 1. Validate the deployed CRC when processing a 5×5 tag and validation is enabled
-   1. Convert cells to binary using the rule that the palette is ordered clockwise
-      starting at the top left with the binary values `00`, `01`, `10`, `11`.
-   1. Extract message code and CRC code.
-   1. Validate message code with CRC code.
+   <ol type="i">
+     <li>Convert cells to binary using the rule that the palette is ordered clockwise starting at the top left with the binary values <code>00</code>, <code>01</code>, <code>10</code>, <code>11</code>.</li>
+     <li>Extract message code and CRC code.</li>
+     <li>Validate message code with CRC code.</li>
+   </ol>
+
+### Steps 1-2
+
+![Cyclic frame vertices mapped to a square without assuming tag orientation](./assets/ddtag-detection/decoding-rectification.svg)
+
+### Steps 2-4
+
+![Rectified quiet zones sampled for black and white references before cropping](./assets/ddtag-detection/quiet-zone-references.svg)
+
+### Steps 5-7
+
+![Cell centres sampled, corrected with the measured RGB range, and converted to CIELab](./assets/ddtag-detection/colour-sampling.svg)
+
+### Steps 8-10
+
+![Grid rotated by its darkest corner and cells assigned to the nearest palette colour](./assets/ddtag-detection/orientation-palette.svg)
+
+### Steps 11-12
+
+![Decoded cells checked for canonical corner order and a matching CRC](./assets/ddtag-detection/validation.svg)
 
 ## References
 
