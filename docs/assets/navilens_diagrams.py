@@ -314,11 +314,11 @@ def draw_cloud(ctx, x, y, width, height):
     show_centered(ctx, "Internet", x, y + height + 7, width, 28, 18, INK)
 
 
-def ellipse_path(ctx, x, y, width, height):
+def ellipse_path(ctx, x, y, width, height, start_angle=0, end_angle=math.tau):
     ctx.save()
     ctx.translate(x + width / 2, y + height / 2)
     ctx.scale(width / 2, height / 2)
-    ctx.arc(0, 0, 1, 0, math.tau)
+    ctx.arc(0, 0, 1, start_angle, end_angle)
     ctx.restore()
 
 
@@ -338,7 +338,15 @@ def draw_database(ctx, x, y, width, height):
     ctx.line_to(x, y + height - ellipse_height / 2)
     ctx.move_to(x + width, y + ellipse_height / 2)
     ctx.line_to(x + width, y + height - ellipse_height / 2)
-    ellipse_path(ctx, x, y + height - ellipse_height, width, ellipse_height)
+    ellipse_path(
+        ctx,
+        x,
+        y + height - ellipse_height,
+        width,
+        ellipse_height,
+        0,
+        math.pi,
+    )
     set_source(ctx, INK)
     ctx.set_line_width(2)
     ctx.stroke()
