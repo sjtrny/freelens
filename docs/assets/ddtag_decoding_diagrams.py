@@ -71,6 +71,8 @@ GREEN = rgb("12B76A")
 class DecodingStages:
     rectified: Image.Image
     frame: Image.Image
+    corrected_frame: Image.Image
+    corrected_frame_lab: np.ndarray
     black: np.ndarray
     white: np.ndarray
     cells_rgb: np.ndarray
@@ -119,6 +121,10 @@ def load_decoding_stages():
     corrected_rgb = np.round(_correct_colours(cells_rgb, black, white) * 255).astype(
         np.uint8
     )
+    corrected_frame = np.round(_correct_colours(frame_rgb, black, white) * 255).astype(
+        np.uint8
+    )
+    corrected_frame_lab = cv.cvtColor(corrected_frame, cv.COLOR_RGB2Lab)
     cells_lab = cv.cvtColor(corrected_rgb, cv.COLOR_RGB2Lab)
 
     observed_corners = np.array(
@@ -149,6 +155,8 @@ def load_decoding_stages():
     return DecodingStages(
         rectified=Image.fromarray(rectified_rgba[..., :3], mode="RGB"),
         frame=Image.fromarray(frame_rgb, mode="RGB"),
+        corrected_frame=Image.fromarray(corrected_frame, mode="RGB"),
+        corrected_frame_lab=corrected_frame_lab,
         black=black,
         white=white,
         cells_rgb=cells_rgb,
@@ -181,6 +189,33 @@ def colour_from_sample(sample):
     return tuple(float(channel) / 255 for channel in sample)
 
 
+def draw_step_title(ctx, step, label, x, y, width, *, size=18):
+    badge_size = 28
+    badge_x = x
+    fill_round_rect(
+        ctx,
+        badge_x,
+        y,
+        badge_size,
+        badge_size,
+        badge_size / 2,
+        BLUE,
+    )
+    show_centered(
+        ctx,
+        str(step),
+        badge_x,
+        y,
+        badge_size,
+        badge_size,
+        14,
+        WHITE,
+        mono=True,
+        bold=True,
+    )
+    show_text(ctx, label, badge_x + badge_size + 10, y + 21, size)
+
+
 def draw_numbered_vertex(ctx, x, y, number):
     ctx.new_sub_path()
     ctx.arc(x, y, 12, 0, math.tau)
@@ -209,8 +244,8 @@ def draw_rectification(ctx, width, height):
     right_x = width - CONTENT_PADDING - panel_size
     detail = detection.image.crop(DETAIL_CROP)
 
-    show_centered(ctx, "cyclic frame vertices", left_x, 20, panel_size, 27, 20)
-    show_centered(ctx, "square rectification", right_x, 20, panel_size, 27, 20)
+    draw_step_title(ctx, 1, "preserve cyclic vertices", left_x, 17, panel_size)
+    draw_step_title(ctx, 2, "rectify to square", right_x, 17, panel_size)
 
     draw_image(ctx, detail, left_x, panel_y, panel_size)
 
@@ -303,17 +338,17 @@ def draw_ring_overlay(ctx, x, y, size, outer_cell, colour):
     )
 
 
-def draw_reference(ctx, x, y, colour, name, values, highlight):
-    swatch = 52
+def draw_reference_chip(ctx, x, y, colour, name, values, highlight):
+    swatch = 34
     fill_rect(ctx, x, y, swatch, swatch, colour)
-    stroke_rect(ctx, x, y, swatch, swatch, highlight, 3)
-    show_text(ctx, name, x + 66, y + 21, 17)
+    stroke_rect(ctx, x, y, swatch, swatch, highlight, 2.5)
+    show_text(ctx, name, x + 44, y + 14, 13)
     show_text(
         ctx,
         " ".join(str(round(value)) for value in values),
-        x + 66,
-        y + 47,
-        15,
+        x + 44,
+        y + 33,
+        11,
         MUTED,
         mono=True,
     )
@@ -321,37 +356,33 @@ def draw_reference(ctx, x, y, colour, name, values, highlight):
 
 def draw_quiet_zone_references(ctx, width, height):
     decoding = load_decoding_stages()
-    panel_size = 360
-    panel_y = 53
-    left_x = CONTENT_PADDING
-    card_x = 414
-    card_width = 200
-    right_x = width - CONTENT_PADDING - panel_size
+    panel_size = 300
+    panel_y = 62
+    panel_xs = (32, 402, 772)
 
-    show_centered(ctx, "rectified quiet zones", left_x, 18, panel_size, 27, 20)
-    show_centered(ctx, "black-framed tag", right_x, 18, panel_size, 27, 20)
-    draw_image(ctx, decoding.rectified, left_x, panel_y, panel_size)
-    draw_ring_overlay(ctx, left_x, panel_y, panel_size, 0, BLUE)
-    draw_ring_overlay(ctx, left_x, panel_y, panel_size, 1, ORANGE)
+    draw_step_title(ctx, 2, "rectified frame", panel_xs[0], 18, panel_size)
+    draw_step_title(ctx, 3, "measure quiet zones", panel_xs[1], 18, panel_size)
+    draw_step_title(ctx, 4, "crop black frame", panel_xs[2], 18, panel_size)
 
-    card_y = 105
-    card_height = 256
-    fill_round_rect(ctx, card_x, card_y, card_width, card_height, 14, WHITE)
-    stroke_round_rect(ctx, card_x, card_y, card_width, card_height, 14, LINE, 1.5)
-    show_centered(ctx, "median RGB", card_x, card_y + 14, card_width, 28, 18)
-    draw_reference(
+    draw_image(ctx, decoding.rectified, panel_xs[0], panel_y, panel_size)
+    draw_image(ctx, decoding.rectified, panel_xs[1], panel_y, panel_size)
+    draw_ring_overlay(ctx, panel_xs[1], panel_y, panel_size, 0, BLUE)
+    draw_ring_overlay(ctx, panel_xs[1], panel_y, panel_size, 1, ORANGE)
+    draw_image(ctx, decoding.frame, panel_xs[2], panel_y, panel_size)
+
+    draw_reference_chip(
         ctx,
-        card_x + 18,
-        card_y + 65,
+        panel_xs[1],
+        374,
         colour_from_sample(decoding.white),
         "white",
         decoding.white,
         BLUE,
     )
-    draw_reference(
+    draw_reference_chip(
         ctx,
-        card_x + 18,
-        card_y + 153,
+        panel_xs[1] + 155,
+        374,
         colour_from_sample(decoding.black),
         "black",
         decoding.black,
@@ -359,9 +390,8 @@ def draw_quiet_zone_references(ctx, width, height):
     )
 
     center_y = panel_y + panel_size / 2
-    draw_arrow(ctx, left_x + panel_size + 9, card_x - 9, center_y)
-    draw_arrow(ctx, card_x + card_width + 9, right_x - 9, center_y)
-    draw_image(ctx, decoding.frame, right_x, panel_y, panel_size)
+    draw_arrow(ctx, panel_xs[0] + panel_size + 12, panel_xs[1] - 12, center_y)
+    draw_arrow(ctx, panel_xs[1] + panel_size + 12, panel_xs[2] - 12, center_y)
 
 
 def draw_sample_grid(ctx, samples, x, y, size, *, labels=False):
@@ -443,62 +473,81 @@ def draw_sample_centres(ctx, x, y, size):
             ctx.fill()
 
 
-def draw_range_mapping(ctx, x, y, width, decoding):
-    height = 236
-    fill_round_rect(ctx, x, y, width, height, 14, WHITE)
-    stroke_round_rect(ctx, x, y, width, height, 14, LINE, 1.5)
-    show_centered(ctx, "map RGB range", x, y + 14, width, 30, 18)
-
-    rows = (
-        ("black", decoding.black, "0"),
-        ("white", decoding.white, "255"),
+def draw_lab_channels(ctx, lab, x, y, size):
+    fill_round_rect(ctx, x, y, size, size, 12, WHITE)
+    stroke_round_rect(ctx, x, y, size, size, 12, LINE, 1.5)
+    thumbnail = 78
+    gap = 12
+    start_x = x + (size - 3 * thumbnail - 2 * gap) / 2
+    image_y = y + 75
+    for index, label in enumerate(("L*", "a*", "b*")):
+        channel = Image.fromarray(lab[..., index], mode="L").convert("RGB")
+        image_x = start_x + index * (thumbnail + gap)
+        draw_image(ctx, channel, image_x, image_y, thumbnail)
+        show_centered(ctx, label, image_x, image_y + thumbnail + 8, thumbnail, 24, 16)
+    show_centered(
+        ctx,
+        "three values per pixel",
+        x,
+        y + 215,
+        size,
+        28,
+        15,
+        MUTED,
     )
-    for row_index, (label, values, target) in enumerate(rows):
-        row_y = y + 62 + row_index * 69
-        swatch_colour = colour_from_sample(values)
-        fill_rect(ctx, x + 18, row_y, 38, 38, swatch_colour)
-        stroke_rect(ctx, x + 18, row_y, 38, 38, LINE, 1.3)
-        show_text(ctx, label, x + 67, row_y + 16, 15)
-        show_text(
-            ctx,
-            " ".join(str(round(value)) for value in values),
-            x + 67,
-            row_y + 36,
-            12,
-            MUTED,
-            mono=True,
-        )
-        draw_arrow(
-            ctx,
-            x + width - 78,
-            x + width - 52,
-            row_y + 20,
-            line_width=1.8,
-        )
-        show_text(ctx, target, x + width - 44, row_y + 26, 14, INK, mono=True)
-
-    show_centered(ctx, "RGB to CIELab", x, y + 197, width, 25, 16, MUTED)
 
 
 def draw_colour_sampling(ctx, width, height):
     decoding = load_decoding_stages()
-    panel_size = 340
-    panel_y = 64
-    left_x = CONTENT_PADDING
-    card_x = 404
-    card_width = 240
-    right_x = width - CONTENT_PADDING - panel_size
+    panel_size = 280
+    panel_y = 72
+    left_x = 32
+    middle_x = 382
+    sample_x = 732
+    sample_width = 426
 
-    show_centered(ctx, "cell centres", left_x, 20, panel_size, 27, 20)
-    show_centered(ctx, "49 colour samples", right_x, 20, panel_size, 27, 20)
-    draw_image(ctx, decoding.frame, left_x, panel_y, panel_size)
-    draw_sample_centres(ctx, left_x, panel_y, panel_size)
-    draw_range_mapping(ctx, card_x, 115, card_width, decoding)
-    draw_sample_grid(ctx, decoding.corrected_rgb, right_x, panel_y, panel_size)
+    draw_step_title(ctx, 5, "map RGB range", left_x, 20, panel_size)
+    draw_step_title(ctx, 6, "convert to CIELab", middle_x, 20, panel_size)
+    draw_step_title(ctx, 7, "sample cell centres", sample_x, 20, sample_width)
+
+    draw_image(ctx, decoding.corrected_frame, left_x, panel_y, panel_size)
+    show_centered(
+        ctx,
+        "black = 0     white = 255",
+        left_x,
+        358,
+        panel_size,
+        24,
+        14,
+        MUTED,
+        mono=True,
+    )
+    draw_lab_channels(
+        ctx,
+        decoding.corrected_frame_lab,
+        middle_x,
+        panel_y,
+        panel_size,
+    )
+
+    fill_round_rect(ctx, sample_x, panel_y, sample_width, panel_size, 12, WHITE)
+    stroke_round_rect(ctx, sample_x, panel_y, sample_width, panel_size, 12, LINE, 1.5)
+    sample_size = 180
+    frame_x = sample_x + 12
+    grid_x = sample_x + sample_width - sample_size - 12
+    image_y = panel_y + 58
+    show_centered(ctx, "frame", frame_x, panel_y + 18, sample_size, 24, 15, MUTED)
+    show_centered(
+        ctx, "7 × 7 samples", grid_x, panel_y + 18, sample_size, 24, 15, MUTED
+    )
+    draw_image(ctx, decoding.corrected_frame, frame_x, image_y, sample_size)
+    draw_sample_centres(ctx, frame_x, image_y, sample_size)
+    draw_sample_grid(ctx, decoding.corrected_rgb, grid_x, image_y, sample_size)
+    draw_arrow(ctx, frame_x + sample_size + 8, grid_x - 8, image_y + sample_size / 2)
 
     center_y = panel_y + panel_size / 2
-    draw_arrow(ctx, left_x + panel_size + 9, card_x - 9, center_y)
-    draw_arrow(ctx, card_x + card_width + 9, right_x - 9, center_y)
+    draw_arrow(ctx, left_x + panel_size + 12, middle_x - 12, center_y)
+    draw_arrow(ctx, middle_x + panel_size + 12, sample_x - 12, center_y)
 
 
 def draw_grid_highlight(ctx, x, y, size, row, column, colour, line_width=4):
@@ -514,56 +563,78 @@ def draw_grid_highlight(ctx, x, y, size, row, column, colour, line_width=4):
     )
 
 
+def draw_palette_panel(ctx, oriented, x, y, size):
+    corners = (
+        oriented[0, 0],
+        oriented[0, -1],
+        oriented[-1, -1],
+        oriented[-1, 0],
+    )
+    positions = ((0, 0), (0, 1), (1, 1), (1, 0))
+    cell = size / 2
+    for index, ((row, column), sample) in enumerate(
+        zip(positions, corners, strict=True)
+    ):
+        cell_x = x + column * cell
+        cell_y = y + row * cell
+        fill_rect(ctx, cell_x, cell_y, cell, cell, colour_from_sample(sample))
+        text_colour = WHITE if index == 3 else INK
+        show_centered(
+            ctx,
+            BIT_VALUES[index],
+            cell_x,
+            cell_y,
+            cell,
+            cell,
+            18,
+            text_colour,
+            mono=True,
+            bold=True,
+        )
+    stroke_rect(ctx, x, y, size, size, INK, 2)
+
+
 def draw_orientation_palette(ctx, width, height):
     decoding = load_decoding_stages()
-    panel_size = 260
-    panel_y = 62
-    panel_xs = (32, 407, 782)
+    panel_size = 230
+    panel_y = 60
+    panel_xs = (32, 332, 632, 932)
     observed = decoding.corrected_rgb[1 : N + 1, 1 : N + 1]
     oriented = decoding.rotated_rgb[1 : N + 1, 1 : N + 1]
 
-    labels = ("darkest corner", "oriented palette", "nearest palette colour")
-    for x, label in zip(panel_xs, labels, strict=True):
-        show_centered(ctx, label, x, 19, panel_size, 27, 19)
+    titles = (
+        (8, "find darkest"),
+        (8, "rotate to bottom-left"),
+        (9, "read corner palette"),
+        (10, "classify cells"),
+    )
+    for x, (step, label) in zip(panel_xs, titles, strict=True):
+        draw_step_title(ctx, step, label, x, 16, panel_size, size=16)
 
     draw_sample_grid(ctx, observed, panel_xs[0], panel_y, panel_size)
     draw_grid_highlight(ctx, panel_xs[0], panel_y, panel_size, 4, 4, RED, 5)
 
     draw_sample_grid(ctx, oriented, panel_xs[1], panel_y, panel_size)
-    for row, column in ((0, 0), (0, 4), (4, 4), (4, 0)):
-        draw_grid_highlight(
-            ctx,
-            panel_xs[1],
-            panel_y,
-            panel_size,
-            row,
-            column,
-            ORANGE,
-            4,
-        )
+    draw_grid_highlight(ctx, panel_xs[1], panel_y, panel_size, 4, 0, RED, 5)
 
+    draw_palette_panel(ctx, oriented, panel_xs[2], panel_y, panel_size)
     draw_class_grid(
-        ctx,
-        decoding.classes,
-        panel_xs[2],
-        panel_y,
-        panel_size,
-        labels=True,
+        ctx, decoding.classes, panel_xs[3], panel_y, panel_size, labels=True
     )
 
     center_y = panel_y + panel_size / 2
-    draw_arrow(ctx, panel_xs[0] + panel_size + 18, panel_xs[1] - 18, center_y)
+    for left_x, right_x in zip(panel_xs[:-1], panel_xs[1:], strict=True):
+        draw_arrow(ctx, left_x + panel_size + 14, right_x - 14, center_y)
     show_centered(
         ctx,
-        "rotate 90°",
+        "90°",
         panel_xs[0] + panel_size,
-        center_y - 43,
+        center_y - 39,
         panel_xs[1] - panel_xs[0] - panel_size,
-        24,
-        16,
+        22,
+        15,
         MUTED,
     )
-    draw_arrow(ctx, panel_xs[1] + panel_size + 18, panel_xs[2] - 18, center_y)
 
 
 def draw_check(ctx, center_x, center_y, radius=15):
@@ -581,10 +652,10 @@ def draw_check(ctx, center_x, center_y, radius=15):
     ctx.stroke()
 
 
-def draw_validation_card(ctx, x, y, width, height, title):
+def draw_validation_card(ctx, x, y, width, height, step, title):
     fill_round_rect(ctx, x, y, width, height, 14, WHITE)
     stroke_round_rect(ctx, x, y, width, height, 14, LINE, 1.5)
-    show_text(ctx, title, x + 20, y + 30, 18)
+    draw_step_title(ctx, step, title, x + 20, y + 14, width - 40, size=17)
 
 
 def draw_validation(ctx, width, height):
@@ -595,7 +666,7 @@ def draw_validation(ctx, width, height):
     card_x = 388
     card_width = width - CONTENT_PADDING - card_x
 
-    show_centered(ctx, "decoded cells", grid_x, 20, grid_size, 27, 20)
+    show_centered(ctx, "palette values", grid_x, 20, grid_size, 27, 20)
     draw_class_grid(
         ctx,
         decoding.classes,
@@ -607,9 +678,17 @@ def draw_validation(ctx, width, height):
     draw_arrow(ctx, grid_x + grid_size + 14, card_x - 14, grid_y + grid_size / 2)
 
     corners_y = 32
-    draw_validation_card(ctx, card_x, corners_y, card_width, 98, "corner order")
+    draw_validation_card(
+        ctx,
+        card_x,
+        corners_y,
+        card_width,
+        98,
+        11,
+        "check corner order",
+    )
     swatch = 42
-    swatch_x = card_x + 190
+    swatch_x = card_x + 220
     for index, (bits, colour) in enumerate(zip(BIT_VALUES, CELL_COLOURS, strict=True)):
         x = swatch_x + index * 66
         fill_rect(ctx, x, corners_y + 27, swatch, swatch, colour)
@@ -628,16 +707,24 @@ def draw_validation(ctx, width, height):
     draw_check(ctx, card_x + card_width - 30, corners_y + 49)
 
     message_y = 146
-    draw_validation_card(ctx, card_x, message_y, card_width, 102, "message")
+    draw_validation_card(
+        ctx,
+        card_x,
+        message_y,
+        card_width,
+        102,
+        12,
+        "extract message",
+    )
     grouped_message = " ".join(
         decoding.tag.message[index : index + 8]
         for index in range(0, len(decoding.tag.message), 8)
     )
-    show_text(ctx, grouped_message, card_x + 128, message_y + 34, 16, MUTED, mono=True)
+    show_text(ctx, grouped_message, card_x + 190, message_y + 34, 16, MUTED, mono=True)
     show_text(
         ctx,
         f"{int(decoding.tag.message, 2):06X}",
-        card_x + 128,
+        card_x + 190,
         message_y + 76,
         26,
         INK,
@@ -646,12 +733,20 @@ def draw_validation(ctx, width, height):
     )
 
     crc_y = 264
-    draw_validation_card(ctx, card_x, crc_y, card_width, 102, "CRC")
+    draw_validation_card(
+        ctx,
+        card_x,
+        crc_y,
+        card_width,
+        102,
+        12,
+        "compare CRC",
+    )
     stored_crc = int(decoding.tag.crc, 2)
     show_text(
         ctx,
         f"calculated  {decoding.computed_crc:04X}",
-        card_x + 128,
+        card_x + 190,
         crc_y + 36,
         17,
         MUTED,
@@ -660,7 +755,7 @@ def draw_validation(ctx, width, height):
     show_text(
         ctx,
         f"stored      {stored_crc:04X}",
-        card_x + 128,
+        card_x + 190,
         crc_y + 73,
         17,
         INK,
@@ -671,9 +766,9 @@ def draw_validation(ctx, width, height):
 
 DIAGRAMS = {
     "decoding-rectification": (1040, 480, draw_rectification),
-    "quiet-zone-references": (1028, 445, draw_quiet_zone_references),
-    "colour-sampling": (1048, 436, draw_colour_sampling),
-    "orientation-palette": (1074, 354, draw_orientation_palette),
+    "quiet-zone-references": (1104, 445, draw_quiet_zone_references),
+    "colour-sampling": (1190, 414, draw_colour_sampling),
+    "orientation-palette": (1194, 322, draw_orientation_palette),
     "validation": (1040, 398, draw_validation),
 }
 PREVIEW_DIAGRAM = "decoding-rectification"
