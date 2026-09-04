@@ -314,8 +314,7 @@
 </g>
 </defs>
 <g id="surface20">
-<rect x="0" y="0" width="1123" height="463" style="fill:rgb(95.686275%,96.862745%,98.431373%);fill-opacity:1;stroke:none;"/>
-<path style="fill:none;stroke-width:1.5;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(79.607843%,83.529412%,88.235294%);stroke-opacity:1;stroke-miterlimit:10;" d="M 1103.5 1.5 C 1113.441406 1.5 1121.5 9.558594 1121.5 19.5 L 1121.5 443.5 C 1121.5 453.441406 1113.441406 461.5 1103.5 461.5 L 19.5 461.5 C 9.558594 461.5 1.5 453.441406 1.5 443.5 L 1.5 19.5 C 1.5 9.558594 9.558594 1.5 19.5 1.5 Z M 1103.5 1.5 "/>
+<path style="fill-rule:nonzero;fill:rgb(95.686275%,96.862745%,98.431373%);fill-opacity:1;stroke-width:1.5;stroke-linecap:butt;stroke-linejoin:miter;stroke:rgb(79.607843%,83.529412%,88.235294%);stroke-opacity:1;stroke-miterlimit:10;" d="M 1103.5 1.5 C 1113.441406 1.5 1121.5 9.558594 1121.5 19.5 L 1121.5 443.5 C 1121.5 453.441406 1113.441406 461.5 1103.5 461.5 L 19.5 461.5 C 9.558594 461.5 1.5 453.441406 1.5 443.5 L 1.5 19.5 C 1.5 9.558594 9.558594 1.5 19.5 1.5 Z M 1103.5 1.5 "/>
 <use xlink:href="#surface23" transform="matrix(1,0,0,1,-36,-1)"/>
 </g>
 </svg>

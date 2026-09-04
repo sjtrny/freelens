@@ -25,9 +25,7 @@ is what allows a reader to locate it under less controlled conditions. See
 The 24-bit message is only an identifier. NaviLens resolves that identifier using a
 hosted database:
 
-```text
-ddTag -> app detects an ID -> NaviLens service -> registered information -> text or audio
-```
+![NaviLens system overview: an app detects a ddTag ID, exchanges it with the NaviLens service over the Internet, and receives information from the tag registry](./assets/navilens/system-overview.svg)
 
 The app scans the camera image, extracts the tag ID, and sends it to the NaviLens
 service. The service looks up the information registered for that ID and returns it for
@@ -46,6 +44,8 @@ signs in much the same way that a domain name stands for an Internet destination
 tag has 2^24, or 16,777,216, possible messages, so IDs must be allocated consistently to
 prevent two deployments assigning different meanings to the same tag. Larger ddTags
 provide more IDs, but do not remove the need for a registry in this model.
+
+![Conceptual 24-bit tag namespace divided into general-purpose, personal-use, and commercial ranges, with commercial leases](./assets/navilens/namespace.svg)
 
 One possible way to stretch the limited ID space would be to divide the world into
 geographic regions and reuse the same ID in places far enough apart that they cannot be
