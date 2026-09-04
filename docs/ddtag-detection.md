@@ -28,7 +28,12 @@ In `detect_frames` we use a modified version of [1] as follows:
 
 ![Raw contours reduced by point count and bounding-box area](./assets/ddtag-detection/contour-candidates.svg)
 
-Adaptive thresholding can produce many small contours, and calculating the perimeter and fitting a polygon to each one is comparatively expensive. Therefore they are prefiltered with `contour_filter_candidates`, which checks that the countour has more than four points and a sufficiently large bounding box. This works because a four-vertex polygon cannot be fitted from fewer than four contour points, and a fitted polygon cannot have a larger area than the contour's bounding box.
+Adaptive thresholding can produce many small contours, and calculating the perimeter and
+fitting a polygon to each one is comparatively expensive. Therefore they are prefiltered
+with `contour_filter_candidates`, which checks that the countour has more than four
+points and a sufficiently large bounding box. This works because a four-vertex polygon
+cannot be fitted from fewer than four contour points, and a fitted polygon cannot have a
+larger area than the contour's bounding box.
 
 ### Step 5
 
@@ -37,12 +42,13 @@ Adaptive thresholding can produce many small contours, and calculating the perim
 The full polygon filters are therefore still required to check the fitted polygon's
 vertex count, exact area, convexity, and shape.
 
-
 ### Step 6
 
 ![Fitted polygons reduced to one possible frame by the four polygon filters](./assets/ddtag-detection/frame-filters.svg)
 
-Every candidate is colour calibrated using median RGB values from its black and white rings. When either ring cannot be sampled, identity references preserve the original RGB values.
+Every candidate is colour calibrated using median RGB values from its black and white
+rings. When either ring cannot be sampled, identity references preserve the original RGB
+values.
 
 ## Decoding Possible Tags
 
