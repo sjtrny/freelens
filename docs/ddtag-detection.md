@@ -10,12 +10,24 @@ In `detect_frames` we use a modified version of [1] as follows:
 1. Convert image to grayscale
 1. Detect edges by local adaptive thresholding
 1. Detect contours by Suzuki's method
+1. Remove contours that cannot possibly become a frame:
+   1. Raw contours with fewer than four sampled boundary points
+   1. Contours whose bounding box covers less than 1,500 px²
 1. Fit polygon to contours
 1. Apply filters:
-   1. 4-vertex polygons.
+   1. 4-vertex polygons
    1. Area of at least 1,500 px²
    1. Convex polygon
    1. Shape is roughly square (perimeter/area test)
+
+`contour_filter_candidates` performs the inexpensive checks before fitting polygons.
+Adaptive thresholding can produce many small contours, and calculating the perimeter and
+fitting a polygon to each one is comparatively expensive. The early checks are
+conservative: a four-vertex polygon cannot be fitted from fewer than four contour
+points, and a fitted polygon cannot have a larger area than the contour's bounding box.
+The contour points are not polygon corners; the number of corners is known only after
+polygon fitting. The full polygon filters are therefore still required to check the
+fitted polygon's vertex count, exact area, convexity, and shape.
 
 The quiet zone is not used to reject frame candidates. Every candidate is colour
 calibrated using median RGB values from its black and white rings. When either ring
