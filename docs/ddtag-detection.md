@@ -20,14 +20,25 @@ In `detect_frames` we use a modified version of [1] as follows:
    1. Convex polygon
    1. Shape is roughly square (perimeter/area test)
 
+![A photograph converted to grayscale and then locally thresholded](./assets/ddtag-detection/image-processing.svg)
+
 `contour_filter_candidates` performs the inexpensive checks before fitting polygons.
 Adaptive thresholding can produce many small contours, and calculating the perimeter and
-fitting a polygon to each one is comparatively expensive. The early checks are
-conservative: a four-vertex polygon cannot be fitted from fewer than four contour
-points, and a fitted polygon cannot have a larger area than the contour's bounding box.
-The contour points are not polygon corners; the number of corners is known only after
-polygon fitting. The full polygon filters are therefore still required to check the
-fitted polygon's vertex count, exact area, convexity, and shape.
+fitting a polygon to each one is comparatively expensive.
+
+![Raw contours reduced by point count and bounding-box area](./assets/ddtag-detection/contour-candidates.svg)
+
+The early checks are conservative: a four-vertex polygon cannot be fitted from fewer
+than four contour points, and a fitted polygon cannot have a larger area than the
+contour's bounding box. The contour points are not polygon corners; the number of
+corners is known only after polygon fitting.
+
+![A sampled contour simplified to a four-vertex polygon](./assets/ddtag-detection/polygon-fitting.svg)
+
+The full polygon filters are therefore still required to check the fitted polygon's
+vertex count, exact area, convexity, and shape.
+
+![Fitted polygons reduced to one possible frame by the four polygon filters](./assets/ddtag-detection/frame-filters.svg)
 
 The quiet zone is not used to reject frame candidates. Every candidate is colour
 calibrated using median RGB values from its black and white rings. When either ring
