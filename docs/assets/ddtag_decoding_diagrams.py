@@ -39,6 +39,7 @@ from docs.assets.ddtag_detection_diagrams import (  # noqa: E402
     fill_round_rect,
     load_stages,
     map_point,
+    regular_font,
     rgb,
     set_source,
     show_centered,
@@ -64,7 +65,6 @@ CELL_COLOURS = (
     rgb("FFFF00"),
     rgb("000000"),
 )
-GREEN = rgb("12B76A")
 
 
 @dataclass(frozen=True)
@@ -479,22 +479,12 @@ def draw_lab_channels(ctx, lab, x, y, size):
     thumbnail = 78
     gap = 12
     start_x = x + (size - 3 * thumbnail - 2 * gap) / 2
-    image_y = y + 75
+    image_y = y + 85
     for index, label in enumerate(("L*", "a*", "b*")):
         channel = Image.fromarray(lab[..., index], mode="L").convert("RGB")
         image_x = start_x + index * (thumbnail + gap)
         draw_image(ctx, channel, image_x, image_y, thumbnail)
         show_centered(ctx, label, image_x, image_y + thumbnail + 8, thumbnail, 24, 16)
-    show_centered(
-        ctx,
-        "three values per pixel",
-        x,
-        y + 215,
-        size,
-        28,
-        15,
-        MUTED,
-    )
 
 
 def draw_colour_sampling(ctx, width, height):
@@ -637,131 +627,178 @@ def draw_orientation_palette(ctx, width, height):
     )
 
 
-def draw_check(ctx, center_x, center_y, radius=15):
-    ctx.new_sub_path()
-    ctx.arc(center_x, center_y, radius, 0, math.tau)
-    set_source(ctx, GREEN)
-    ctx.fill()
-    ctx.move_to(center_x - radius * 0.48, center_y)
-    ctx.line_to(center_x - radius * 0.12, center_y + radius * 0.36)
-    ctx.line_to(center_x + radius * 0.54, center_y - radius * 0.4)
-    set_source(ctx, WHITE)
-    ctx.set_line_width(3)
-    ctx.set_line_cap(cairo.LINE_CAP_ROUND)
-    ctx.set_line_join(cairo.LINE_JOIN_ROUND)
-    ctx.stroke()
-
-
 def draw_validation_card(ctx, x, y, width, height, step, title):
     fill_round_rect(ctx, x, y, width, height, 14, WHITE)
     stroke_round_rect(ctx, x, y, width, height, 14, LINE, 1.5)
-    draw_step_title(ctx, step, title, x + 20, y + 14, width - 40, size=17)
+    regular_font(ctx, 17)
+    title_width = ctx.text_extents(title).width
+    group_width = 28 + 10 + title_width
+    draw_step_title(
+        ctx,
+        step,
+        title,
+        x + (width - group_width) / 2,
+        y + 24,
+        group_width,
+        size=17,
+    )
 
 
 def draw_validation(ctx, width, height):
     decoding = load_decoding_stages()
-    grid_size = 300
-    grid_x = CONTENT_PADDING
-    grid_y = 66
-    card_x = 388
-    card_width = width - CONTENT_PADDING - card_x
+    card_width = 500
+    card_height = 216
+    left_x = 32
+    right_x = 568
+    top_y = 32
+    bottom_y = 272
 
-    show_centered(ctx, "palette values", grid_x, 20, grid_size, 27, 20)
-    draw_class_grid(
-        ctx,
-        decoding.classes,
-        grid_x,
-        grid_y,
-        grid_size,
-        labels=True,
-    )
-    draw_arrow(ctx, grid_x + grid_size + 14, card_x - 14, grid_y + grid_size / 2)
-
-    corners_y = 32
     draw_validation_card(
         ctx,
-        card_x,
-        corners_y,
+        left_x,
+        top_y,
         card_width,
-        98,
+        card_height,
         11,
         "check corner order",
     )
-    swatch = 42
-    swatch_x = card_x + 220
+    swatch = 50
+    swatch_gap = 18
+    swatch_group = 4 * swatch + 3 * swatch_gap
+    swatch_x = left_x + (card_width - swatch_group) / 2
+    swatch_y = top_y + 118
     for index, (bits, colour) in enumerate(zip(BIT_VALUES, CELL_COLOURS, strict=True)):
-        x = swatch_x + index * 66
-        fill_rect(ctx, x, corners_y + 27, swatch, swatch, colour)
+        x = swatch_x + index * (swatch + swatch_gap)
+        fill_rect(ctx, x, swatch_y, swatch, swatch, colour)
         text_colour = WHITE if index == 3 else INK
         show_centered(
             ctx,
             bits,
             x,
-            corners_y + 27,
+            swatch_y,
             swatch,
             swatch,
-            12,
+            14,
             text_colour,
             mono=True,
         )
-    draw_check(ctx, card_x + card_width - 30, corners_y + 49)
 
-    message_y = 146
     draw_validation_card(
         ctx,
-        card_x,
-        message_y,
+        right_x,
+        top_y,
         card_width,
-        102,
+        card_height,
         12,
-        "extract message",
+        "i. convert cells to binary",
+    )
+    binary_grid_size = 140
+    draw_class_grid(
+        ctx,
+        decoding.classes,
+        right_x + (card_width - binary_grid_size) / 2,
+        top_y + 68,
+        binary_grid_size,
+        labels=True,
+    )
+
+    draw_validation_card(
+        ctx,
+        left_x,
+        bottom_y,
+        card_width,
+        card_height,
+        12,
+        "ii. extract message and CRC",
     )
     grouped_message = " ".join(
         decoding.tag.message[index : index + 8]
         for index in range(0, len(decoding.tag.message), 8)
     )
-    show_text(ctx, grouped_message, card_x + 190, message_y + 34, 16, MUTED, mono=True)
-    show_text(
+    grouped_crc = " ".join(
+        decoding.tag.crc[index : index + 8]
+        for index in range(0, len(decoding.tag.crc), 8)
+    )
+    show_centered(
         ctx,
-        f"{int(decoding.tag.message, 2):06X}",
-        card_x + 190,
-        message_y + 76,
-        26,
+        grouped_message,
+        left_x,
+        bottom_y + 79,
+        card_width,
+        22,
+        15,
+        MUTED,
+        mono=True,
+    )
+    show_centered(
+        ctx,
+        f"message  {int(decoding.tag.message, 2):06X}",
+        left_x,
+        bottom_y + 107,
+        card_width,
+        27,
+        20,
+        INK,
+        mono=True,
+        bold=True,
+    )
+    show_centered(
+        ctx,
+        grouped_crc,
+        left_x,
+        bottom_y + 143,
+        card_width,
+        22,
+        15,
+        MUTED,
+        mono=True,
+    )
+    show_centered(
+        ctx,
+        f"CRC      {int(decoding.tag.crc, 2):04X}",
+        left_x,
+        bottom_y + 171,
+        card_width,
+        27,
+        20,
         INK,
         mono=True,
         bold=True,
     )
 
-    crc_y = 264
     draw_validation_card(
         ctx,
-        card_x,
-        crc_y,
+        right_x,
+        bottom_y,
         card_width,
-        102,
+        card_height,
         12,
-        "compare CRC",
+        "iii. validate CRC",
     )
     stored_crc = int(decoding.tag.crc, 2)
-    show_text(
+    show_centered(
         ctx,
         f"calculated  {decoding.computed_crc:04X}",
-        card_x + 190,
-        crc_y + 36,
+        right_x,
+        bottom_y + 91,
+        card_width,
+        26,
         17,
         MUTED,
         mono=True,
     )
-    show_text(
+    show_centered(ctx, "=", right_x, bottom_y + 122, card_width, 20, 18, MUTED)
+    show_centered(
         ctx,
         f"stored      {stored_crc:04X}",
-        card_x + 190,
-        crc_y + 73,
+        right_x,
+        bottom_y + 149,
+        card_width,
+        26,
         17,
         INK,
         mono=True,
     )
-    draw_check(ctx, card_x + card_width - 30, crc_y + 51)
 
 
 DIAGRAMS = {
@@ -769,7 +806,7 @@ DIAGRAMS = {
     "quiet-zone-references": (1104, 445, draw_quiet_zone_references),
     "colour-sampling": (1190, 414, draw_colour_sampling),
     "orientation-palette": (1194, 322, draw_orientation_palette),
-    "validation": (1040, 398, draw_validation),
+    "validation": (1100, 520, draw_validation),
 }
 PREVIEW_DIAGRAM = "decoding-rectification"
 

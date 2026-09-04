@@ -66,10 +66,11 @@ For each un-rectified frame polygon:
 1. When strict validation is enabled, require the four reserved corner cells to have
    distinct palette values in canonical order
 1. Validate the deployed CRC when processing a 5×5 tag and validation is enabled
-   1. Convert cells to binary using the rule that the palette is ordered clockwise
-      starting at the top left with the binary values `00`, `01`, `10`, `11`.
-   1. Extract message code and CRC code.
-   1. Validate message code with CRC code.
+   <ol type="i">
+     <li>Convert cells to binary using the rule that the palette is ordered clockwise starting at the top left with the binary values <code>00</code>, <code>01</code>, <code>10</code>, <code>11</code>.</li>
+     <li>Extract message code and CRC code.</li>
+     <li>Validate message code with CRC code.</li>
+   </ol>
 
 ### Steps 1-2
 
