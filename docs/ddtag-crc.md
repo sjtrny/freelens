@@ -13,6 +13,8 @@ The patent defines grids with sizes 5x5, 7x7, 9x9, and 11x11. For a grid with wi
 The message length is `2N^2 - 4N - 6` bits. The patent says to calculate the CRC from
 this message only.
 
+![Patent layouts showing message, CRC, palette, and size cells for each grid size](./assets/ddtag-crc/patent-layout.svg)
+
 ### Polynomials and parameters
 
 The patent gives a standard CRC name for each grid size. Its table calls these names
@@ -59,6 +61,8 @@ bottom. The following table lists the zero-based cell indices in that order.
 | 9x9   | `4, 13, 22, 31, 36, 37, 38, 39, 41, 42, 43, 44, 49, 58, 67, 76`                   |
 | 11x11 | `5, 16, 27, 38, 49, 55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 71, 82, 93, 104, 115` |
 
+![Patent CRC cells numbered in matrix order and expanded into their zero-based indices](./assets/ddtag-crc/patent-crc-order.svg)
+
 The patent is less exact about the message. It says to compose the message from the
 cells that are not palette, CRC, or size cells. It does not give a separate cell order
 or say how to pack the resulting bits into bytes. A simple reading is to use the same
@@ -82,6 +86,8 @@ The twelve message cells are read by columns:
 
 Their two-bit values form the 24-bit message.
 
+![Message cells numbered in deployed column-major order](./assets/ddtag/message-order.svg)
+
 ### CRC input
 
 The CRC covers every cell outside the centre row and centre column. This includes the
@@ -99,6 +105,8 @@ The cells are read by columns in this order:
 Join the two-bit cell values to make 32 bits. Split those bits from left to right into
 four bytes. Keep the input width fixed at four bytes so that leading zero bytes are
 preserved.
+
+![Deployed CRC input cells numbered in read order and packed into four bytes](./assets/ddtag-crc/observed-crc-input.svg)
 
 The CRC parameters are:
 
@@ -127,6 +135,8 @@ cells. Store those cells in this order:
 In grid terms, this order is the left arm of the centre row, the upper arm of the centre
 column, the lower arm, and then the right arm.
 
+![Stored CRC cells numbered in arm order and concatenated into the Melbourne tag checksum](./assets/ddtag-crc/observed-crc-storage.svg)
+
 The complete check is equivalent to:
 
 ```text
@@ -137,6 +147,8 @@ calculated  = CRC(input_bytes, poly=0xC867, init=0x0000,
 stored      = join(cells[i] for i in CRC_STORAGE_INDICES)
 valid       = calculated == integer value of stored
 ```
+
+![The Melbourne tag input bytes produce the same checksum as the value stored in the tag](./assets/ddtag-crc/crc-check.svg)
 
 ### Patent and real 5x5 tags
 
