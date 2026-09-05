@@ -1636,6 +1636,28 @@
             2365
           ]
         }
+      },
+      {
+        "message": "4A00EE",
+        "conditions": [],
+        "location": {
+          "top_left": [
+            40,
+            2332
+          ],
+          "top_right": [
+            92,
+            2333
+          ],
+          "bottom_right": [
+            90,
+            2393
+          ],
+          "bottom_left": [
+            38,
+            2393
+          ]
+        }
       }
     ]
   },
