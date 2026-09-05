@@ -38,4 +38,4 @@ The registry lets a small tag identify information that can change. But the syst
 
 FreeLens operates independently of NaviLens. It provides a reference implementation to generate and detect ddTags. Developers can use it for experiments with open alternatives. It does not provide the official NaviLens registry or its content.
 
-The community image dataset helps to check detection with different lighting, devices, distances, and camera angles. Refer to the [dataset notes](../dataset/DATASET.md) for its sources and licence.
+The community image dataset helps to check detection with different lighting, devices, distances, and camera angles. Refer to the [dataset notes](./dataset.md) for its sources and licence.

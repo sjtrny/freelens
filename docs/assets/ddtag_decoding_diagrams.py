@@ -48,6 +48,8 @@ from docs.assets.ddtag_detection_diagrams import (  # noqa: E402
 )
 from docs.assets.ddtag_diagrams import (  # noqa: E402
     MIN_ARROW_LENGTH,
+    STEP_BADGE_SIZE,
+    STEP_LABEL_GAP,
     draw_step_title,
     layout_content,
     mono_font,
@@ -212,7 +214,7 @@ def draw_rectification(ctx, width, height):
     detection = load_stages()
     decoding = load_decoding_stages()
     panel_size = 390
-    panel_y = 58
+    panel_y = 70
     left_x = CONTENT_PADDING
     right_x = width - CONTENT_PADDING - panel_size
     detail = detection.image.crop(DETAIL_CROP)
@@ -221,6 +223,7 @@ def draw_rectification(ctx, width, height):
     draw_step_title(ctx, 2, "rectify to square", right_x, 17, panel_size)
 
     draw_image(ctx, detail, left_x, panel_y, panel_size)
+    draw_image(ctx, decoding.rectified, right_x, panel_y, panel_size)
 
     source_points = [
         map_point(point, left_x, panel_y, panel_size, DETAIL_CROP)
@@ -234,10 +237,10 @@ def draw_rectification(ctx, width, height):
         (right_x + frame_inset, panel_y + panel_size - frame_inset),
     )
 
+    # Keep every corner mapping visible over both images.
     for source, target in zip(source_points, target_points, strict=True):
         draw_projection_line(ctx, source, target)
 
-    draw_image(ctx, decoding.rectified, right_x, panel_y, panel_size)
     draw_path(
         ctx,
         detection.frame_polygon,
@@ -330,7 +333,7 @@ def draw_reference_chip(ctx, x, y, colour, name, values, highlight):
 def draw_quiet_zone_references(ctx, width, height):
     decoding = load_decoding_stages()
     panel_size = 300
-    panel_y = 62
+    panel_y = 74
     panel_xs = (32, 402, 772)
 
     draw_step_title(ctx, 2, "rectified frame", panel_xs[0], 18, panel_size)
@@ -346,7 +349,7 @@ def draw_quiet_zone_references(ctx, width, height):
     draw_reference_chip(
         ctx,
         panel_xs[1] - 18,
-        374,
+        panel_y + panel_size + 12,
         colour_from_sample(decoding.white),
         "white",
         decoding.white,
@@ -355,7 +358,7 @@ def draw_quiet_zone_references(ctx, width, height):
     draw_reference_chip(
         ctx,
         panel_xs[1] + 170,
-        374,
+        panel_y + panel_size + 12,
         colour_from_sample(decoding.black),
         "black",
         decoding.black,
@@ -607,8 +610,8 @@ def draw_validation_card(ctx, x, y, width, height, step, title):
     fill_round_rect(ctx, x, y, width, height, 14, WHITE)
     stroke_round_rect(ctx, x, y, width, height, 14, LINE, 1.5)
     regular_font(ctx, 18)
-    title_width = ctx.text_extents(title).x_advance
-    group_width = 28 + 10 + title_width
+    title_width = ctx.text_extents(title).width
+    group_width = STEP_BADGE_SIZE + STEP_LABEL_GAP + title_width
     draw_step_title(
         ctx,
         step,
@@ -645,7 +648,7 @@ def draw_validation(ctx, width, height):
     grid_y = (height - grid_size) / 2
     card_x = grid_x + grid_size + 14 + MIN_ARROW_LENGTH + 14
     card_width = width - CONTENT_PADDING - card_x
-    card_heights = (106, 106, 154, 106)
+    card_heights = (118, 118, 166, 118)
     card_gap = 16
     card_ys = tuple(
         CONTENT_PADDING + sum(card_heights[:index]) + index * card_gap
@@ -676,7 +679,7 @@ def draw_validation(ctx, width, height):
     swatch_gap = 14
     swatch_group = 4 * swatch + 3 * swatch_gap
     swatch_x = card_x + (card_width - swatch_group) / 2
-    swatch_y = card_ys[0] + 58
+    swatch_y = card_ys[0] + 70
     for index, colour in enumerate(CELL_COLOURS):
         x = swatch_x + index * (swatch + swatch_gap)
         fill_rect(ctx, x, swatch_y, swatch, swatch, colour)
@@ -690,7 +693,7 @@ def draw_validation(ctx, width, height):
         12,
         "i. convert cells to binary",
     )
-    swatch_y = card_ys[1] + 58
+    swatch_y = card_ys[1] + 70
     for index, (bits, colour) in enumerate(zip(BIT_VALUES, CELL_COLOURS, strict=True)):
         x = swatch_x + index * (swatch + swatch_gap)
         fill_rect(ctx, x, swatch_y, swatch, swatch, colour)
@@ -732,7 +735,7 @@ def draw_validation(ctx, width, height):
             grouped,
             hex_value,
             card_x,
-            card_ys[2] + 56 + index * 29,
+            card_ys[2] + 68 + index * 29,
             card_width,
         )
 
@@ -750,7 +753,7 @@ def draw_validation(ctx, width, height):
         ctx,
         f"calculated {decoding.computed_crc:04X} = stored {stored_crc:04X}",
         card_x,
-        card_ys[3] + 61,
+        card_ys[3] + 73,
         card_width,
         24,
         17,
@@ -760,12 +763,12 @@ def draw_validation(ctx, width, height):
 
 
 DIAGRAMS = {
-    "decoding-rectification": (1040, 480, draw_rectification),
-    "quiet-zone-references": (1104, 445, draw_quiet_zone_references),
+    "decoding-rectification": (1040, 492, draw_rectification),
+    "quiet-zone-references": (1104, 457, draw_quiet_zone_references),
     "colour-sampling": (1202, 420, draw_colour_sampling),
     "grid-orientation": (984, 408, draw_grid_orientation),
     "orientation-palette": (654, 368, draw_orientation_palette),
-    "validation": (1170, 584, draw_validation),
+    "validation": (1170, 632, draw_validation),
 }
 PREVIEW_DIAGRAM = "decoding-rectification"
 

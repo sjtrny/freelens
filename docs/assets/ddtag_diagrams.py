@@ -40,6 +40,8 @@ MIN_LABEL_SIZE = 18
 # Match image-processing.svg: a 38-pixel line with a 10-pixel arrowhead.
 MIN_ARROW_SHAFT_LENGTH = 28
 MIN_ARROW_LENGTH = MIN_ARROW_SHAFT_LENGTH + 10
+STEP_BADGE_SIZE = 40
+STEP_LABEL_GAP = 12
 
 
 def rgb(value):
@@ -137,9 +139,15 @@ def show_centered(
     ctx.show_text(value)
 
 
-def draw_step_badge(ctx, step, x, y, *, width=28):
+def step_badge_width(ctx, step):
+    mono_font(ctx, 18, bold=True)
+    return max(STEP_BADGE_SIZE, math.ceil(ctx.text_extents(str(step)).width + 20))
+
+
+def draw_step_badge(ctx, step, x, y, *, width=None):
     """Draw a procedure step separately from cell indices and sample counts."""
-    height = 28
+    height = STEP_BADGE_SIZE
+    width = max(step_badge_width(ctx, step), width or 0)
     rounded_rect(ctx, x, y, width, height, height / 2)
     set_source(ctx, BLUE)
     ctx.fill()
@@ -147,8 +155,19 @@ def draw_step_badge(ctx, step, x, y, *, width=28):
 
 
 def draw_step_title(ctx, step, label, x, y, width, *, size=18):
+    badge_width = step_badge_width(ctx, step)
     draw_step_badge(ctx, step, x, y)
-    show_text(ctx, label, x + 38, y + 21, size)
+    regular_font(ctx, size)
+    label_width = ctx.text_extents(label).width
+    show_centered(
+        ctx,
+        label,
+        x + badge_width + STEP_LABEL_GAP,
+        y,
+        label_width,
+        STEP_BADGE_SIZE,
+        size,
+    )
 
 
 def draw_background(ctx, width, height, *, border=True):
