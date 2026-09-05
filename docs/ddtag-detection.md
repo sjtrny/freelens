@@ -19,7 +19,7 @@ The FreeLens `detect_frames` function uses an adapted method:
    - A convex shape
    - A roughly square shape, as measured by the perimeter-to-area test
 
-### Steps 1–3
+### Steps 1–2
 
 ![The photograph becomes a greyscale image and then a binary image through local adaptive thresholding](./assets/ddtag-detection/image-processing.svg)
 
@@ -31,13 +31,13 @@ Adaptive thresholding can produce many small contours. Polygon fitting and perim
 
 The function keeps contours with four or more points and a minimum bounding-box area of 1,500 px². A polygon with four vertices must have four or more contour points. Its area cannot be greater than the area of the contour's bounding box.
 
-### Step 5
+### Steps 4–5
 
 ![The detector fits a four-vertex polygon to the sampled contour](./assets/ddtag-detection/polygon-fitting.svg)
 
 The initial contour checks do not fully check the polygon shape. The polygon filters must also check the vertex count, area, convexity, and shape.
 
-### Step 6
+### Steps 5–6
 
 ![The four polygon filters reduce the candidates to one possible frame](./assets/ddtag-detection/frame-filters.svg)
 

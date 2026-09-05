@@ -37,6 +37,9 @@ MESSAGE_BITS = f"{int(MESSAGE_HEX, 16):024b}"
 EXAMPLE_TAG = Tag.from_message(MESSAGE_BITS, n=5)
 CONTENT_PADDING = 32
 MIN_LABEL_SIZE = 18
+# Match image-processing.svg: a 38-pixel line with a 10-pixel arrowhead.
+MIN_ARROW_SHAFT_LENGTH = 28
+MIN_ARROW_LENGTH = MIN_ARROW_SHAFT_LENGTH + 10
 
 
 def rgb(value):
@@ -119,9 +122,11 @@ def show_text(ctx, value, x, baseline, size, colour=INK, *, mono=False, bold=Fal
     ctx.show_text(value)
 
 
-def show_centered(ctx, value, x, y, width, height, size, colour=INK, *, mono=False):
+def show_centered(
+    ctx, value, x, y, width, height, size, colour=INK, *, mono=False, bold=False
+):
     if mono:
-        mono_font(ctx, size)
+        mono_font(ctx, size, bold)
     else:
         regular_font(ctx, size)
     extents = ctx.text_extents(value)
@@ -130,6 +135,20 @@ def show_centered(ctx, value, x, y, width, height, size, colour=INK, *, mono=Fal
     set_source(ctx, colour)
     ctx.move_to(text_x, text_y)
     ctx.show_text(value)
+
+
+def draw_step_badge(ctx, step, x, y, *, width=28):
+    """Draw a procedure step separately from cell indices and sample counts."""
+    height = 28
+    rounded_rect(ctx, x, y, width, height, height / 2)
+    set_source(ctx, BLUE)
+    ctx.fill()
+    show_centered(ctx, str(step), x, y, width, height, 18, WHITE, mono=True, bold=True)
+
+
+def draw_step_title(ctx, step, label, x, y, width, *, size=18):
+    draw_step_badge(ctx, step, x, y)
+    show_text(ctx, label, x + 38, y + 21, size)
 
 
 def draw_background(ctx, width, height, *, border=True):
@@ -510,9 +529,11 @@ def layout_diagram(name):
 
 
 def render_diagram(surface_factory, name, layout=None):
+    if layout is None:
+        layout = layout_diagram(name)
     return render_layout(
         surface_factory,
-        layout if layout is not None else layout_diagram(name),
+        layout,
         border=name not in BORDERLESS_DIAGRAMS,
     )
 

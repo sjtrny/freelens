@@ -46,7 +46,13 @@ from docs.assets.ddtag_detection_diagrams import (  # noqa: E402
     show_text,
     stroke_round_rect,
 )
-from docs.assets.ddtag_diagrams import layout_content, render_layout  # noqa: E402
+from docs.assets.ddtag_diagrams import (  # noqa: E402
+    MIN_ARROW_LENGTH,
+    draw_step_title,
+    layout_content,
+    mono_font,
+    render_layout,
+)
 from freelens import (  # noqa: E402
     _correct_colours,
     _decode_sampled_cells,
@@ -181,33 +187,6 @@ def fill_rect(ctx, x, y, width, height, colour, alpha=1.0):
 
 def colour_from_sample(sample):
     return tuple(float(channel) / 255 for channel in sample)
-
-
-def draw_step_title(ctx, step, label, x, y, width, *, size=18):
-    badge_size = 28
-    badge_x = x
-    fill_round_rect(
-        ctx,
-        badge_x,
-        y,
-        badge_size,
-        badge_size,
-        badge_size / 2,
-        BLUE,
-    )
-    show_centered(
-        ctx,
-        str(step),
-        badge_x,
-        y,
-        badge_size,
-        badge_size,
-        14,
-        WHITE,
-        mono=True,
-        bold=True,
-    )
-    show_text(ctx, label, badge_x + badge_size + 10, y + 21, size)
 
 
 def draw_numbered_vertex(ctx, x, y, number):
@@ -486,9 +465,10 @@ def draw_colour_sampling(ctx, width, height):
     panel_size = 280
     panel_y = 72
     sample_x = 32
-    sample_width = 426
-    corrected_x = 528
-    lab_x = 878
+    sample_size = 180
+    sample_width = 2 * (12 + sample_size + 8) + MIN_ARROW_LENGTH
+    corrected_x = sample_x + sample_width + 70
+    lab_x = corrected_x + panel_size + 70
 
     draw_step_title(ctx, 5, "sample cell centres", sample_x, 20, sample_width)
     draw_step_title(ctx, 6, "map RGB range", corrected_x, 20, panel_size)
@@ -496,7 +476,6 @@ def draw_colour_sampling(ctx, width, height):
 
     fill_round_rect(ctx, sample_x, panel_y, sample_width, panel_size, 12, WHITE)
     stroke_round_rect(ctx, sample_x, panel_y, sample_width, panel_size, 12, LINE, 1.5)
-    sample_size = 180
     frame_x = sample_x + 12
     grid_x = sample_x + sample_width - sample_size - 12
     image_y = panel_y + 58
@@ -641,12 +620,30 @@ def draw_validation_card(ctx, x, y, width, height, step, title):
     )
 
 
+def draw_binary_conversion(ctx, label, bits, hex_value, x, y, width):
+    """Centre the binary value, connector and hex value as one group."""
+    size = 18
+    height = 24
+    gap = 12
+    value = f"{label}: {bits}"
+    mono_font(ctx, size)
+    value_width = ctx.text_extents(value).width
+    hex_width = ctx.text_extents(hex_value).width
+    group_width = value_width + 2 * gap + MIN_ARROW_LENGTH + hex_width
+    value_x = x + (width - group_width) / 2
+    arrow_x = value_x + value_width + gap
+    hex_x = arrow_x + MIN_ARROW_LENGTH + gap
+    show_centered(ctx, value, value_x, y, value_width, height, size, INK, mono=True)
+    draw_arrow(ctx, arrow_x, arrow_x + MIN_ARROW_LENGTH, y + height / 2, INK, 2)
+    show_centered(ctx, hex_value, hex_x, y, hex_width, height, size, INK, mono=True)
+
+
 def draw_validation(ctx, width, height):
     decoding = load_decoding_stages()
     grid_size = 300
     grid_x = CONTENT_PADDING
     grid_y = (height - grid_size) / 2
-    card_x = 388
+    card_x = grid_x + grid_size + 14 + MIN_ARROW_LENGTH + 14
     card_width = width - CONTENT_PADDING - card_x
     card_heights = (106, 106, 154, 106)
     card_gap = 16
@@ -729,16 +726,14 @@ def draw_validation(ctx, width, height):
         grouped = " ".join(
             bits[offset : offset + 8] for offset in range(0, len(bits), 8)
         )
-        show_centered(
+        draw_binary_conversion(
             ctx,
-            f"{label}: {grouped} → {hex_value}",
+            label,
+            grouped,
+            hex_value,
             card_x,
             card_ys[2] + 56 + index * 29,
             card_width,
-            24,
-            18,
-            INK,
-            mono=True,
         )
 
     draw_validation_card(
@@ -767,17 +762,18 @@ def draw_validation(ctx, width, height):
 DIAGRAMS = {
     "decoding-rectification": (1040, 480, draw_rectification),
     "quiet-zone-references": (1104, 445, draw_quiet_zone_references),
-    "colour-sampling": (1190, 420, draw_colour_sampling),
+    "colour-sampling": (1202, 420, draw_colour_sampling),
     "grid-orientation": (984, 408, draw_grid_orientation),
     "orientation-palette": (654, 368, draw_orientation_palette),
-    "validation": (1160, 584, draw_validation),
+    "validation": (1170, 584, draw_validation),
 }
 PREVIEW_DIAGRAM = "decoding-rectification"
 
 
 def render_diagram(surface_factory, name):
     width, height, drawer = DIAGRAMS[name]
-    return render_layout(surface_factory, layout_content(drawer, width, height))
+    layout = layout_content(drawer, width, height)
+    return render_layout(surface_factory, layout)
 
 
 def draw(surface_factory, width, height):

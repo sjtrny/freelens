@@ -21,6 +21,7 @@ from docs.assets.ddtag_diagrams import (
     CELL_COLOURS,
     INK,
     LINE,
+    MIN_ARROW_LENGTH,
     MUTED,
     ORANGE,
     PALE,
@@ -28,6 +29,8 @@ from docs.assets.ddtag_diagrams import (
     draw_arrow,
     draw_background,
     draw_message_order,
+    draw_step_badge,
+    draw_step_title,
     fill_rect,
     layout_content,
     mono_font,
@@ -404,6 +407,27 @@ def draw_observed_input(ctx, width, height):
         )
 
 
+def draw_numbered_value(ctx, step, value, x, y, width, height, size, *, bold=False):
+    badge_width = 48 if len(str(step)) > 2 else 28
+    mono_font(ctx, size, bold)
+    text_width = ctx.text_extents(value).width
+    group_width = badge_width + 12 + text_width
+    group_x = x + (width - group_width) / 2
+    draw_step_badge(ctx, step, group_x, y + (height - 28) / 2, width=badge_width)
+    show_centered_text(
+        ctx,
+        value,
+        group_x + badge_width + 12,
+        y,
+        text_width,
+        height,
+        size,
+        INK,
+        mono=True,
+        bold=bold,
+    )
+
+
 def draw_observed_storage(ctx, width, height):
     storage_indices = tuple(get_crc_inds(5))
     pairs = tuple(MELBOURNE_CELLS[index] for index in storage_indices)
@@ -413,7 +437,7 @@ def draw_observed_storage(ctx, width, height):
     grid_x = 32
     grid_y = 76
     grid_size = 270
-    show_centered(ctx, "zero-based cell indices", grid_x, 32, grid_size, 26, 19)
+    draw_step_title(ctx, 1, "zero-based cell indices", grid_x, 32, grid_size)
     draw_grid(
         ctx,
         5,
@@ -435,7 +459,7 @@ def draw_observed_storage(ctx, width, height):
     cells_y = 76
     bits_y = 138
     label_x = ribbon_x - 66
-    arrow_y = (cells_y + chip + bits_y) / 2
+    arrow_y = cells_y + chip / 2
 
     draw_arrow(
         ctx,
@@ -447,6 +471,7 @@ def draw_observed_storage(ctx, width, height):
         2.5,
     )
     show_centered(ctx, "cell", label_x, cells_y, 54, chip, 15, MUTED)
+    draw_step_badge(ctx, 2, label_x - 38, bits_y + (chip - 28) / 2)
     show_centered(ctx, "bits", label_x, bits_y, 54, chip, 15, MUTED)
 
     for position, (cell_index, bits) in enumerate(
@@ -485,21 +510,34 @@ def draw_observed_storage(ctx, width, height):
             MUTED,
         )
 
-    draw_arrow(ctx, center_x, 196, center_x, 220, MUTED, 2)
-    show_centered(
-        ctx, grouped_bits, ribbon_x, 234, ribbon_width, 26, 18, INK, mono=True
-    )
-    draw_arrow(ctx, center_x, 274, center_x, 298, MUTED, 2)
-    show_centered_text(
+    binary_arrow_y = bits_y + chip + 14
+    binary_y = binary_arrow_y + MIN_ARROW_LENGTH + 14
+    crc_arrow_y = binary_y + 28 + 12
+    crc_y = crc_arrow_y + MIN_ARROW_LENGTH + 16
+    draw_arrow(
         ctx,
+        center_x,
+        binary_arrow_y,
+        center_x,
+        binary_arrow_y + MIN_ARROW_LENGTH,
+        MUTED,
+        2,
+    )
+    draw_numbered_value(
+        ctx, "3–4", grouped_bits, ribbon_x, binary_y, ribbon_width, 28, 18
+    )
+    draw_arrow(
+        ctx, center_x, crc_arrow_y, center_x, crc_arrow_y + MIN_ARROW_LENGTH, MUTED, 2
+    )
+    draw_numbered_value(
+        ctx,
+        5,
         f"CRC 0x{crc_value:04X}",
         ribbon_x,
-        314,
+        crc_y,
         ribbon_width,
         32,
         25,
-        INK,
-        mono=True,
         bold=True,
     )
 
@@ -509,14 +547,15 @@ DIAGRAMS = {
     "patent-crc-order": (890, 326, draw_patent_order),
     "message-order": (1200, 500, partial(draw_message_order, tag=MELBOURNE_TAG)),
     "observed-crc-input": (1100, 436, draw_observed_input),
-    "observed-crc-storage": (920, 378, draw_observed_storage),
+    "observed-crc-storage": (920, 406, draw_observed_storage),
 }
 PREVIEW_DIAGRAM = "patent-layout"
 
 
 def render_diagram(surface_factory, name):
     width, height, drawer = DIAGRAMS[name]
-    return render_layout(surface_factory, layout_content(drawer, width, height))
+    layout = layout_content(drawer, width, height)
+    return render_layout(surface_factory, layout)
 
 
 def draw(surface_factory, width, height):

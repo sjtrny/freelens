@@ -40,6 +40,8 @@ Use Simplified Technical English with Australian English spelling. Keep technica
 
 Use `5×5`, `7×7`, `9×9`, and `11×11` for grid sizes in prose and diagram labels. Use "read positions" for a sequence that starts at 1. Use "cell indices" for grid positions that start at 0.
 
+For a diagram that shows procedure steps, use blue number badges that agree with the numbered instructions. Keep these badges separate from cell indices and sample counts. Do not assign a step number to a source image or a layout illustration.
+
 The diagram generators are in `docs/assets/`. They use the Cairo Visuals project and its Atkinson Hyperlegible font. To regenerate the diagrams, set `PYTHONPATH` to your Cairo Visuals checkout. For example:
 
 ```bash
@@ -47,6 +49,8 @@ PYTHONPATH=/path/to/cairo-visuals python docs/assets/ddtag_crc_diagrams.py
 ```
 
 Use square corners for tags and cells. Keep figure backgrounds within their borders. Use a 32-pixel content margin around each figure. Use a minimum font size of 18 pixels for bit labels and binary values. Check that all text is readable at its displayed size.
+
+Use the arrows in `image-processing.svg` as the minimum: 38 pixels from tail to tip, with 28 pixels of shaft before the arrowhead. For larger heads or arrows with two heads, keep at least 28 pixels of shaft outside the heads. Increase the space between components to fit the arrows.
 
 ## Dataset
 

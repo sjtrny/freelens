@@ -110,7 +110,9 @@ The arm order is left (`10, 11`), upper (`2, 7`), lower (`17, 22`), then right (
 
 For the [example Melbourne tag](../dataset/images/0017.jpg), the eight cells contain `11 11 11 11 11 11 00 10`. The binary number is `1111111111110010`. This number is `0xFFF2` in hexadecimal.
 
-![The CRC cells supply two-bit values. The arrows show the conversion to the binary number and the hexadecimal CRC 0xFFF2.](./assets/ddtag-crc/observed-crc-storage.svg)
+The blue badges identify the procedure steps. The numbers in the grid are cell indices.
+
+![Steps 1–2 select the CRC cells and convert their colours to bits. Steps 3–5 form the binary number and hexadecimal CRC 0xFFF2.](./assets/ddtag-crc/observed-crc-storage.svg)
 
 ## Examples
 

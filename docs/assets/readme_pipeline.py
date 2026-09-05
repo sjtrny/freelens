@@ -2,7 +2,7 @@
 
 The diagram is intentionally data-driven: it rectifies the reviewed corners from
 ``dataset/evaluation.json`` and regenerates the same tag with
-``Tag.from_message``. Render it at 1920 x 820 from the repository checkout.
+``Tag.from_message``. Render it at ``WIDTH`` × ``HEIGHT`` from the repository checkout.
 """
 
 from __future__ import annotations
@@ -20,6 +20,7 @@ from PIL import Image
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from docs.assets.ddtag_diagrams import MIN_ARROW_SHAFT_LENGTH  # noqa: E402
 from freelens import Tag  # noqa: E402
 from scripts.tag_editor import _perspective_coefficients  # noqa: E402
 
@@ -28,8 +29,9 @@ try:
 except ImportError as error:  # pragma: no cover - supplied by Cairo Visuals
     raise RuntimeError("Render this diagram with the cairo-visuals project") from error
 
-WIDTH = 1920
 HEIGHT = 680
+ARROW_HEAD_LENGTH = 11
+ARROW_LENGTH = MIN_ARROW_SHAFT_LENGTH + ARROW_HEAD_LENGTH
 
 PHOTO_X = 52
 PHOTO_Y = 72
@@ -40,13 +42,14 @@ RECTIFIED_X = 750
 RECTIFIED_Y = 183
 TAG_SIZE = 315
 
-GENERATED_X = 1150
+GENERATED_X = RECTIFIED_X + TAG_SIZE + 24 + ARROW_LENGTH + 24
 GENERATED_Y = RECTIFIED_Y
 
-DATA_X = 1530
+DATA_X = GENERATED_X + TAG_SIZE + 18 + ARROW_LENGTH + 18
 DATA_Y = RECTIFIED_Y
 DATA_W = 338
 DATA_H = TAG_SIZE
+WIDTH = DATA_X + DATA_W + 52
 
 SAMPLE_INDEX = 2
 LOCATION_KEYS = ("top_left", "top_right", "bottom_right", "bottom_left")
@@ -251,9 +254,9 @@ def draw_arrow(ctx, start, end, y):
     ctx.set_line_cap(cairo.LINE_CAP_ROUND)
     ctx.stroke()
 
-    ctx.move_to(end - 11, y - 8)
+    ctx.move_to(end - ARROW_HEAD_LENGTH, y - 8)
     ctx.line_to(end, y)
-    ctx.line_to(end - 11, y + 8)
+    ctx.line_to(end - ARROW_HEAD_LENGTH, y + 8)
     set_source(ctx, INK, 0.72)
     ctx.set_line_width(4)
     ctx.stroke()
