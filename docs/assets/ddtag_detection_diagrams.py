@@ -340,7 +340,7 @@ def draw_vertices(ctx, points, panel_x, panel_y, panel_size, *, crop=None):
 def draw_image_processing(ctx, width, height):
     stages = load_stages()
     panel_size = 310
-    panel_y = 64
+    panel_y = 76
     panel_xs = (32, 404, 776)
     labels = ((None, "source image"), (1, "greyscale"), (2, "adaptive threshold"))
     images = (
@@ -351,7 +351,7 @@ def draw_image_processing(ctx, width, height):
 
     for x, (step, label), image in zip(panel_xs, labels, images, strict=True):
         if step is None:
-            show_text(ctx, label, x, 44, 18)
+            show_text(ctx, label, x, 50, 18)
         else:
             draw_step_title(ctx, step, label, x, 23, panel_size)
         draw_image(ctx, image, x, panel_y, panel_size)
@@ -364,7 +364,7 @@ def draw_image_processing(ctx, width, height):
 def draw_contour_candidates(ctx, width, height):
     stages = load_stages()
     panel_size = 360
-    panel_y = 76
+    panel_y = 88
     left_x = 32
     right_x = width - CONTENT_PADDING - panel_size
     raw = contour_image(stages.contours, CYAN, 3)
@@ -425,7 +425,7 @@ def draw_contour_candidates(ctx, width, height):
 def draw_polygon_fitting(ctx, width, height):
     stages = load_stages()
     panel_size = 380
-    panel_y = 66
+    panel_y = 78
     left_x = 32
     right_x = width - CONTENT_PADDING - panel_size
     detail = stages.image.crop(DETAIL_CROP)
@@ -515,7 +515,7 @@ def draw_filter_row(ctx, x, y, width, label, count, *, divider=True):
 def draw_frame_filters(ctx, width, height):
     stages = load_stages()
     panel_size = 320
-    panel_y = 68
+    panel_y = 80
     left_x = 32
     filter_x = left_x + panel_size + 10 + MIN_ARROW_LENGTH + 10
     filter_width = 356
@@ -572,7 +572,7 @@ def draw_frame_filters(ctx, width, height):
         panel_size,
     )
 
-    card_y = 70
+    card_y = panel_y + 2
     card_height = 316
     fill_round_rect(ctx, filter_x, card_y, filter_width, card_height, 16, WHITE)
     stroke_round_rect(ctx, filter_x, card_y, filter_width, card_height, 16, LINE, 1.5)
@@ -599,10 +599,10 @@ def draw_frame_filters(ctx, width, height):
 
 
 DIAGRAMS = {
-    "image-processing": (1118, 406, draw_image_processing),
-    "contour-candidates": (1068, 489, draw_contour_candidates),
-    "polygon-fitting": (940, 478, draw_polygon_fitting),
-    "frame-filters": (1176, 420, draw_frame_filters),
+    "image-processing": (1118, 418, draw_image_processing),
+    "contour-candidates": (1068, 501, draw_contour_candidates),
+    "polygon-fitting": (940, 490, draw_polygon_fitting),
+    "frame-filters": (1176, 432, draw_frame_filters),
 }
 PREVIEW_DIAGRAM = "image-processing"
 

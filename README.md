@@ -15,7 +15,8 @@ This project provides a reference implementation of [NaviLens](https://www.navil
 - [ddTag detection](./docs/ddtag-detection.md)
 - [CRCs in ddTags](./docs/ddtag-crc.md)
 - [Testing NaviLens code PDFs](./docs/testing-navilens-codes.md)
-- [Tag editor](./dataset/DATASET.md#tag-editor)
+- [Dataset](./docs/dataset.md)
+- [Tag editor](./docs/tag-editor.md)
 - [Development](./docs/development.md)
 
 ## Quick start
