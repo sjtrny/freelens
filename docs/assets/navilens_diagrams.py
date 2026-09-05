@@ -17,6 +17,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_DIR = Path(__file__).resolve().parent / "navilens"
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from docs.assets.ddtag_diagrams import layout_content, render_layout  # noqa: E402
 from freelens import Tag  # noqa: E402
 
 try:
@@ -369,18 +370,18 @@ def draw_registry_record(ctx, x, y, width, height):
     rounded_rect(ctx, x, y, width, height, radius)
     ctx.clip()
     fill_rect(ctx, x, y, width, header_height, PALE)
-    ctx.restore()
 
     for column_x in (x + id_width, x + id_width + owner_width):
         ctx.move_to(column_x, y)
         ctx.line_to(column_x, y + height)
-    for row_index in range(len(REGISTRY_ROWS) + 1):
+    for row_index in range(len(REGISTRY_ROWS)):
         line_y = y + header_height + row_index * row_height
         ctx.move_to(x, line_y)
         ctx.line_to(x + width, line_y)
     set_source(ctx, LINE)
     ctx.set_line_width(1.5)
     ctx.stroke()
+    ctx.restore()
 
     show_centered(ctx, "ID", x, y, id_width, header_height, 15, INK, bold=True)
     show_centered(
@@ -436,8 +437,6 @@ def draw_registry_record(ctx, x, y, width, height):
 
 
 def draw_system_overview(ctx, width, height):
-    draw_background(ctx, width, height)
-
     tag_x = 36
     tag_y = 145
     tag_size = 109
@@ -478,8 +477,6 @@ def draw_system_overview(ctx, width, height):
 
 
 def draw_namespace(ctx, width, height):
-    draw_background(ctx, width, height)
-
     start_x = 48
     gap = 12
     general_width = 190
@@ -573,22 +570,24 @@ PREVIEW_DIAGRAM = "system-overview"
 
 
 def draw(surface_factory, width, height):
-    expected_width, expected_height, drawer = DIAGRAMS[PREVIEW_DIAGRAM]
+    layout_width, layout_height, drawer = DIAGRAMS[PREVIEW_DIAGRAM]
+    layout = layout_content(drawer, layout_width, layout_height)
+    expected_width, expected_height = layout[1:3]
     if (width, height) != (expected_width, expected_height):
         raise ValueError(
             f"Render {PREVIEW_DIAGRAM!r} at {expected_width} x {expected_height} pixels"
         )
-    surface = surface_factory(width, height)
-    drawer(cairo.Context(surface), width, height)
-    return surface, width, height
+    return render_layout(surface_factory, layout)
 
 
 def render_all():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     for name, (width, height, drawer) in DIAGRAMS.items():
         output_path = OUTPUT_DIR / f"{name}.svg"
-        surface = cairo.SVGSurface(str(output_path), width, height)
-        drawer(cairo.Context(surface), width, height)
+        surface, _, _ = render_layout(
+            lambda w, h: cairo.SVGSurface(str(output_path), w, h),
+            layout_content(drawer, width, height),
+        )
         surface.finish()
         print(output_path.relative_to(PROJECT_ROOT))
 

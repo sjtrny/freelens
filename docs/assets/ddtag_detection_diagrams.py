@@ -23,6 +23,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_DIR = Path(__file__).resolve().parent / "ddtag-detection"
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from docs.assets.ddtag_diagrams import (  # noqa: E402
+    CONTENT_PADDING,
+    MIN_LABEL_SIZE,
+    layout_content,
+    render_layout,
+)
 from freelens import (  # noqa: E402
     MIN_FRAME_AREA,
     contour_filter_candidates,
@@ -43,7 +49,6 @@ except ImportError as error:  # pragma: no cover - supplied by Cairo Visuals
 SOURCE_IMAGE = PROJECT_ROOT / "dataset" / "images" / "0004.jpg"
 SOURCE_CROP = (1075, 947, 2167, 2039)
 DETAIL_CROP = (250, 240, 840, 830)
-CONTENT_PADDING = 32
 
 
 def rgb(value):
@@ -171,13 +176,13 @@ def draw_background(ctx, width, height):
 
 
 def regular_font(ctx, size):
-    set_font_from_file(ctx, DEFAULT_FONT, size)
+    set_font_from_file(ctx, DEFAULT_FONT, max(MIN_LABEL_SIZE, size))
 
 
 def mono_font(ctx, size, bold=False):
     weight = cairo.FONT_WEIGHT_BOLD if bold else cairo.FONT_WEIGHT_NORMAL
     ctx.select_font_face("DejaVu Sans Mono", cairo.FONT_SLANT_NORMAL, weight)
-    ctx.set_font_size(size)
+    ctx.set_font_size(max(MIN_LABEL_SIZE, size))
 
 
 def show_text(ctx, value, x, baseline, size, colour=INK, *, mono=False, bold=False):
@@ -335,7 +340,7 @@ def draw_image_processing(ctx, width, height):
     panel_size = 310
     panel_y = 64
     panel_xs = (32, 404, 776)
-    labels = ("image", "grayscale", "adaptive threshold")
+    labels = ("image", "greyscale", "adaptive threshold")
     images = (
         stages.image,
         image_from_array(stages.grayscale),
@@ -371,7 +376,7 @@ def draw_contour_candidates(ctx, width, height):
     draw_arrow(ctx, card_x + card_width + 10, right_x - 12, panel_y + panel_size / 2)
     fill_round_rect(ctx, card_x, card_y, card_width, card_height, 14, WHITE)
     stroke_round_rect(ctx, card_x, card_y, card_width, card_height, 14, LINE, 1.5)
-    show_centered(ctx, "at least 4 points", card_x, card_y + 20, card_width, 30, 18)
+    show_centered(ctx, "4 or more points", card_x, card_y + 20, card_width, 30, 18)
     ctx.move_to(card_x + 22, card_y + 72)
     ctx.line_to(card_x + card_width - 22, card_y + 72)
     set_source(ctx, LINE)
@@ -598,20 +603,18 @@ PREVIEW_DIAGRAM = "image-processing"
 
 def render_diagram(surface_factory, name):
     width, height, drawer = DIAGRAMS[name]
-    surface = surface_factory(width, height)
-    ctx = cairo.Context(surface)
-    draw_background(ctx, width, height)
-    drawer(ctx, width, height)
-    return surface, width, height
+    return render_layout(surface_factory, layout_content(drawer, width, height))
 
 
 def draw(surface_factory, width, height):
-    expected_width, expected_height, _ = DIAGRAMS[PREVIEW_DIAGRAM]
+    layout_width, layout_height, drawer = DIAGRAMS[PREVIEW_DIAGRAM]
+    layout = layout_content(drawer, layout_width, layout_height)
+    expected_width, expected_height = layout[1:3]
     if (width, height) != (expected_width, expected_height):
         raise ValueError(
             f"Render {PREVIEW_DIAGRAM!r} at {expected_width} x {expected_height} pixels"
         )
-    return render_diagram(surface_factory, PREVIEW_DIAGRAM)
+    return render_layout(surface_factory, layout)
 
 
 def render_all():

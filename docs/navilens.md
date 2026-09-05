@@ -1,67 +1,41 @@
 # NaviLens
 
-[NaviLens](https://www.navilens.com/) is an accessible wayfinding system that uses
-[ddTags](./ddtag.md), or "distant dense tags." These small grids of coloured cells are
-designed to be detected at greater distances, with less precise camera aim, and while
-the tag or user is in relative motion. That makes them useful on signs, stops, vehicles,
-and packaging, especially when a person cannot first see and centre a marker in the
-camera.
+[NaviLens](https://www.navilens.com/) is a wayfinding system for people with accessibility requirements. It uses [ddTags](./ddtag.md), or "distant dense tags". These tags are small grids of coloured cells.
+
+A reader can detect a ddTag from a distance without precise camera alignment. It can also detect a tag while the tag or user moves. These features help users who cannot see a marker or keep it in the centre of the camera image. Tags can identify signs, stops, vehicles, and packaging.
 
 ## Why ddTags?
 
-QR codes can contain URLs or other useful data directly, but their dense grid must be
-framed closely and resolved clearly. Scanning one on a moving vehicle is difficult, and
-finding one in the first place can be a barrier for people with visual or motor
-impairments.
+QR codes can contain web addresses or other data. The camera image must show their dense grid clearly. If the tag moves, the camera can fail to get a clear image. For users with visual or motor impairments, a QR code is not always easy to find.
 
-ddTags trade capacity for easier detection. Each cell has one of four colours and
-therefore represents two bits. After reserving cells for orientation and error
-detection, the common 5x5 tag carries a 24-bit message. Its simple, low-density pattern
-is what allows a reader to locate it under less controlled conditions. See
-[Detecting ddTags](./ddtag-detection.md) for the process used by FreeLens.
+The simpler ddTag pattern makes detection easier, but contains less data than a QR code. Each cell has one of four colours and represents two bits. The 5×5 tag contains a 24-bit message. Other cells contain the colour palette, grid size, and cyclic redundancy check (CRC). Refer to [ddTag detection](./ddtag-detection.md) for the FreeLens process.
 
 ## How NaviLens works
 
-The 24-bit message is only an identifier. NaviLens resolves that identifier using a
-hosted database:
+The 24-bit message is a tag identifier (ID), not the information for the user. NaviLens uses a remote database to find the information for each ID:
 
-![NaviLens system overview: an app detects a ddTag ID, exchanges it with the NaviLens service over the Internet, and receives information from the tag registry](./assets/navilens/system-overview.svg)
+![The app reads a ddTag ID. The NaviLens service finds the information in the tag registry and returns it to the app.](./assets/navilens/system-overview.svg)
 
-The app scans the camera image, extracts the tag ID, and sends it to the NaviLens
-service. The service looks up the information registered for that ID and returns it for
-the app to present. This lets an operator update or localise the information without
-printing a new tag. A tag on a tram, for example, can resolve to route and stop
-information that the app reads aloud.
+The app extracts the tag ID from the camera image. It sends the ID to the NaviLens service. The service returns the information registered for that ID. The app then presents this information to the user.
 
-This separation is the main difference between a ddTag and the complete NaviLens system.
-A ddTag decoder can recover the number locally; it cannot know what that number means
-without NaviLens's registry or another source containing the same mapping.
+An operator can update or translate the registered information without a new printed tag. For example, a tram tag can identify route and stop information that the app reads aloud.
+
+A ddTag decoder and the complete NaviLens system have different functions. The decoder can read the ID without a network connection. To find the information for that ID, it must use the NaviLens registry or a different source with the same records.
 
 ## A physical namespace
 
-The registry acts as a physical namespace: numbered tags stand for places, objects, or
-signs in much the same way that a domain name stands for an Internet destination. A 5x5
-tag has 2^24, or 16,777,216, possible messages, so IDs must be allocated consistently to
-prevent two deployments assigning different meanings to the same tag. Larger ddTags
-provide more IDs, but do not remove the need for a registry in this model.
+The registry assigns tag IDs to places, objects, or signs. This set of IDs is a namespace. A 5×5 tag has `2^24`, or 16,777,216, possible IDs: from 0 to 16,777,215.
 
-![Conceptual 24-bit tag namespace divided into general-purpose, personal-use, and commercial ranges, with commercial leases](./assets/navilens/namespace.svg)
+Each ID must have the same meaning in all deployments that use the registry. If not, different deployments could give different meanings to the same tag. Larger ddTags provide more IDs, but this system must still use a registry.
 
-One possible way to stretch the limited ID space would be to divide the world into
-geographic regions and reuse the same ID in places far enough apart that they cannot be
-confused. The service could then resolve the combination of tag ID and location.
+![A conceptual tag namespace has general-purpose, personal-use, and commercial ranges. The commercial range contains leases.](./assets/navilens/namespace.svg)
 
-Central resolution makes small tags capable of returning rich, changeable information,
-but it also creates a dependency on the registry operator. Access to registered tags,
-service availability, pricing, long-term stewardship, and the metadata exposed by remote
-lookups all matter when the system becomes public accessibility infrastructure. A QR
-code that embeds its content directly does not have the same service dependency.
+The diagram shows the namespace concept, not the actual allocation boundaries. One possible extension is to reuse IDs in separate geographic regions. The service could use the tag ID and location together to select a record. The regions must have sufficient distance between them to prevent ambiguity.
+
+The registry lets a small tag identify information that can change. But the system depends on the registry operator. For public accessibility services, access, availability, cost, and long-term operation are important. The data sent with each remote request is also important. A QR code with all its content in the code can operate without this type of service.
 
 ## FreeLens
 
-FreeLens is not affiliated with NaviLens. It is an understandable reference
-implementation for generating and detecting ddTags, and a starting point for experiments
-with open alternatives. It does not provide NaviLens's official tag registry or its
-registered content. The community image dataset helps test detection under the varied
-lighting, devices, distances, and perspectives that real wayfinding requires. Its
-sources and licence are recorded in the [dataset notes](../dataset/DATASET.md).
+FreeLens operates independently of NaviLens. It provides a reference implementation to generate and detect ddTags. Developers can use it for experiments with open alternatives. It does not provide the official NaviLens registry or its content.
+
+The community image dataset helps to check detection with different lighting, devices, distances, and camera angles. Refer to the [dataset notes](../dataset/DATASET.md) for its sources and licence.

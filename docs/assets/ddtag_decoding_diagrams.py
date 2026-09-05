@@ -46,12 +46,14 @@ from docs.assets.ddtag_detection_diagrams import (  # noqa: E402
     show_text,
     stroke_round_rect,
 )
+from docs.assets.ddtag_diagrams import layout_content, render_layout  # noqa: E402
 from freelens import (  # noqa: E402
     _correct_colours,
     _decode_sampled_cells,
     _rectify_frame,
     _sample_cells,
     compute_crc_5x5,
+    get_crc_input_inds,
 )
 
 N = 5
@@ -71,8 +73,6 @@ CELL_COLOURS = (
 class DecodingStages:
     rectified: Image.Image
     frame: Image.Image
-    corrected_frame: Image.Image
-    corrected_frame_lab: np.ndarray
     black: np.ndarray
     white: np.ndarray
     cells_rgb: np.ndarray
@@ -121,10 +121,6 @@ def load_decoding_stages():
     corrected_rgb = np.round(_correct_colours(cells_rgb, black, white) * 255).astype(
         np.uint8
     )
-    corrected_frame = np.round(_correct_colours(frame_rgb, black, white) * 255).astype(
-        np.uint8
-    )
-    corrected_frame_lab = cv.cvtColor(corrected_frame, cv.COLOR_RGB2Lab)
     cells_lab = cv.cvtColor(corrected_rgb, cv.COLOR_RGB2Lab)
 
     observed_corners = np.array(
@@ -155,8 +151,6 @@ def load_decoding_stages():
     return DecodingStages(
         rectified=Image.fromarray(rectified_rgba[..., :3], mode="RGB"),
         frame=Image.fromarray(frame_rgb, mode="RGB"),
-        corrected_frame=Image.fromarray(corrected_frame, mode="RGB"),
-        corrected_frame_lab=corrected_frame_lab,
         black=black,
         white=white,
         cells_rgb=cells_rgb,
@@ -244,7 +238,7 @@ def draw_rectification(ctx, width, height):
     right_x = width - CONTENT_PADDING - panel_size
     detail = detection.image.crop(DETAIL_CROP)
 
-    draw_step_title(ctx, 1, "preserve cyclic vertices", left_x, 17, panel_size)
+    draw_step_title(ctx, 1, "keep cyclic vertices", left_x, 17, panel_size)
     draw_step_title(ctx, 2, "rectify to square", right_x, 17, panel_size)
 
     draw_image(ctx, detail, left_x, panel_y, panel_size)
@@ -342,13 +336,13 @@ def draw_reference_chip(ctx, x, y, colour, name, values, highlight):
     swatch = 34
     fill_rect(ctx, x, y, swatch, swatch, colour)
     stroke_rect(ctx, x, y, swatch, swatch, highlight, 2.5)
-    show_text(ctx, name, x + 44, y + 14, 13)
+    show_text(ctx, name, x + 44, y + 16, 18)
     show_text(
         ctx,
         " ".join(str(round(value)) for value in values),
         x + 44,
-        y + 33,
-        11,
+        y + 39,
+        18,
         MUTED,
         mono=True,
     )
@@ -372,7 +366,7 @@ def draw_quiet_zone_references(ctx, width, height):
 
     draw_reference_chip(
         ctx,
-        panel_xs[1],
+        panel_xs[1] - 18,
         374,
         colour_from_sample(decoding.white),
         "white",
@@ -381,7 +375,7 @@ def draw_quiet_zone_references(ctx, width, height):
     )
     draw_reference_chip(
         ctx,
-        panel_xs[1] + 155,
+        panel_xs[1] + 170,
         374,
         colour_from_sample(decoding.black),
         "black",
@@ -491,34 +485,14 @@ def draw_colour_sampling(ctx, width, height):
     decoding = load_decoding_stages()
     panel_size = 280
     panel_y = 72
-    left_x = 32
-    middle_x = 382
-    sample_x = 732
+    sample_x = 32
     sample_width = 426
+    corrected_x = 528
+    lab_x = 878
 
-    draw_step_title(ctx, 5, "map RGB range", left_x, 20, panel_size)
-    draw_step_title(ctx, 6, "convert to CIELab", middle_x, 20, panel_size)
-    draw_step_title(ctx, 7, "sample cell centres", sample_x, 20, sample_width)
-
-    draw_image(ctx, decoding.corrected_frame, left_x, panel_y, panel_size)
-    show_centered(
-        ctx,
-        "black = 0     white = 255",
-        left_x,
-        358,
-        panel_size,
-        24,
-        14,
-        MUTED,
-        mono=True,
-    )
-    draw_lab_channels(
-        ctx,
-        decoding.corrected_frame_lab,
-        middle_x,
-        panel_y,
-        panel_size,
-    )
+    draw_step_title(ctx, 5, "sample cell centres", sample_x, 20, sample_width)
+    draw_step_title(ctx, 6, "map RGB range", corrected_x, 20, panel_size)
+    draw_step_title(ctx, 7, "convert to CIELab", lab_x, 20, panel_size)
 
     fill_round_rect(ctx, sample_x, panel_y, sample_width, panel_size, 12, WHITE)
     stroke_round_rect(ctx, sample_x, panel_y, sample_width, panel_size, 12, LINE, 1.5)
@@ -526,22 +500,34 @@ def draw_colour_sampling(ctx, width, height):
     frame_x = sample_x + 12
     grid_x = sample_x + sample_width - sample_size - 12
     image_y = panel_y + 58
-    show_centered(ctx, "frame", frame_x, panel_y + 18, sample_size, 24, 15, MUTED)
-    show_centered(
-        ctx, "7 × 7 samples", grid_x, panel_y + 18, sample_size, 24, 15, MUTED
-    )
-    draw_image(ctx, decoding.corrected_frame, frame_x, image_y, sample_size)
+    show_centered(ctx, "frame", frame_x, panel_y + 18, sample_size, 24, 18, MUTED)
+    show_centered(ctx, "7×7 samples", grid_x, panel_y + 18, sample_size, 24, 18, MUTED)
+    draw_image(ctx, decoding.frame, frame_x, image_y, sample_size)
     draw_sample_centres(ctx, frame_x, image_y, sample_size)
-    draw_sample_grid(ctx, decoding.corrected_rgb, grid_x, image_y, sample_size)
+    draw_sample_grid(ctx, decoding.cells_rgb, grid_x, image_y, sample_size)
     draw_arrow(ctx, frame_x + sample_size + 8, grid_x - 8, image_y + sample_size / 2)
 
-    center_y = panel_y + panel_size / 2
-    draw_arrow(ctx, left_x + panel_size + 12, middle_x - 12, center_y)
-    draw_arrow(ctx, middle_x + panel_size + 12, sample_x - 12, center_y)
+    draw_sample_grid(ctx, decoding.corrected_rgb, corrected_x, panel_y, panel_size)
+    show_centered(
+        ctx,
+        "black 0 · white 255",
+        corrected_x,
+        364,
+        panel_size,
+        24,
+        18,
+        MUTED,
+        mono=True,
+    )
+    draw_lab_channels(ctx, decoding.cells_lab, lab_x, panel_y, panel_size)
+
+    centre_y = panel_y + panel_size / 2
+    draw_arrow(ctx, sample_x + sample_width + 12, corrected_x - 12, centre_y)
+    draw_arrow(ctx, corrected_x + panel_size + 12, lab_x - 12, centre_y)
 
 
-def draw_grid_highlight(ctx, x, y, size, row, column, colour, line_width=4):
-    cell = size / N
+def draw_grid_highlight(ctx, x, y, size, row, column, colour, line_width=4, *, n=N):
+    cell = size / n
     stroke_rect(
         ctx,
         x + column * cell + line_width / 2,
@@ -584,53 +570,64 @@ def draw_palette_panel(ctx, oriented, x, y, size):
     stroke_rect(ctx, x, y, size, size, INK, 2)
 
 
-def draw_orientation_palette(ctx, width, height):
+def draw_grid_orientation(ctx, width, height):
     decoding = load_decoding_stages()
-    panel_size = 230
-    panel_y = 60
-    panel_xs = (32, 332, 632, 932)
-    observed = decoding.corrected_rgb[1 : N + 1, 1 : N + 1]
+    panel_size = 260
+    panel_y = 76
+    panel_xs = (32, 362, 692)
+    titles = ("find darkest corner", "rotate grid", "remove quiet zone")
+    for x, label in zip(panel_xs, titles, strict=True):
+        draw_step_title(ctx, 8, label, x, 24, panel_size)
+
+    draw_sample_grid(ctx, decoding.corrected_rgb, panel_xs[0], panel_y, panel_size)
+    corners = ((1, 1), (1, N), (N, N), (N, 1))
+    darkest = int(np.argmin([decoding.cells_lab[row, col, 0] for row, col in corners]))
+    draw_grid_highlight(
+        ctx, panel_xs[0], panel_y, panel_size, *corners[darkest], RED, 4, n=FRAME_CELLS
+    )
+    draw_sample_grid(ctx, decoding.rotated_rgb, panel_xs[1], panel_y, panel_size)
+    inset = panel_size / FRAME_CELLS
+    stroke_rect(ctx, panel_xs[1] + inset, panel_y + inset, N * inset, N * inset, RED, 3)
     oriented = decoding.rotated_rgb[1 : N + 1, 1 : N + 1]
-
-    titles = (
-        (8, "find darkest"),
-        (8, "rotate to bottom-left"),
-        (9, "read corner palette"),
-        (10, "classify cells"),
-    )
-    for x, (step, label) in zip(panel_xs, titles, strict=True):
-        draw_step_title(ctx, step, label, x, 16, panel_size, size=16)
-
-    draw_sample_grid(ctx, observed, panel_xs[0], panel_y, panel_size)
-    draw_grid_highlight(ctx, panel_xs[0], panel_y, panel_size, 4, 4, RED, 5)
-
-    draw_sample_grid(ctx, oriented, panel_xs[1], panel_y, panel_size)
-    draw_grid_highlight(ctx, panel_xs[1], panel_y, panel_size, 4, 0, RED, 5)
-
-    draw_palette_panel(ctx, oriented, panel_xs[2], panel_y, panel_size)
-    draw_class_grid(
-        ctx, decoding.classes, panel_xs[3], panel_y, panel_size, labels=True
-    )
-
-    center_y = panel_y + panel_size / 2
+    draw_sample_grid(ctx, oriented, panel_xs[2], panel_y, panel_size)
+    for x, label in zip(
+        panel_xs, ("7×7 samples", "7×7 samples", "5×5 tag cells"), strict=True
+    ):
+        show_centered(ctx, label, x, 350, panel_size, 26, 18, MUTED)
+    centre_y = panel_y + panel_size / 2
     for left_x, right_x in zip(panel_xs[:-1], panel_xs[1:], strict=True):
-        draw_arrow(ctx, left_x + panel_size + 14, right_x - 14, center_y)
+        draw_arrow(ctx, left_x + panel_size + 14, right_x - 14, centre_y)
     show_centered(
         ctx,
-        "90°",
+        f"{(-decoding.rotation * 90) % 360}°",
         panel_xs[0] + panel_size,
-        center_y - 39,
+        centre_y - 39,
         panel_xs[1] - panel_xs[0] - panel_size,
-        22,
-        15,
+        24,
+        18,
         MUTED,
     )
+
+
+def draw_orientation_palette(ctx, width, height):
+    decoding = load_decoding_stages()
+    panel_size = 260
+    panel_y = 76
+    left_x = 32
+    right_x = 362
+    oriented = decoding.rotated_rgb[1 : N + 1, 1 : N + 1]
+
+    draw_step_title(ctx, 9, "read corner palette", left_x, 24, panel_size)
+    draw_step_title(ctx, 10, "classify cells", right_x, 24, panel_size)
+    draw_palette_panel(ctx, oriented, left_x, panel_y, panel_size)
+    draw_class_grid(ctx, decoding.classes, right_x, panel_y, panel_size, labels=True)
+    draw_arrow(ctx, left_x + panel_size + 14, right_x - 14, panel_y + panel_size / 2)
 
 
 def draw_validation_card(ctx, x, y, width, height, step, title):
     fill_round_rect(ctx, x, y, width, height, 14, WHITE)
     stroke_round_rect(ctx, x, y, width, height, 14, LINE, 1.5)
-    regular_font(ctx, 17)
+    regular_font(ctx, 18)
     title_width = ctx.text_extents(title).x_advance
     group_width = 28 + 10 + title_width
     draw_step_title(
@@ -640,7 +637,7 @@ def draw_validation_card(ctx, x, y, width, height, step, title):
         x + (width - group_width) / 2,
         y + 14,
         group_width,
-        size=17,
+        size=18,
     )
 
 
@@ -651,10 +648,10 @@ def draw_validation(ctx, width, height):
     grid_y = (height - grid_size) / 2
     card_x = 388
     card_width = width - CONTENT_PADDING - card_x
-    card_height = 102
-    card_gap = 12
+    card_heights = (106, 106, 154, 106)
+    card_gap = 16
     card_ys = tuple(
-        15 + index * (card_height + card_gap)
+        CONTENT_PADDING + sum(card_heights[:index]) + index * card_gap
         for index in range(4)
     )
 
@@ -674,7 +671,7 @@ def draw_validation(ctx, width, height):
         card_x,
         card_ys[0],
         card_width,
-        card_height,
+        card_heights[0],
         11,
         "check corner order",
     )
@@ -692,7 +689,7 @@ def draw_validation(ctx, width, height):
         card_x,
         card_ys[1],
         card_width,
-        card_height,
+        card_heights[1],
         12,
         "i. convert cells to binary",
     )
@@ -718,49 +715,38 @@ def draw_validation(ctx, width, height):
         card_x,
         card_ys[2],
         card_width,
-        card_height,
+        card_heights[2],
         12,
-        "ii. extract message and CRC",
+        "ii. extract message, CRC input and stored CRC",
     )
-    grouped_message = " ".join(
-        decoding.tag.message[index : index + 8]
-        for index in range(0, len(decoding.tag.message), 8)
+    input_bits = "".join(decoding.tag.cells[index] for index in get_crc_input_inds(N))
+    rows = (
+        ("message", decoding.tag.message, f"{int(decoding.tag.message, 2):06X}"),
+        ("CRC input", input_bits, f"{int(input_bits, 2):08X}"),
+        ("stored CRC", decoding.tag.crc, f"{int(decoding.tag.crc, 2):04X}"),
     )
-    grouped_crc = " ".join(
-        decoding.tag.crc[index : index + 8]
-        for index in range(0, len(decoding.tag.crc), 8)
-    )
-    message_text = f"message: {grouped_message} → {int(decoding.tag.message, 2):06X}"
-    crc_text = f"CRC: {grouped_crc} → {int(decoding.tag.crc, 2):04X}"
-    show_centered(
-        ctx,
-        message_text,
-        card_x,
-        card_ys[2] + 53,
-        card_width,
-        18,
-        13,
-        INK,
-        mono=True,
-    )
-    show_centered(
-        ctx,
-        crc_text,
-        card_x,
-        card_ys[2] + 76,
-        card_width,
-        18,
-        13,
-        INK,
-        mono=True,
-    )
+    for index, (label, bits, hex_value) in enumerate(rows):
+        grouped = " ".join(
+            bits[offset : offset + 8] for offset in range(0, len(bits), 8)
+        )
+        show_centered(
+            ctx,
+            f"{label}: {grouped} → {hex_value}",
+            card_x,
+            card_ys[2] + 56 + index * 29,
+            card_width,
+            24,
+            18,
+            INK,
+            mono=True,
+        )
 
     draw_validation_card(
         ctx,
         card_x,
         card_ys[3],
         card_width,
-        card_height,
+        card_heights[3],
         12,
         "iii. validate CRC",
     )
@@ -781,29 +767,28 @@ def draw_validation(ctx, width, height):
 DIAGRAMS = {
     "decoding-rectification": (1040, 480, draw_rectification),
     "quiet-zone-references": (1104, 445, draw_quiet_zone_references),
-    "colour-sampling": (1190, 414, draw_colour_sampling),
-    "orientation-palette": (1194, 322, draw_orientation_palette),
-    "validation": (1040, 474, draw_validation),
+    "colour-sampling": (1190, 420, draw_colour_sampling),
+    "grid-orientation": (984, 408, draw_grid_orientation),
+    "orientation-palette": (654, 368, draw_orientation_palette),
+    "validation": (1160, 584, draw_validation),
 }
 PREVIEW_DIAGRAM = "decoding-rectification"
 
 
 def render_diagram(surface_factory, name):
     width, height, drawer = DIAGRAMS[name]
-    surface = surface_factory(width, height)
-    ctx = cairo.Context(surface)
-    draw_background(ctx, width, height)
-    drawer(ctx, width, height)
-    return surface, width, height
+    return render_layout(surface_factory, layout_content(drawer, width, height))
 
 
 def draw(surface_factory, width, height):
-    expected_width, expected_height, _ = DIAGRAMS[PREVIEW_DIAGRAM]
+    layout_width, layout_height, drawer = DIAGRAMS[PREVIEW_DIAGRAM]
+    layout = layout_content(drawer, layout_width, layout_height)
+    expected_width, expected_height = layout[1:3]
     if (width, height) != (expected_width, expected_height):
         raise ValueError(
             f"Render {PREVIEW_DIAGRAM!r} at {expected_width} x {expected_height} pixels"
         )
-    return render_diagram(surface_factory, PREVIEW_DIAGRAM)
+    return render_layout(surface_factory, layout)
 
 
 def render_all():

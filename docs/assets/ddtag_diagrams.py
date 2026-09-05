@@ -36,6 +36,7 @@ MESSAGE_HEX = "4A005C"
 MESSAGE_BITS = f"{int(MESSAGE_HEX, 16):024b}"
 EXAMPLE_TAG = Tag.from_message(MESSAGE_BITS, n=5)
 CONTENT_PADDING = 32
+MIN_LABEL_SIZE = 18
 
 
 def rgb(value):
@@ -99,13 +100,13 @@ def stroke_rect(ctx, x, y, width, height, colour, line_width=1.0, alpha=1.0):
 
 
 def regular_font(ctx, size):
-    set_font_from_file(ctx, DEFAULT_FONT, size)
+    set_font_from_file(ctx, DEFAULT_FONT, max(MIN_LABEL_SIZE, size))
 
 
 def mono_font(ctx, size, bold=False):
     weight = cairo.FONT_WEIGHT_BOLD if bold else cairo.FONT_WEIGHT_NORMAL
     ctx.select_font_face("DejaVu Sans Mono", cairo.FONT_SLANT_NORMAL, weight)
-    ctx.set_font_size(size)
+    ctx.set_font_size(max(MIN_LABEL_SIZE, size))
 
 
 def show_text(ctx, value, x, baseline, size, colour=INK, *, mono=False, bold=False):
@@ -387,18 +388,20 @@ def draw_crc(ctx, width, height):
     legend_item(ctx, 570, 345, PALE, "size cell", "excluded from the CRC")
 
 
-def draw_message_order(ctx, width, height):
+def draw_message_order(ctx, width, height, tag=EXAMPLE_TAG):
     grid_x = 70
     grid_y = 70
     cell = 70
     message_indices = get_message_inds(5)
     order = {cell_index: number for number, cell_index in enumerate(message_indices, 1)}
 
+    show_centered(ctx, "read positions (1–12)", grid_x, 24, 350, 28, 20)
+
     for index in range(25):
         row, column = divmod(index, 5)
         cell_x = grid_x + column * cell
         cell_y = grid_y + row * cell
-        bits = EXAMPLE_TAG.cells[index]
+        bits = tag.cells[index]
         colour = CELL_COLOURS[bits] if index in order else PALE
         set_source(ctx, colour)
         ctx.rectangle(cell_x, cell_y, cell - 2, cell - 2)
@@ -420,7 +423,7 @@ def draw_message_order(ctx, width, height):
 
     draw_arrow(ctx, 455, 245, 520, 245, INK, 3)
 
-    chunks = [EXAMPLE_TAG.cells[index] for index in message_indices]
+    chunks = [tag.cells[index] for index in message_indices]
     chip_x = 535
     chip_y = 175
     chip = 48
@@ -429,9 +432,9 @@ def draw_message_order(ctx, width, height):
         x = chip_x + index * (chip + gap)
         fill_rect(ctx, x, chip_y, chip, chip, CELL_COLOURS[bits])
         text_colour = WHITE if bits == "11" else INK
-        show_centered(ctx, bits, x, chip_y, chip, chip, 14, text_colour, mono=True)
+        show_centered(ctx, bits, x, chip_y, chip, chip, 22, text_colour, mono=True)
         show_centered(
-            ctx, str(index + 1), x, chip_y + 54, chip, 22, 12, MUTED, mono=True
+            ctx, str(index + 1), x, chip_y + 54, chip, 24, 20, MUTED, mono=True
         )
 
     ribbon_width = len(chunks) * chip + (len(chunks) - 1) * gap
@@ -445,8 +448,17 @@ def draw_message_order(ctx, width, height):
     ctx.move_to(chip_x + ribbon_width, 265)
     ctx.line_to(chip_x + ribbon_width, 281)
     ctx.stroke()
-    show_centered(ctx, MESSAGE_BITS, chip_x, 293, ribbon_width, 34, 18, INK, mono=True)
-    show_centered(ctx, "24 bits", chip_x, 334, ribbon_width, 28, 17, MUTED)
+    show_centered(ctx, tag.message, chip_x, 293, ribbon_width, 34, 22, INK, mono=True)
+    show_centered(
+        ctx,
+        f"24 bits · {int(tag.message, 2):06X}",
+        chip_x,
+        334,
+        ribbon_width,
+        28,
+        20,
+        MUTED,
+    )
 
 
 DIAGRAMS = {
@@ -461,13 +473,13 @@ SQUARE_DIAGRAMS = {"example"}
 BORDERLESS_DIAGRAMS = {"example"}
 
 
-def layout_diagram(name):
-    layout_width, layout_height, drawer = DIAGRAMS[name]
+def layout_content(drawer, layout_width, layout_height, *, square=False):
+    """Fit a diagram to its content with the shared margin on all four sides."""
     recording = cairo.RecordingSurface(cairo.CONTENT_COLOR_ALPHA, None)
     drawer(cairo.Context(recording), layout_width, layout_height)
     content_x, content_y, content_width, content_height = recording.ink_extents()
 
-    if name in SQUARE_DIAGRAMS:
+    if square:
         canvas_width = canvas_height = math.ceil(
             max(content_width, content_height) + 2 * CONTENT_PADDING
         )
@@ -482,16 +494,27 @@ def layout_diagram(name):
     return recording, canvas_width, canvas_height, offset_x, offset_y
 
 
-def render_diagram(surface_factory, name, layout=None):
-    if layout is None:
-        layout = layout_diagram(name)
+def render_layout(surface_factory, layout, *, border=True):
     recording, width, height, offset_x, offset_y = layout
     surface = surface_factory(width, height)
     ctx = cairo.Context(surface)
-    draw_background(ctx, width, height, border=name not in BORDERLESS_DIAGRAMS)
+    draw_background(ctx, width, height, border=border)
     ctx.set_source_surface(recording, offset_x, offset_y)
     ctx.paint()
     return surface, width, height
+
+
+def layout_diagram(name):
+    width, height, drawer = DIAGRAMS[name]
+    return layout_content(drawer, width, height, square=name in SQUARE_DIAGRAMS)
+
+
+def render_diagram(surface_factory, name, layout=None):
+    return render_layout(
+        surface_factory,
+        layout if layout is not None else layout_diagram(name),
+        border=name not in BORDERLESS_DIAGRAMS,
+    )
 
 
 def draw(surface_factory, width, height):
