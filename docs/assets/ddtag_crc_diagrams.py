@@ -161,11 +161,6 @@ def draw_palette_swatch(ctx, x, y, size):
         )
 
 
-def draw_legend_item(ctx, x, y, colour, label):
-    fill_rect(ctx, x, y, 26, 26, colour)
-    show_text(ctx, label, x + 38, y + 20, 17)
-
-
 def draw_patent_layout(ctx, width, height):
     grid_size = 176
     grid_y = 58
@@ -199,11 +194,35 @@ def draw_patent_layout(ctx, width, height):
         )
 
     legend_y = 326
-    draw_legend_item(ctx, 230, legend_y, BLUE, "message")
-    draw_legend_item(ctx, 408, legend_y, ORANGE, "CRC")
-    draw_palette_swatch(ctx, 548, legend_y, 26)
-    show_text(ctx, "palette", 586, legend_y + 20, 17)
-    draw_legend_item(ctx, 724, legend_y, PALE, "size")
+    swatch_size = 26
+    label_gap = 12
+    item_gap = 36
+    legend_items = (
+        (BLUE, "message cells"),
+        (ORANGE, "CRC cells"),
+        (None, "palette cells"),
+        (PALE, "size cell"),
+    )
+    regular_font(ctx, 17)
+    label_extents = [ctx.text_extents(label) for _, label in legend_items]
+    legend_width = sum(
+        swatch_size + label_gap + extents.width for extents in label_extents
+    ) + item_gap * (len(legend_items) - 1)
+    legend_x = (width - legend_width) / 2
+
+    for (colour, label), extents in zip(legend_items, label_extents, strict=True):
+        if colour is None:
+            draw_palette_swatch(ctx, legend_x, legend_y, swatch_size)
+        else:
+            fill_rect(ctx, legend_x, legend_y, swatch_size, swatch_size, colour)
+        show_text(
+            ctx,
+            label,
+            legend_x + swatch_size + label_gap - extents.x_bearing,
+            legend_y + 20,
+            17,
+        )
+        legend_x += swatch_size + label_gap + extents.width + item_gap
 
 
 def draw_patent_order(ctx, width, height):
@@ -212,8 +231,20 @@ def draw_patent_order(ctx, width, height):
     grid_x = 34
     grid_y = 32
     crc_indices = patent_crc_indices(n)
-    order = {cell_index: number for number, cell_index in enumerate(crc_indices, 1)}
-    label_colours = {cell_index: INK for cell_index in crc_indices}
+    colours = patent_grid_colours(n)
+    labels = {cell_index: cell_index for cell_index in range(n * n)}
+    label_colours = {}
+    for cell_index, background in enumerate(colours):
+        if cell_index in crc_indices:
+            label_colours[cell_index] = INK
+        else:
+            foreground = WHITE if background == CELL_COLOURS["11"] else INK
+            label_colours[cell_index] = tuple(
+                (text_channel + background_channel) / 2
+                for text_channel, background_channel in zip(
+                    foreground, background, strict=True
+                )
+            )
 
     draw_grid(
         ctx,
@@ -221,8 +252,8 @@ def draw_patent_order(ctx, width, height):
         grid_x,
         grid_y,
         grid_size,
-        patent_grid_colours(n),
-        order,
+        colours,
+        labels,
         label_colours,
     )
     draw_arrow(ctx, 320, height / 2, 370, height / 2, MUTED, 2.5)
@@ -230,21 +261,18 @@ def draw_patent_order(ctx, width, height):
     chip = 48
     gap = 8
     chip_x = 394
-    chip_y = 131
-    show_centered(ctx, "cell indices", chip_x, 74, 8 * chip + 7 * gap, 26, 19)
-    for ordinal, cell_index in enumerate(crc_indices, 1):
-        x = chip_x + (ordinal - 1) * (chip + gap)
-        show_centered(
-            ctx,
-            str(ordinal),
-            x,
-            chip_y - 31,
-            chip,
-            22,
-            13,
-            MUTED,
-            mono=True,
-        )
+    chip_y = (height - chip) / 2
+    show_centered(
+        ctx,
+        "zero-based cell indices",
+        chip_x,
+        chip_y - 40,
+        len(crc_indices) * chip + (len(crc_indices) - 1) * gap,
+        26,
+        19,
+    )
+    for position, cell_index in enumerate(crc_indices):
+        x = chip_x + position * (chip + gap)
         fill_rect(ctx, x, chip_y, chip, chip, ORANGE)
         show_centered_text(
             ctx,
@@ -264,14 +292,6 @@ def actual_input_colours():
     input_indices = set(get_crc_input_inds(5))
     return [
         CELL_COLOURS[MELBOURNE_CELLS[index]] if index in input_indices else PALE
-        for index in range(25)
-    ]
-
-
-def actual_storage_colours():
-    storage_indices = set(get_crc_inds(5))
-    return [
-        CELL_COLOURS[MELBOURNE_CELLS[index]] if index in storage_indices else PALE
         for index in range(25)
     ]
 
@@ -380,77 +400,98 @@ def draw_observed_input(ctx, width, height):
 
 def draw_observed_storage(ctx, width, height):
     storage_indices = tuple(get_crc_inds(5))
-    order = {cell_index: number for number, cell_index in enumerate(storage_indices, 1)}
-    grid_x = 40
-    grid_y = 48
-    grid_size = 300
-
-    show_centered(ctx, "storage order", grid_x, 14, grid_size, 25, 19)
+    pairs = tuple(MELBOURNE_CELLS[index] for index in storage_indices)
+    crc_bits = "".join(pairs)
+    crc_value = int(crc_bits, 2)
+    grouped_bits = " ".join(crc_bits[offset : offset + 4] for offset in range(0, 16, 4))
+    grid_x = 32
+    grid_y = 76
+    grid_size = 270
+    show_centered(ctx, "cell indices", grid_x, 32, grid_size, 26, 19)
     draw_grid(
         ctx,
         5,
         grid_x,
         grid_y,
         grid_size,
-        actual_storage_colours(),
-        order,
-        actual_label_colours(storage_indices),
+        [ORANGE if index in storage_indices else PALE for index in range(25)],
+        {index: index for index in range(25)},
+        {index: INK if index in storage_indices else MUTED for index in range(25)},
     )
-    draw_arrow(ctx, 366, 170, 416, 170, MUTED, 2.5)
 
-    chip = 50
-    gap = 8
-    chip_x = 442
-    chip_y = 102
-    ribbon_width = 8 * chip + 7 * gap
+    chip = 44
+    cell_gap = 6
+    arm_gap = 18
+    group_width = 2 * chip + cell_gap
+    ribbon_width = 4 * group_width + 3 * arm_gap
+    ribbon_x = 458
+    center_x = ribbon_x + ribbon_width / 2
+    cells_y = 76
+    bits_y = 138
+    label_x = ribbon_x - 66
+    arrow_y = (cells_y + chip + bits_y) / 2
 
-    for ordinal, cell_index in enumerate(storage_indices, 1):
-        x = chip_x + (ordinal - 1) * (chip + gap)
-        show_centered(
-            ctx,
-            str(ordinal),
-            x,
-            chip_y - 30,
-            chip,
-            22,
-            13,
-            MUTED,
-            mono=True,
+    draw_arrow(
+        ctx,
+        grid_x + grid_size + 18,
+        arrow_y,
+        label_x - 16,
+        arrow_y,
+        MUTED,
+        2.5,
+    )
+    show_centered(ctx, "cell", label_x, cells_y, 54, chip, 15, MUTED)
+    show_centered(ctx, "bits", label_x, bits_y, 54, chip, 15, MUTED)
+
+    for position, (cell_index, bits) in enumerate(
+        zip(storage_indices, pairs, strict=True)
+    ):
+        arm, offset = divmod(position, 2)
+        x = ribbon_x + arm * (group_width + arm_gap) + offset * (chip + cell_gap)
+        fill_rect(ctx, x, bits_y, chip, chip, WHITE)
+        stroke_rect(ctx, x, bits_y, chip, chip, LINE, 1.5)
+        show_centered_text(
+            ctx, bits, x, bits_y, chip, chip, 16, INK, mono=True, bold=True
         )
-        draw_bit_chip(ctx, MELBOURNE_CELLS[cell_index], x, chip_y, chip)
-        show_centered(
+        fill_rect(ctx, x, cells_y, chip, chip, ORANGE)
+        show_centered_text(
             ctx,
             str(cell_index),
             x,
-            chip_y + 57,
+            cells_y,
             chip,
-            20,
-            13,
-            MUTED,
+            chip,
+            16,
+            INK,
             mono=True,
+            bold=True,
         )
 
-    crc_bits = "".join(MELBOURNE_CELLS[index] for index in storage_indices)
-    grouped_crc = f"{crc_bits[:8]} {crc_bits[8:]}"
+    for arm, name in enumerate(("left", "upper", "lower", "right")):
+        show_centered(
+            ctx,
+            name,
+            ribbon_x + arm * (group_width + arm_gap),
+            32,
+            group_width,
+            26,
+            16,
+            MUTED,
+        )
+
+    draw_arrow(ctx, center_x, 196, center_x, 220, MUTED, 2)
     show_centered(
-        ctx,
-        grouped_crc,
-        chip_x,
-        218,
-        ribbon_width,
-        28,
-        18,
-        INK,
-        mono=True,
+        ctx, grouped_bits, ribbon_x, 234, ribbon_width, 26, 18, INK, mono=True
     )
+    draw_arrow(ctx, center_x, 274, center_x, 298, MUTED, 2)
     show_centered_text(
         ctx,
-        f"{int(crc_bits, 2):04X}",
-        chip_x,
-        264,
+        f"CRC 0x{crc_value:04X}",
+        ribbon_x,
+        314,
         ribbon_width,
-        38,
-        28,
+        32,
+        25,
         INK,
         mono=True,
         bold=True,
@@ -576,7 +617,7 @@ DIAGRAMS = {
     "patent-layout": (1120, 384, draw_patent_layout),
     "patent-crc-order": (890, 326, draw_patent_order),
     "observed-crc-input": (1100, 436, draw_observed_input),
-    "observed-crc-storage": (1050, 390, draw_observed_storage),
+    "observed-crc-storage": (920, 378, draw_observed_storage),
     "crc-check": (1100, 238, draw_crc_check),
 }
 PREVIEW_DIAGRAM = "patent-layout"

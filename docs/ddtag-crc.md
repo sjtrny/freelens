@@ -1,30 +1,28 @@
 # CRCs in ddTags
 
-## Patent CRC
+## Patent CRC description
 
-The patent defines grids with sizes 5x5, 7x7, 9x9, and 11x11. For a grid with width `N`:
+The patent gives this cell layout for a grid with width `N`:
 
-- the centre row and centre column hold the CRC, except for the centre cell;
-- the CRC uses `2N - 2` cells and therefore contains `4N - 4` bits;
-- the four corners hold the palette;
-- the centre cell holds the grid size; and
-- all remaining cells form the message.
+- The center row and center column contain the CRC, except for the center cell.
+- The CRC uses `2N - 2` cells and contains `4N - 4` bits.
+- The four corner cells contain the palette colors.
+- The center cell contains the grid size.
+- All other cells contain the message.
 
-The message length is `2N^2 - 4N - 6` bits. The patent says to calculate the CRC from
-this message only.
+The message contains `2N^2 - 4N - 6` bits. The patent gives a CRC calculation that uses only this message.
 
-![Patent layouts showing message, CRC, palette, and size cells for each grid size](./assets/ddtag-crc/patent-layout.svg)
+The patent gives the CRC cell order, but the message cell order is not clear. It also does not give a method to convert the message bits into bytes. Row-by-row order is possible, but the patent does not give this instruction.
+
+![The four grid layouts identify the message cells, CRC cells, palette cells, and size cell.](./assets/ddtag-crc/patent-layout.svg)
 
 ### Polynomials and parameters
 
-The patent gives a standard CRC name for each grid size. Its table calls these names
-"CRC polynomials", but does not list the initial value, final XOR, or reflection
-settings. Interpreting each name as the standard CRC model gives the following
-parameters. `check` is the CRC of the ASCII bytes `123456789` and is included to remove
-any ambiguity.
+The patent gives a CRC name for each grid size. It uses the heading "CRC polynomials" for these names. It does not give the initial value, final XOR, or reflection settings.
 
-All four models use `refin=false` and `refout=false`, so each input byte is processed
-most-significant bit first.
+The table below uses the standard CRC model for each name. The `check` value gives the CRC of the ASCII bytes `123456789` for comparison.
+
+All four models use `refin=false` and `refout=false`. Each model processes the most-significant bit of each input byte first.
 
 | Grid  |  Message |     CRC | Patent name     |         `poly` |         `init` |       `xorout` |        `check` |
 | ----- | -------: | ------: | --------------- | -------------: | -------------: | -------------: | -------------: |
@@ -33,12 +31,11 @@ most-significant bit first.
 | 9x9   | 120 bits | 32 bits | CRC-32Q         |   `0x814141AB` |   `0x00000000` |   `0x00000000` |   `0x3010BF7F` |
 | 11x11 | 192 bits | 40 bits | CRC-40-GSM      | `0x0004820009` | `0x0000000000` | `0xFFFFFFFFFF` | `0xD4164FC646` |
 
-`CRC-24-Radix-64` is now normally called `CRC-24/OPENPGP`. `CRC-32Q` is also called
-`CRC-32/AIXM`. The residue is zero for the 16-, 24-, and 32-bit models. The CRC-40/GSM
-residue is `0xC4FF8071FF`.
+`CRC-24-Radix-64` is another name for `CRC-24/OPENPGP`. `CRC-32Q` is another name for `CRC-32/AIXM`.
 
-The hexadecimal `poly` value omits the leading `x^width` term. The complete generator
-polynomials are:
+The residue is zero for the 16-, 24-, and 32-bit models. The CRC-40/GSM residue is `0xC4FF8071FF`.
+
+The hexadecimal `poly` value does not include the `x^width` term. The full generator polynomials are:
 
 ```text
 CRC-16: x^16 + x^15 + x^14 + x^11 + x^6 + x^5 + x^2 + x + 1
@@ -51,8 +48,7 @@ CRC-40: x^40 + x^26 + x^23 + x^17 + x^3 + 1
 
 ### CRC cells
 
-The patent reads the CRC cells in normal matrix order: left to right, then top to
-bottom. The following table lists the zero-based cell indices in that order.
+The patent gives this CRC cell order: from left to right, then from top to bottom. The table below gives the cell indices in that order. Cell indices start at zero.
 
 | Grid  | CRC cell indices                                                                  |
 | ----- | --------------------------------------------------------------------------------- |
@@ -61,54 +57,27 @@ bottom. The following table lists the zero-based cell indices in that order.
 | 9x9   | `4, 13, 22, 31, 36, 37, 38, 39, 41, 42, 43, 44, 49, 58, 67, 76`                   |
 | 11x11 | `5, 16, 27, 38, 49, 55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 71, 82, 93, 104, 115` |
 
-![Patent CRC cells numbered in matrix order and expanded into their zero-based indices](./assets/ddtag-crc/patent-crc-order.svg)
-
-The patent is less exact about the message. It says to compose the message from the
-cells that are not palette, CRC, or size cells. It does not give a separate cell order
-or say how to pack the resulting bits into bytes. A simple reading is to use the same
-row order, but this is not stated as clearly as the CRC cell order.
+![The grid shows all cell indices. The list shows the highlighted CRC indices in the patent order.](./assets/ddtag-crc/patent-crc-order.svg)
 
 ## Observed CRC
 
-Real 5x5 tags do not use the patent calculation. They use the same `0xC867` polynomial,
-but change the input data, initial value, and CRC cell order.
+NaviLens 5x5 tags do not use the patent calculation. The sections below give the CRC calculation found by reverse engineering.
 
 ### Message order
 
-The twelve message cells are read by columns:
+The decoder reads the twelve message cells one column at a time. The two-bit values of these cells give the 24-bit message.
 
-```text
-5, 15,
-1, 6, 16, 21,
-3, 8, 18, 23,
-9, 19
-```
-
-Their two-bit values form the 24-bit message.
-
-![Message cells numbered in deployed column-major order](./assets/ddtag/message-order.svg)
+![The diagram shows the message cells and their two-bit values in column order.](./assets/ddtag/message-order.svg)
 
 ### CRC input
 
-The CRC covers every cell outside the centre row and centre column. This includes the
-four palette corners. The centre cell and the CRC cells are not included.
+The CRC calculation uses all cells outside the center row and center column.
 
-The cells are read by columns in this order:
+Join the two-bit cell values to make 32 bits. Divide the bits into four bytes, from left to right. Do not remove any leading zero bytes.
 
-```text
-0, 5, 15, 20,
-1, 6, 16, 21,
-3, 8, 18, 23,
-4, 9, 19, 24
-```
+![The CRC input cells supply four bytes in column order.](./assets/ddtag-crc/observed-crc-input.svg)
 
-Join the two-bit cell values to make 32 bits. Split those bits from left to right into
-four bytes. Keep the input width fixed at four bytes so that leading zero bytes are
-preserved.
-
-![Deployed CRC input cells numbered in read order and packed into four bytes](./assets/ddtag-crc/observed-crc-input.svg)
-
-The CRC parameters are:
+The CRC parameters for these tags are:
 
 ```text
 width     = 16
@@ -121,50 +90,26 @@ check     = 0xE355
 residue   = 0x0000
 ```
 
-This is not the standard CRC-16/CDMA2000 model. That model uses `init=0xFFFF`.
-
 ### CRC storage
 
-Write the 16-bit result most-significant bit first and split it into eight two-bit
-cells. Store those cells in this order:
+A tag stores the 16-bit CRC in eight cells of the central cross. Each cell contains two bits. The center cell, at index `12`, does not contain CRC bits.
 
-```text
-10, 11, 2, 7, 17, 22, 13, 14
-```
+To read the stored CRC:
 
-In grid terms, this order is the left arm of the centre row, the upper arm of the centre
-column, the lower arm, and then the right arm.
+1. Read the cells in this order: `10, 11, 2, 7, 17, 22, 13, 14`.
+1. Convert the palette color of each cell to its two-bit value.
+1. Join the eight two-bit values to make a 16-bit binary number, with the most-significant bit first. Keep any leading zeros.
+1. Convert the binary number to hexadecimal.
 
-![Stored CRC cells numbered in arm order and concatenated into the Melbourne tag checksum](./assets/ddtag-crc/observed-crc-storage.svg)
+The arm order is left (`10, 11`), upper (`2, 7`), lower (`17, 22`), then right (`13, 14`). In each arm, the order is from left to right or from top to bottom. These indices identify cell positions, not bit values.
 
-The complete check is equivalent to:
+For the [example Melbourne tag](../dataset/images/0017.jpg), the eight cells contain `11 11 11 11 11 11 00 10`. The binary number is `1111111111110010`. This number is `0xFFF2` in hexadecimal.
 
-```text
-input_bits  = join(cells[i] for i in CRC_INPUT_INDICES)
-input_bytes = split input_bits into four 8-bit values, left to right
-calculated  = CRC(input_bytes, poly=0xC867, init=0x0000,
-                  xorout=0x0000, refin=false, refout=false)
-stored      = join(cells[i] for i in CRC_STORAGE_INDICES)
-valid       = calculated == integer value of stored
-```
-
-![The Melbourne tag input bytes produce the same checksum as the value stored in the tag](./assets/ddtag-crc/crc-check.svg)
-
-### Patent and real 5x5 tags
-
-| Detail                      | Patent 5x5                     | Real NaviLens 5x5                |
-| --------------------------- | ------------------------------ | -------------------------------- |
-| CRC input                   | 24 message bits                | 32 bits from all non-cross cells |
-| Palette corners included    | No                             | Yes                              |
-| Polynomial                  | `0xC867`                       | `0xC867`                         |
-| Initial value               | `0xFFFF` in the named standard | `0x0000`                         |
-| Input and output reflection | False                          | False                            |
-| Final XOR                   | `0x0000`                       | `0x0000`                         |
-| CRC cell order              | `2, 7, 10, 11, 13, 14, 17, 22` | `10, 11, 2, 7, 17, 22, 13, 14`   |
+![The CRC cells supply two-bit values. The arrows show the conversion to the binary number and the hexadecimal CRC 0xFFF2.](./assets/ddtag-crc/observed-crc-storage.svg)
 
 ## Examples
 
-For the Melbourne tram tag:
+The [Melbourne tram tag](../dataset/images/0017.jpg) has these values:
 
 ```text
 grid       00101100010110110011111100001000001110001100110010
@@ -174,9 +119,9 @@ bytes      13 A0 08 72
 CRC        FFF2
 ```
 
-Standard CRC-16/CDMA2000 over the message bytes `4A 00 8C` gives `E751`, not `FFF2`.
+Standard CRC-16/CDMA2000 gives `E751` for the message bytes `4A 00 8C`. This result is not equal to the stored CRC, `FFF2`.
 
-For the tag labelled `B1269C`:
+The tag with message code `B1269C` has these values:
 
 ```text
 grid       00001001011001011011001100011111001010001110100110
@@ -186,40 +131,38 @@ bytes      2F 12 69 72
 CRC        39A7
 ```
 
-The [5x5 CRC tests](../tests/test_crc_5x5.py) check these values, the cell orders, byte
-packing, tag generation, and changes to each type of cell.
+The [5x5 CRC tests](../tests/test_crc_5x5.py) check these values, the cell order, the byte packing, and tag generation. The tests also check the CRC after a change to each type of cell.
 
 ## FreeLens
 
-FreeLens generates all four tag sizes. It extends the observed 5x5 calculation to larger
-grids:
+FreeLens generates all four tag sizes. It uses the CRC method from NaviLens 5x5 tags for larger grids, with these rules:
 
-- CRC input contains every cell outside the centre row and column, including corners;
-- input cells are read by columns and packed most-significant bit first;
-- CRC width is `4N - 4`, using the polynomial listed for that size in the patent;
-- `init=0`, `xorout=0`, `refin=false`, and `refout=false`; and
-- CRC cells are written as the left, upper, lower, and right arms of the central cross.
+- The CRC input contains all cells outside the center row and center column, including the four corner cells.
+- FreeLens reads the input cells by column, with the most-significant bit first in each byte.
+- The CRC width is `4N - 4` bits. FreeLens uses the polynomial that the patent gives for each grid size.
+- The parameters are `init=0`, `xorout=0`, `refin=false`, and `refout=false`.
+- FreeLens stores the CRC in the left, upper, lower, and right arms of the central cross, in that order.
 
-This is not the patent calculation. It applies the real 5x5 layout and parameters to the
-larger polynomial widths. Only the 5x5 result has been checked against real tags.
+This method is different from the patent calculation. It uses the 5x5 layout and parameters with larger polynomial widths.
 
-The larger CRCs are not validated because no real 7x7, 9x9, or 11x11 tags have been
-tested. Generated larger tags therefore report an unknown CRC status:
+The tests include NaviLens tags only for the 5x5 size. The CRC status is unknown for generated 7x7, 9x9, and 11x11 tags:
 
 ```python
 tag = Tag.from_message("0" * 64, n=7)
 assert tag.crc_valid is None
 ```
 
-Parsing a larger tag also requires CRC validation to be disabled explicitly:
+To parse a larger tag, disable CRC validation:
 
 ```python
 tag = Tag(bit_string, n=7, validate_crc=False)
 ```
 
-The local `NaviLens Codes.zip` archive contains 142 5x5 PDF tags. All 142 pass the real
-5x5 calculation. The archive is not committed because redistribution permission has not
-been provided. Run the check with:
+The local `NaviLens Codes.zip` archive contains 142 PDF tags with 5x5 grids. The calculated CRC is equal to the stored CRC in all 142 tags.
+
+The repository does not include the archive. The project needs permission to distribute it.
+
+To check a local copy of the archive, run these commands:
 
 ```bash
 python -m pip install -e ".[dataset,test]"
