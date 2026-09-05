@@ -1,78 +1,87 @@
 # Dataset
 
-The contributor-supplied photographs under `images/` are licensed under `CC-BY-4.0`.
+The contributor-supplied photographs in `images/` use the `CC-BY-4.0` licence. Refer to the [licence file](./LICENSE) or the [Creative Commons licence](https://creativecommons.org/licenses/by/4.0/) for details.
 
-Refer to the `LICENSE` file or https://creativecommons.org/licenses/by/4.0/ for details.
+The repository does not contain the NaviLens free-kit archive. That archive is not part of the contributor photograph licence. Permission is necessary before the project can distribute it. Refer to [Testing NaviLens code PDFs](../docs/testing-navilens-codes.md) to check a local copy.
 
-The placeholder `navilens-provided/` directory is outside that license grant. Its README
-records the separate provenance and redistribution merge gate for the proposed NaviLens
-free-kit corpus; no corpus files are currently included.
+## Field photograph benchmark
 
-## Field Photograph Benchmark
+`evaluation.json` records the expected 5×5 tags. Each tag has these fields:
 
-`evaluation.json` records the expected 5x5 tags. Each tag has a six-digit hexadecimal or
-`null` `message`, a `conditions` list, and an optional four-corner `location`. A null
-message records a confirmed tag whose identity cannot be determined. Locations use
-integer `[x, y]` pairs in original-image pixels, clockwise from `top_left`. Conditions
-describe the individual tag region, not the whole image. An optional free-form
-`description` records any additional context about the tag. Tags are included in scoring
-by default; optional `scorable: false` retains a tag as ground-truth metadata without
-requiring a detector to recover it.
+- `message`: a six-digit hexadecimal string, or `null` if the tag is confirmed but its identity is unknown.
+- `conditions`: a list that describes the tag region, not the whole image.
+- `location`: optional corner positions as integer `[x, y]` pairs in source-image pixels. The order is clockwise from `top_left`.
+- `description`: optional text with more information about the tag.
+- `scorable`: an optional flag. The default is `true`. A value of `false` keeps the tag record but removes it from the expected detector output.
 
-The initial messages were bootstrapped from CRC-valid FreeLens detections, so they are
-provisional benchmark data rather than independent proof of correctness. `tags: null`
-means the image needs independent labelling; `tags: []` means it has been reviewed and
-contains no tags.
+The initial message labels use FreeLens detections with valid CRCs. These labels are provisional. They do not show independently that the decoder is correct.
 
-Run the benchmark with:
+An image with `tags: null` has no reviewed labels. A reviewer must label it independently. An image with `tags: []` has no tags, as checked by a reviewer.
+
+To run the benchmark, use this command:
 
 ```bash
 python scripts/benchmark_dataset.py
 ```
 
-The command reports scores and timing but always exits successfully after a completed
-run. It is intentionally not part of pytest or CI. Use `--output results.json` to save a
-detailed result that can be compared between implementations. The current end-to-end
-benchmark evaluates reviewed images whose scorable tags all have known messages. It
-omits unreviewed images and images containing a scorable tag with a null message.
-Non-scorable tags are omitted from expected detector output.
+The command reports scores and execution time. It exits successfully after a completed run, regardless of the scores. It is not part of pytest or continuous integration (CI). To save detailed results for comparison, use `--output results.json`.
 
-## Tag Editor
+The benchmark includes reviewed images if all their scorable tags have known messages. It omits unreviewed images and images with a null message on a scorable tag. It also omits non-scorable tags from the expected detector output.
 
-Start the tag editor locally with:
+## Tag editor
+
+### Start the editor
+
+To start the editor locally, run these commands:
 
 ```bash
 python -m pip install -e ".[editor]"
 python -m scripts.tag_editor
 ```
 
-Or build and start the containerized service:
+As an alternative, use this command to build and start the service in Docker:
 
 ```bash
 docker compose up --build
 ```
 
-Open http://localhost:8899 on the Docker host, or use the host's address from another
-machine. Compose publishes port 8899 on all host interfaces. Located tags are outlined
-in green; selecting one changes it to red and displays its four draggable corner
-handles. Click a green tag to select it, or an untagged part of the image to clear the
-selection. Leaving a tag with unsaved changes prompts to save, discard, or keep editing.
-Use Save to persist or Cancel to restore all unsaved changes. For a tag without a
-location, use Add bounding box to create an adjustable square centered in the visible
-image region and sized for the current zoom. Drag inside a box to move the whole region,
-or hold Shift when starting a corner drag to scale the box proportionally around its
-opposite corner. When zoomed in, drag elsewhere on the image to pan. Use Add tag beside
-the tag-list heading to start an unsaved tag with the same visible-region box ready for
-adjustment. Leave its message blank if it cannot be determined. Scrolling over the image
-zooms around the pointer without an upper zoom limit. Tag edits also update the square,
-perspective-corrected preview below the details. Tag edits are validated and atomically
-replace `dataset/evaluation.json` directly in the repository through Compose's writable
-`./dataset:/app/dataset` bind mount. Every other application path remains read-only.
+Open [the tag editor](http://localhost:8899) on the Docker host. From a different machine, use the host's address with port 8899. Compose publishes this port on all host interfaces.
 
-Compose runs the tag editor as UID/GID 1000 by default. On Linux, override these values
-if the checkout has a different owner. If Docker runs outside a development container,
-also set `TAG_EDITOR_DATASET_PATH` to the checkout path visible to the Docker daemon.
-These values may be placed in the ignored `.env` file:
+The editor has no user authentication. Make it available only on a trusted network.
+
+### Select and edit a tag
+
+The image shows tags with known locations as green outlines. A selected tag has a red outline and four corner handles. Edits also update the square, perspective-corrected preview below the tag details.
+
+1. Click a green tag to select it.
+1. Drag its corner handles to fit the tag boundary.
+1. Click **Save** to store the changes.
+
+To clear the selection, click a part of the image with no tag. If there are unsaved changes, the editor asks how to handle them before a selection change. The choices are to save, discard, or continue the edit. Click **Cancel** to restore the last saved values.
+
+### Add a tag or bounding box
+
+1. Click **Add tag** adjacent to the tag-list heading.
+1. Adjust the new bounding box to fit the tag.
+1. If the message is known, enter it in the message field. If not, keep the field empty.
+1. Click **Save**.
+
+For an existing tag without a location, click **Add bounding box**. The new box is a square at the centre of the image region in view. Its size depends on the current zoom.
+
+### Move and resize the view
+
+- To move a whole box, drag within it.
+- To scale a box about its opposite corner, hold **Shift** as you start to drag a corner.
+- To pan a magnified image, drag outside the boxes.
+- To zoom about the pointer, scroll over the image. There is no upper zoom limit.
+
+### Data storage and Docker settings
+
+The editor checks each saved change before it replaces `dataset/evaluation.json`. This file replacement is atomic. Compose permits these writes through the `./dataset:/app/dataset` bind mount. All other application paths are read-only.
+
+Compose runs the editor with UID and GID 1000 by default. On Linux, change these values if a different user owns the checkout. If Docker runs separately from the development container, use a checkout path that the Docker daemon can access. Set `TAG_EDITOR_DATASET_PATH` to that path.
+
+You can put these values in the ignored `.env` file:
 
 ```bash
 TAG_EDITOR_DATASET_PATH=/daemon/path/to/freelens/dataset
@@ -80,10 +89,13 @@ TAG_EDITOR_UID=1000
 TAG_EDITOR_GID=1000
 ```
 
-The tag editor has no user authentication, so expose it only on a trusted network. Stop
-the service with `docker compose down`.
+To stop the service, run this command:
 
-## PyCon AU 2024 Contributors
+```bash
+docker compose down
+```
+
+## PyCon AU 2024 contributors
 
 - Elliana May (mause.me)
 - Cait Macleod (caitelatte)
@@ -91,7 +103,7 @@ the service with `docker compose down`.
 - Peter Hall (urcher)
 - Stephen Tierney (sjtrny)
 
-## PyCon AU 2025 Contributors
+## PyCon AU 2025 contributors
 
 - Kesara Rathnayake (dh90909252)
 - David Vo (auscompgeek)

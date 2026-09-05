@@ -23,6 +23,14 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_DIR = Path(__file__).resolve().parent / "ddtag-detection"
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from docs.assets.ddtag_diagrams import (  # noqa: E402
+    CONTENT_PADDING,
+    MIN_ARROW_LENGTH,
+    MIN_LABEL_SIZE,
+    draw_step_title,
+    layout_content,
+    render_layout,
+)
 from freelens import (  # noqa: E402
     MIN_FRAME_AREA,
     contour_filter_candidates,
@@ -43,7 +51,6 @@ except ImportError as error:  # pragma: no cover - supplied by Cairo Visuals
 SOURCE_IMAGE = PROJECT_ROOT / "dataset" / "images" / "0004.jpg"
 SOURCE_CROP = (1075, 947, 2167, 2039)
 DETAIL_CROP = (250, 240, 840, 830)
-CONTENT_PADDING = 32
 
 
 def rgb(value):
@@ -171,13 +178,13 @@ def draw_background(ctx, width, height):
 
 
 def regular_font(ctx, size):
-    set_font_from_file(ctx, DEFAULT_FONT, size)
+    set_font_from_file(ctx, DEFAULT_FONT, max(MIN_LABEL_SIZE, size))
 
 
 def mono_font(ctx, size, bold=False):
     weight = cairo.FONT_WEIGHT_BOLD if bold else cairo.FONT_WEIGHT_NORMAL
     ctx.select_font_face("DejaVu Sans Mono", cairo.FONT_SLANT_NORMAL, weight)
-    ctx.set_font_size(size)
+    ctx.set_font_size(max(MIN_LABEL_SIZE, size))
 
 
 def show_text(ctx, value, x, baseline, size, colour=INK, *, mono=False, bold=False):
@@ -335,15 +342,18 @@ def draw_image_processing(ctx, width, height):
     panel_size = 310
     panel_y = 64
     panel_xs = (32, 404, 776)
-    labels = ("image", "grayscale", "adaptive threshold")
+    labels = ((None, "source image"), (1, "greyscale"), (2, "adaptive threshold"))
     images = (
         stages.image,
         image_from_array(stages.grayscale),
         image_from_array(stages.threshold),
     )
 
-    for x, label, image in zip(panel_xs, labels, images, strict=True):
-        show_centered(ctx, label, x, 23, panel_size, 28, 21)
+    for x, (step, label), image in zip(panel_xs, labels, images, strict=True):
+        if step is None:
+            show_text(ctx, label, x, 44, 18)
+        else:
+            draw_step_title(ctx, step, label, x, 23, panel_size)
         draw_image(ctx, image, x, panel_y, panel_size)
 
     center_y = panel_y + panel_size / 2
@@ -354,24 +364,27 @@ def draw_image_processing(ctx, width, height):
 def draw_contour_candidates(ctx, width, height):
     stages = load_stages()
     panel_size = 360
-    panel_y = 32
+    panel_y = 76
     left_x = 32
     right_x = width - CONTENT_PADDING - panel_size
     raw = contour_image(stages.contours, CYAN, 3)
     candidates = contour_image(stages.candidates, ORANGE, 5)
 
+    draw_step_title(ctx, 3, "detect contours", left_x, 32, panel_size)
+    draw_step_title(ctx, 4, "filter contours", right_x, 32, panel_size)
     draw_image(ctx, raw, left_x, panel_y, panel_size, border_colour=INK)
     draw_image(ctx, candidates, right_x, panel_y, panel_size, border_colour=INK)
 
-    card_x = left_x + panel_size + 34
-    card_y = 132
-    card_width = right_x - 34 - card_x
+    card_gap = 12 + MIN_ARROW_LENGTH + 10
+    card_x = left_x + panel_size + card_gap
+    card_y = panel_y + 100
+    card_width = right_x - card_gap - card_x
     card_height = 160
     draw_arrow(ctx, left_x + panel_size + 12, card_x - 10, panel_y + panel_size / 2)
     draw_arrow(ctx, card_x + card_width + 10, right_x - 12, panel_y + panel_size / 2)
     fill_round_rect(ctx, card_x, card_y, card_width, card_height, 14, WHITE)
     stroke_round_rect(ctx, card_x, card_y, card_width, card_height, 14, LINE, 1.5)
-    show_centered(ctx, "at least 4 points", card_x, card_y + 20, card_width, 30, 18)
+    show_centered(ctx, "4 or more points", card_x, card_y + 20, card_width, 30, 18)
     ctx.move_to(card_x + 22, card_y + 72)
     ctx.line_to(card_x + card_width - 22, card_y + 72)
     set_source(ctx, LINE)
@@ -393,7 +406,7 @@ def draw_contour_candidates(ctx, width, height):
         ctx,
         f"{len(stages.contours):,} contours",
         left_x,
-        402,
+        panel_y + panel_size + 10,
         panel_size,
         28,
         21,
@@ -402,7 +415,7 @@ def draw_contour_candidates(ctx, width, height):
         ctx,
         f"{len(stages.candidates):,} candidates",
         right_x,
-        402,
+        panel_y + panel_size + 10,
         panel_size,
         28,
         21,
@@ -418,16 +431,15 @@ def draw_polygon_fitting(ctx, width, height):
     detail = stages.image.crop(DETAIL_CROP)
     threshold = image_from_array(stages.threshold).crop(DETAIL_CROP)
 
-    show_centered(
+    draw_step_title(
         ctx,
+        4,
         f"{len(stages.frame_contour)} sampled boundary points",
         left_x,
         23,
         panel_size,
-        28,
-        20,
     )
-    show_centered(ctx, "4 fitted vertices", right_x, 23, panel_size, 28, 20)
+    draw_step_title(ctx, 5, "4 fitted vertices", right_x, 23, panel_size)
     draw_image(ctx, threshold, left_x, panel_y, panel_size)
     draw_image(ctx, detail, right_x, panel_y, panel_size)
 
@@ -505,7 +517,7 @@ def draw_frame_filters(ctx, width, height):
     panel_size = 320
     panel_y = 68
     left_x = 32
-    filter_x = 387
+    filter_x = left_x + panel_size + 10 + MIN_ARROW_LENGTH + 10
     filter_width = 356
     right_x = width - CONTENT_PADDING - panel_size
 
@@ -542,23 +554,22 @@ def draw_frame_filters(ctx, width, height):
     )
     draw_vertices(ctx, stages.frame_polygon, right_x, panel_y, panel_size)
 
-    show_centered(
+    draw_step_title(
         ctx,
+        5,
         f"{len(stages.polygons)} fitted polygons",
         left_x,
         23,
         panel_size,
-        28,
-        20,
     )
-    show_centered(
+    draw_step_title(ctx, 6, "filter polygons", filter_x, 23, filter_width)
+    draw_step_title(
         ctx,
+        6,
         f"{len(stages.frames)} possible frame",
         right_x,
         23,
         panel_size,
-        28,
-        20,
     )
 
     card_y = 70
@@ -589,29 +600,28 @@ def draw_frame_filters(ctx, width, height):
 
 DIAGRAMS = {
     "image-processing": (1118, 406, draw_image_processing),
-    "contour-candidates": (1016, 445, draw_contour_candidates),
+    "contour-candidates": (1068, 489, draw_contour_candidates),
     "polygon-fitting": (940, 478, draw_polygon_fitting),
-    "frame-filters": (1130, 420, draw_frame_filters),
+    "frame-filters": (1176, 420, draw_frame_filters),
 }
 PREVIEW_DIAGRAM = "image-processing"
 
 
 def render_diagram(surface_factory, name):
     width, height, drawer = DIAGRAMS[name]
-    surface = surface_factory(width, height)
-    ctx = cairo.Context(surface)
-    draw_background(ctx, width, height)
-    drawer(ctx, width, height)
-    return surface, width, height
+    layout = layout_content(drawer, width, height)
+    return render_layout(surface_factory, layout)
 
 
 def draw(surface_factory, width, height):
-    expected_width, expected_height, _ = DIAGRAMS[PREVIEW_DIAGRAM]
+    layout_width, layout_height, drawer = DIAGRAMS[PREVIEW_DIAGRAM]
+    layout = layout_content(drawer, layout_width, layout_height)
+    expected_width, expected_height = layout[1:3]
     if (width, height) != (expected_width, expected_height):
         raise ValueError(
             f"Render {PREVIEW_DIAGRAM!r} at {expected_width} x {expected_height} pixels"
         )
-    return render_diagram(surface_factory, PREVIEW_DIAGRAM)
+    return render_layout(surface_factory, layout)
 
 
 def render_all():

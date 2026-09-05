@@ -1,8 +1,10 @@
 # Development
 
-FreeLens requires Python 3.11+, `uv`, and Git LFS.
+To develop FreeLens, use Python 3.11 or a newer version, `uv`, and Git LFS.
 
 ## Setup
+
+Run these commands from the repository root:
 
 ```bash
 git lfs pull
@@ -10,9 +12,7 @@ source ./setup.sh
 uv pip install -e ".[test]"
 ```
 
-`setup.sh` creates a Python 3.11 `.venv` and installs the runtime requirements. Source
-it to keep the environment active; the second command adds developer tools and installs
-FreeLens in editable mode.
+The first command downloads files stored in Git LFS. The second command runs `setup.sh` in the current shell. This script creates a Python 3.11 `.venv`, activates it, and installs the runtime requirements. The third command installs the developer tools and FreeLens in editable mode.
 
 ## Checks
 
@@ -24,10 +24,9 @@ python -m mdformat --check README.md docs dataset
 git lfs fsck
 ```
 
-Pull request CI runs the formatting and import checks on Python 3.11. It runs unit
-tests, excluding tests marked `integration`, on Python 3.11 and 3.14.
+Continuous integration (CI) checks formatting and imports on Python 3.11 for each pull request. It runs unit tests on Python 3.11 and 3.14. These runs do not include tests marked `integration`.
 
-To apply formatting:
+To apply formatting, run these commands:
 
 ```bash
 python -m black freelens.py scripts tests
@@ -35,17 +34,34 @@ python -m isort freelens.py scripts tests
 python -m mdformat README.md docs dataset
 ```
 
+## Documentation
+
+Use Simplified Technical English with Australian English spelling. Keep technical names, code identifiers, and quoted source data unchanged. Use one source line for each Markdown paragraph. The Markdown formatter preserves this paragraph format.
+
+Use `5×5`, `7×7`, `9×9`, and `11×11` for grid sizes in prose and diagram labels. Use "read positions" for a sequence that starts at 1. Use "cell indices" for grid positions that start at 0.
+
+For a diagram that shows procedure steps, use blue number badges that agree with the numbered instructions. Keep these badges separate from cell indices and sample counts. Do not assign a step number to a source image or a layout illustration.
+
+The diagram generators are in `docs/assets/`. They use the Cairo Visuals project and its Atkinson Hyperlegible font. To regenerate the diagrams, set `PYTHONPATH` to your Cairo Visuals checkout. For example:
+
+```bash
+PYTHONPATH=/path/to/cairo-visuals python docs/assets/ddtag_crc_diagrams.py
+```
+
+Use square corners for tags and cells. Keep figure backgrounds within their borders. Use a 32-pixel content margin around each figure. Use a minimum font size of 18 pixels for bit labels and binary values. Check that all text is readable at its displayed size.
+
+Use the arrows in `image-processing.svg` as the minimum: 38 pixels from tail to tip, with 28 pixels of shaft before the arrowhead. For larger heads or arrows with two heads, keep at least 28 pixels of shaft outside the heads. Increase the space between components to fit the arrows.
+
 ## Dataset
 
-Optional dataset tests skip when their files are absent. To validate the local PDF
-archive:
+Optional dataset tests do not run when their files are not available. To check the local PDF archive, run these commands:
 
 ```bash
 uv pip install -e ".[dataset,test]"
 python scripts/verify_navilens_archive.py "/path/to/NaviLens Codes.zip"
 ```
 
-Do not commit that archive or its generated files.
+Do not commit the archive or its generated files.
 
 ## Build
 
@@ -56,20 +72,13 @@ python -m flit build --no-use-vcs
 
 ## Release
 
-PyPI publishing is tied to GitHub Releases. The workflow in
-`.github/workflows/release.yml` runs when a GitHub Release is published. Saving a draft
-does not trigger it.
+The workflow in `.github/workflows/release.yml` runs when you publish a GitHub Release. It does not run when you save a draft.
 
-The workflow runs the checks, verifies that the release tag matches the package version,
-and builds the wheel and source distribution. The final job waits for approval in the
-`pypi` GitHub environment, then authenticates to PyPI through Trusted Publishing and
-uploads both files.
+The workflow checks the code, compares the release tag with the package version, and builds the wheel and source distribution. The last job waits for approval in the `pypi` GitHub environment. It then authenticates to PyPI through Trusted Publishing and uploads the two files.
 
 ### One-time setup
 
-Add a GitHub publisher in the
-[PyPI publishing settings](https://pypi.org/manage/project/freelens/settings/publishing/)
-with these values:
+Add a GitHub publisher in the [PyPI publishing settings](https://pypi.org/manage/project/freelens/settings/publishing/) with these values:
 
 - PyPI project: `freelens`
 - GitHub owner: `sjtrny`
@@ -77,20 +86,21 @@ with these values:
 - Workflow: `release.yml`
 - Environment: `pypi`
 
-Use the `pypi` GitHub environment with required approval.
+Configure the `pypi` GitHub environment to require approval.
 
 ### Publish a release
 
-1. Update the version in `pyproject.toml` and merge it to `main`.
+1. Update the version in `pyproject.toml`.
+1. Merge the version change to `main`.
 1. Open [GitHub Releases](https://github.com/sjtrny/freelens/releases/new).
-1. Create a tag named `v<version>`, such as `v0.0.5`, targeting `main`.
+1. Create a tag named `v<version>`, such as `v0.0.5`, with `main` as its target.
 1. Publish the release.
-1. Open the workflow run and approve the `pypi` deployment.
+1. Open the workflow run.
+1. Approve the `pypi` deployment.
 
-The release tag must match the version in `pyproject.toml`. The workflow rejects any
-mismatch.
+The release tag must agree with the version in `pyproject.toml`. The workflow rejects a mismatch.
 
-The GitHub CLI is an optional alternative to steps 2–4:
+The GitHub CLI is an optional alternative to steps 3–5:
 
 ```bash
 gh release create v0.0.5 --target main --title "FreeLens 0.0.5" --generate-notes
@@ -98,5 +108,8 @@ gh release create v0.0.5 --target main --title "FreeLens 0.0.5" --generate-notes
 
 ## Contributing
 
-Keep changes focused, add tests for changed behavior, update relevant docs, and run the
-checks above before opening a pull request.
+1. Limit each change to one task.
+1. Add tests for behaviour changes.
+1. Update the applicable documentation.
+1. Run the commands in the [Checks section](#checks).
+1. Open a pull request.

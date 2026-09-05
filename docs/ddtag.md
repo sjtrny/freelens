@@ -1,105 +1,89 @@
-## ddTag Specification
+## ddTag specification
 
-A ddTag consists of a small grid of coloured squares, which represents a "message" of
-binary data. The typical implementation uses a 5x5 grid, which represents a 24 bit
-message, with cyan, magenta, yellow and black coloured cells.
+A ddTag is a small square grid of coloured cells. The 5×5 grid contains a 24-bit message. Its cells use cyan, magenta, yellow, and black.
 
-![Example 5x5 ddTag encoding message 4A005C](./assets/ddtag/example.svg)
+![Example 5×5 ddTag with message 4A005C](./assets/ddtag/example.svg)
 
-The data encoded in the tag consists of two parts:
+The tag contains a binary message and a cyclic redundancy check (CRC). The CRC detects errors in the tag data. The tag also has cells for the colour palette and grid size.
 
-1. the "message", which is a binary sequence, and
-1. a CRC checksum, used to verify the message.
+The ddTag specification gives four grid sizes:
 
-ddTags officially come in the following sizes:
+- 5×5
+- 7×7
+- 9×9
+- 11×11
 
-- 5x5
-- 7x7
-- 9x9
-- 11x11
-
-The tag visually consists of three nested components, which are from the outside moving
-inwards:
+The tag has three parts, in this order from the outer border to the centre:
 
 1. Outer quiet zone
 1. Inner quiet zone
 1. Tag grid
 
-### Quiet Zones
+### Quiet zones
 
-The outer quiet zone is a border region of a solid colour, usually white, and should be
-at least as thick as the inner quiet zone for best detection results. The inner quiet
-zone is a border region of a solid colour which must be:
+The outer quiet zone is a solid-colour border, usually white. For best detection results, its width must be equal to or greater than the inner quiet-zone width.
 
-- one on of the four colours used by the ddTag code grid, typically black,
-- the same width as the cells in the tag grid.
+The inner quiet zone is also a solid-colour border. It must use one of the four tag colours, usually black. Its width must equal the width of one grid cell.
 
-![Nested outer quiet zone, inner quiet zone, and tag grid](./assets/ddtag/quiet-zones.svg)
+![Borders identify the outer quiet zone, inner quiet zone, and tag grid](./assets/ddtag/quiet-zones.svg)
 
 ### Grid
 
-The grid consists of a square grid, with each cell coloured by one of four colours. Each
-cell in the grid represents two bits of data (`00`, `01`, `10` and `11`) since it is in
-one of four states.
+Each cell has one of four colours. Each colour represents a two-bit value: `00`, `01`, `10`, or `11`.
 
-The grid uses an odd numbered size because an unambiguous center position is required
-for two features:
+The grid has an odd number of rows and columns. This gives it a centre cell, centre row, and centre column:
 
-- central cell is used to encode the grid size
-- central row and column are used to hold a CRC checksum
+- The centre cell contains the grid size.
+- The centre row and centre column contain the CRC. The centre cell does not contain CRC bits.
 
-#### Corners and Colours
+#### Corners and colours
 
-The corners do not contain any message data. Instead, they are used as follows:
+The four corner cells define the colour palette. They do not contain message bits. Each corner must have a different colour.
 
-- The bottom left cell must contain the darkest colour, e.g. black, from the colour
-  palette as this is used to orient the tag.
-- The other corners are used to infer the colour palette used by the tag, so they must
-  have distinct colours.
-- The other corners determine bit value associated with each colour, which starting from
-  the top left and moving clockwise around the grid are `00`, `01`, `10`, `11`. For
-  example if the top left corner is cyan then all cyan cells have the value `00`.
+The bottom-left corner must have the darkest colour, usually black. The decoder uses this corner to find the tag orientation.
 
-![Corner cells establish orientation and map palette colours to bit values](./assets/ddtag/corners.svg)
+The bit values are `00`, `01`, `10`, and `11`, in clockwise order from the top-left corner. If the top-left corner is cyan, all cyan cells have the value `00`.
 
-#### Center Cell
+![Corner cells define the orientation and the two-bit value of each palette colour](./assets/ddtag/corners.svg)
 
-The central cell does not contain any message data. In the patent, this cell is reserved
-for encoding the size of the grid. The patent uses the following encoding scheme:
+#### Centre cell
 
-| NxN     | Center Cell |
-| ------- | ----------- |
-| 5x5     | cyan        |
-| 7x7     | magenta     |
-| 9x9     | yellow      |
-| 11 X 11 | black       |
+The centre cell does not contain message or CRC bits. The patent uses this cell to encode the grid size:
+
+| Grid  | Centre cell |
+| ----- | ----------- |
+| 5×5   | cyan        |
+| 7×7   | magenta     |
+| 9×9   | yellow      |
+| 11×11 | black       |
 
 #### CRC
 
-To ensure data integrity, each ddTag reserves certain cells for a CRC. The patent
-describes this as using the cells in the central "cross" of the tag, excluding the
-center cell. However, deployed ddTags do not appear to conform to the patent. Instead
-they also include the corner cells.
+The CRC input and the stored CRC are different. The input is the data used to calculate the CRC. The stored CRC is the result that the tag contains for comparison.
 
-For more information about CRC refer to [CRCs in ddTags](./ddtag-crc.md).
+The patent specifies a CRC calculation that uses only the message bits. Deployed NaviLens 5×5 tags use 32 input bits: 24 message bits and eight palette corner bits.
 
-![5x5 CRC input cells, stored CRC cross, included palette corners, and size cell](./assets/ddtag/crc.svg)
+For a 5×5 tag, the two layouts store the 16-bit CRC in eight cells of the central cross. The centre cell is not part of the CRC input or storage. The corner cells supply CRC input bits; they do not store CRC bits.
+
+Refer to [CRCs in ddTags](./ddtag-crc.md) for the cell order and calculation.
+
+![Blue cells supply the 32-bit CRC input. Orange cells store the 16-bit CRC. The grey centre cell contains the grid size.](./assets/ddtag/crc.svg)
 
 #### Message
 
-The message is formed by concatenating the binary values of the remaining cells in
-"reading order", which is described in the patent as:
+The message uses the cells that are not in the central cross or the four corners. Each message cell supplies two bits.
+
+The patent describes the order as:
 
 > from left to right and from top to bottom
 
-Most sane people would interpret this as reading row by row, starting with the first
-row, reading all the values in it from left to right, and then moving to the next row
-below it. However, this interpretation is incorrect for tags distributed by NaviLens,
-which are read column by column.
+This description does not clearly specify which to read first: rows or columns. NaviLens tags use column order. FreeLens uses the same order for compatibility.
 
-To maximise compatibility, we have adopted this psychotic interpretation.
+Read the message cells from top to bottom in each column. Read the columns from left to right. Join their two-bit values to get the message.
 
-![Message cells numbered in column-major reading order and concatenated into 24 bits](./assets/ddtag/message-order.svg)
+The numbers in this diagram are read positions, from 1 to 12. They are not grid cell indices.
+
+![Message cells have read positions 1 to 12. Their two-bit values form the 24-bit message 4A005C.](./assets/ddtag/message-order.svg)
 
 ## References
 

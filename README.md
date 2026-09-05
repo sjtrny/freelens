@@ -1,13 +1,10 @@
-*This is a work in progress and sudden, dramatic changes are expected!*
+*FreeLens development continues. Interfaces and behaviour can change without notice.*
 
 [FreeLens tag generator](https://freelens.sjtrny.com/)
 
 # FreeLens
 
-This project provides a reference implementation of
-[NaviLens](https://www.navilens.com/) and [ddTag](https://www.ddtags.com/) for
-educational or personal use. Commercial use is at your own risk as NaviLens and ddTag
-may attempt to enforce their IP.
+This project provides a reference implementation of [NaviLens](https://www.navilens.com/) and [ddTag](https://www.ddtags.com/) for educational or personal use. Commercial use is at your own risk. NaviLens and ddTag may attempt to enforce their intellectual property rights.
 
 [![FreeLens pipeline from a field photograph to a rectified tag, generated tag, and decoded data](./docs/assets/freelens-pipeline.svg)](./docs/assets/freelens-pipeline.svg)
 
@@ -21,7 +18,7 @@ may attempt to enforce their IP.
 - [Tag editor](./dataset/DATASET.md#tag-editor)
 - [Development](./docs/development.md)
 
-## Quickstart
+## Quick start
 
 ### Installation
 
@@ -29,12 +26,11 @@ may attempt to enforce their IP.
 pip install freelens
 ```
 
-### Generating Tags
+### Generate tags
 
-FreeLens generates 5×5, 7×7, 9×9, and 11×11 tags. The 5×5 generator uses the CRC found
-in deployed NaviLens tags. Larger generators extend that calculation with the CRC width
-and polynomial for their size. Their CRCs are not validated because no deployed examples
-have been tested.
+FreeLens generates 5×5, 7×7, 9×9, and 11×11 tags. A cyclic redundancy check (CRC) detects errors in the tag data. The 5×5 generator uses the CRC calculation found in deployed NaviLens tags.
+
+Larger generators use the same method with the CRC width and polynomial for their grid size. No deployed examples are available to check the CRC calculation for these larger grids.
 
 ```python
 from freelens import Tag
@@ -55,7 +51,7 @@ tag = Tag.from_message("0" * 64, n=7)
 assert tag.crc_valid is None
 ```
 
-### Detecting Tags
+### Detect tags
 
 ```python
 from freelens import detect_tags

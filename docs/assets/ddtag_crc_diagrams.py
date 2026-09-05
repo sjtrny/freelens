@@ -7,6 +7,7 @@ palette and typography as the other ddTag documentation diagrams.
 from __future__ import annotations
 
 import sys
+from functools import partial
 from pathlib import Path
 
 import cairo
@@ -20,15 +21,21 @@ from docs.assets.ddtag_diagrams import (
     CELL_COLOURS,
     INK,
     LINE,
+    MIN_ARROW_LENGTH,
     MUTED,
     ORANGE,
     PALE,
     WHITE,
     draw_arrow,
     draw_background,
+    draw_message_order,
+    draw_step_badge,
+    draw_step_title,
     fill_rect,
+    layout_content,
     mono_font,
     regular_font,
+    render_layout,
     rounded_rect,
     set_source,
     show_centered,
@@ -37,6 +44,7 @@ from docs.assets.ddtag_diagrams import (
     stroke_round_rect,
 )
 from freelens import (
+    Tag,
     get_center_ind,
     get_corner_indices_1d,
     get_crc_inds,
@@ -44,6 +52,7 @@ from freelens import (
 )
 
 MELBOURNE_FULL_TAG_BITS = "00101100010110110011111100001000001110001100110010"
+MELBOURNE_TAG = Tag(MELBOURNE_FULL_TAG_BITS, n=5)
 MELBOURNE_CELLS = tuple(
     MELBOURNE_FULL_TAG_BITS[offset : offset + 2]
     for offset in range(0, len(MELBOURNE_FULL_TAG_BITS), 2)
@@ -326,7 +335,7 @@ def draw_observed_input(ctx, width, height):
     grid_y = 66
     grid_size = 320
 
-    show_centered(ctx, "input order", grid_x, 24, grid_size, 26, 19)
+    show_centered(ctx, "read positions (1–16)", grid_x, 24, grid_size, 26, 19)
     draw_grid(
         ctx,
         5,
@@ -398,6 +407,27 @@ def draw_observed_input(ctx, width, height):
         )
 
 
+def draw_numbered_value(ctx, step, value, x, y, width, height, size, *, bold=False):
+    badge_width = 48 if len(str(step)) > 2 else 28
+    mono_font(ctx, size, bold)
+    text_width = ctx.text_extents(value).width
+    group_width = badge_width + 12 + text_width
+    group_x = x + (width - group_width) / 2
+    draw_step_badge(ctx, step, group_x, y + (height - 28) / 2, width=badge_width)
+    show_centered_text(
+        ctx,
+        value,
+        group_x + badge_width + 12,
+        y,
+        text_width,
+        height,
+        size,
+        INK,
+        mono=True,
+        bold=bold,
+    )
+
+
 def draw_observed_storage(ctx, width, height):
     storage_indices = tuple(get_crc_inds(5))
     pairs = tuple(MELBOURNE_CELLS[index] for index in storage_indices)
@@ -407,7 +437,7 @@ def draw_observed_storage(ctx, width, height):
     grid_x = 32
     grid_y = 76
     grid_size = 270
-    show_centered(ctx, "cell indices", grid_x, 32, grid_size, 26, 19)
+    draw_step_title(ctx, 1, "zero-based cell indices", grid_x, 32, grid_size)
     draw_grid(
         ctx,
         5,
@@ -429,7 +459,7 @@ def draw_observed_storage(ctx, width, height):
     cells_y = 76
     bits_y = 138
     label_x = ribbon_x - 66
-    arrow_y = (cells_y + chip + bits_y) / 2
+    arrow_y = cells_y + chip / 2
 
     draw_arrow(
         ctx,
@@ -441,6 +471,7 @@ def draw_observed_storage(ctx, width, height):
         2.5,
     )
     show_centered(ctx, "cell", label_x, cells_y, 54, chip, 15, MUTED)
+    draw_step_badge(ctx, 2, label_x - 38, bits_y + (chip - 28) / 2)
     show_centered(ctx, "bits", label_x, bits_y, 54, chip, 15, MUTED)
 
     for position, (cell_index, bits) in enumerate(
@@ -479,136 +510,34 @@ def draw_observed_storage(ctx, width, height):
             MUTED,
         )
 
-    draw_arrow(ctx, center_x, 196, center_x, 220, MUTED, 2)
-    show_centered(
-        ctx, grouped_bits, ribbon_x, 234, ribbon_width, 26, 18, INK, mono=True
-    )
-    draw_arrow(ctx, center_x, 274, center_x, 298, MUTED, 2)
-    show_centered_text(
+    binary_arrow_y = bits_y + chip + 14
+    binary_y = binary_arrow_y + MIN_ARROW_LENGTH + 14
+    crc_arrow_y = binary_y + 28 + 12
+    crc_y = crc_arrow_y + MIN_ARROW_LENGTH + 16
+    draw_arrow(
         ctx,
+        center_x,
+        binary_arrow_y,
+        center_x,
+        binary_arrow_y + MIN_ARROW_LENGTH,
+        MUTED,
+        2,
+    )
+    draw_numbered_value(
+        ctx, "3–4", grouped_bits, ribbon_x, binary_y, ribbon_width, 28, 18
+    )
+    draw_arrow(
+        ctx, center_x, crc_arrow_y, center_x, crc_arrow_y + MIN_ARROW_LENGTH, MUTED, 2
+    )
+    draw_numbered_value(
+        ctx,
+        5,
         f"CRC 0x{crc_value:04X}",
         ribbon_x,
-        314,
+        crc_y,
         ribbon_width,
         32,
         25,
-        INK,
-        mono=True,
-        bold=True,
-    )
-
-
-def draw_crc_check(ctx, width, height):
-    card_y = 44
-    card_height = 150
-    input_x = 30
-    input_width = 224
-    engine_x = 326
-    engine_width = 268
-    calculated_x = 666
-    value_width = 170
-    stored_x = 900
-
-    draw_card(ctx, input_x, card_y, input_width, card_height)
-    show_centered(ctx, "input bytes", input_x, card_y + 20, input_width, 25, 18)
-    byte_values = ("13", "A0", "08", "72")
-    byte_size = 38
-    byte_gap = 8
-    bytes_width = 4 * byte_size + 3 * byte_gap
-    bytes_x = input_x + (input_width - bytes_width) / 2
-    for column, value in enumerate(byte_values):
-        x = bytes_x + column * (byte_size + byte_gap)
-        fill_rect(ctx, x, card_y + 76, byte_size, byte_size, BLUE)
-        show_centered_text(
-            ctx,
-            value,
-            x,
-            card_y + 76,
-            byte_size,
-            byte_size,
-            14,
-            WHITE,
-            mono=True,
-            bold=True,
-        )
-
-    draw_arrow(
-        ctx,
-        input_x + input_width + 16,
-        card_y + card_height / 2,
-        engine_x - 16,
-        card_y + card_height / 2,
-        MUTED,
-        2.5,
-    )
-
-    draw_card(ctx, engine_x, card_y, engine_width, card_height)
-    show_centered(ctx, "CRC-16", engine_x, card_y + 18, engine_width, 27, 20)
-    labels = ("poly", "init", "xorout")
-    values = ("0xC867", "0x0000", "0x0000")
-    row_y = card_y + 68
-    for row, (label, value) in enumerate(zip(labels, values, strict=True)):
-        y = row_y + row * 24
-        show_text(ctx, label, engine_x + 67, y, 15, MUTED, mono=True)
-        show_text(ctx, value, engine_x + 143, y, 15, INK, mono=True)
-
-    draw_arrow(
-        ctx,
-        engine_x + engine_width + 16,
-        card_y + card_height / 2,
-        calculated_x - 16,
-        card_y + card_height / 2,
-        MUTED,
-        2.5,
-    )
-
-    draw_card(ctx, calculated_x, card_y, value_width, card_height)
-    show_centered(
-        ctx,
-        "calculated",
-        calculated_x,
-        card_y + 28,
-        value_width,
-        25,
-        17,
-        MUTED,
-    )
-    show_centered_text(
-        ctx,
-        "FFF2",
-        calculated_x,
-        card_y + 74,
-        value_width,
-        42,
-        28,
-        INK,
-        mono=True,
-        bold=True,
-    )
-
-    show_centered(ctx, "=", 850, card_y, 36, card_height, 28, INK)
-
-    draw_card(ctx, stored_x, card_y, value_width, card_height)
-    show_centered(
-        ctx,
-        "stored",
-        stored_x,
-        card_y + 28,
-        value_width,
-        25,
-        17,
-        MUTED,
-    )
-    show_centered_text(
-        ctx,
-        "FFF2",
-        stored_x,
-        card_y + 74,
-        value_width,
-        42,
-        28,
-        INK,
-        mono=True,
         bold=True,
     )
 
@@ -616,29 +545,28 @@ def draw_crc_check(ctx, width, height):
 DIAGRAMS = {
     "patent-layout": (1120, 384, draw_patent_layout),
     "patent-crc-order": (890, 326, draw_patent_order),
+    "message-order": (1200, 500, partial(draw_message_order, tag=MELBOURNE_TAG)),
     "observed-crc-input": (1100, 436, draw_observed_input),
-    "observed-crc-storage": (920, 378, draw_observed_storage),
-    "crc-check": (1100, 238, draw_crc_check),
+    "observed-crc-storage": (920, 406, draw_observed_storage),
 }
 PREVIEW_DIAGRAM = "patent-layout"
 
 
 def render_diagram(surface_factory, name):
     width, height, drawer = DIAGRAMS[name]
-    surface = surface_factory(width, height)
-    ctx = cairo.Context(surface)
-    draw_background(ctx, width, height)
-    drawer(ctx, width, height)
-    return surface, width, height
+    layout = layout_content(drawer, width, height)
+    return render_layout(surface_factory, layout)
 
 
 def draw(surface_factory, width, height):
-    expected_width, expected_height, _ = DIAGRAMS[PREVIEW_DIAGRAM]
+    layout_width, layout_height, drawer = DIAGRAMS[PREVIEW_DIAGRAM]
+    layout = layout_content(drawer, layout_width, layout_height)
+    expected_width, expected_height = layout[1:3]
     if (width, height) != (expected_width, expected_height):
         raise ValueError(
             f"Render {PREVIEW_DIAGRAM!r} at {expected_width} x {expected_height} pixels"
         )
-    return render_diagram(surface_factory, PREVIEW_DIAGRAM)
+    return render_layout(surface_factory, layout)
 
 
 def render_all():
